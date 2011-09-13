@@ -88,8 +88,16 @@ void init(struct md *md, struct config *cfg)
 	/* Initial velocities */
 	vSet(md->velSum, 0, 0);
 	for (n = 0; n < md->N; n++) {
+		vRand(&(md->mol[n].rv));
+		vScale(md->mol[n].rv, md->initVel);
+		vAdd(md->velSum, md->velSum, md->mol[n].rv);
 	}
+	for (n = 0; n < md->N; n++)
+		vSAdd(md->mol[n].rv, md->mol[n].rv, - 1./md->N, md->velSum);
 
+	/* Initial accelertions, simply set to zero */
+	for (n = 0; n < md->N; n++)
+		vSet(md->mol[n].ra, 0, 0);
 }
 
 int main(int argc, char **argv)

@@ -81,9 +81,14 @@ typedef struct config * config_t;
 
 /* Vector Operations */
 #if DIMS == 2
+
 #define vSet(v, sx, sy)	\
 	(v).x = sx,	\
 	(v).y = sy
+
+#define vScale(v, s) \
+	(v).x = s * (v).x, \
+	(v).y = s * (v).y
 
 #define vSCopy(v2, s, v1) \
 	(v2).x = (s) * (v1).x,	\
@@ -95,6 +100,14 @@ typedef struct config * config_t;
 
 #define vProd(v)	((v).x * (v).y)
 
+#define vAdd(v1, v2, v3)	\
+	(v1).x = (v2).x + (v3).x, \
+	(v1).y = (v2).y + (v3).y
+
+#define vSub(v1, v2, v3)	\
+	(v1).x = (v2).x - (v3).x, \
+	(v1).y = (v2).y - (v3).y
+
 #define vMul(v1, v2, v3)	\
 	(v1).x = (v2).x * (v3).x, \
 	(v1).y = (v2).y * (v3).y
@@ -102,8 +115,14 @@ typedef struct config * config_t;
 #define vDiv(v1, v2, v3)	\
 	(v1).x = (v2).x / (v3).x, \
 	(v1).y = (v2).y / (v3).y
+
 #elif DIMS == 3
+
 #endif
+void vRand (struct vec *v);
+
+/* Thermodynamic Properties Accumulation */
+#define tZero
 
 /* Command Line Parsing */
 void cmd_free_opts(struct cmd_opts *opts);

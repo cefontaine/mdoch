@@ -178,3 +178,58 @@ int config_parsing(struct config *cfg, struct cmd_opts *opts)
 		memset(buf, 0x0, LINE_MAX);
 	}
 }
+
+#define IADD   453806245
+#define IMUL   314159269
+#define MASK   2147483647
+#define SCALE  0.4656612873e-9
+
+int randSeedP = 17;
+
+void InitRand (int randSeedI)
+{
+  struct timeval tv;
+
+  if (randSeedI != 0) randSeedP = randSeedI;
+  else {
+    gettimeofday (&tv, 0);
+    randSeedP = tv.tv_usec;
+  }
+}
+
+double RandR (void)
+{
+  randSeedP = (randSeedP * IMUL + IADD) & MASK;
+  return (randSeedP * SCALE);
+}
+
+#if DIMS == 2
+
+void vRand (struct vec *p)
+{
+  double s;
+
+  s = 2. * M_PI * RandR ();
+  p->x = cos (s);
+  p->y = sin (s);
+}
+
+#elif DIMS == 3
+
+void vRand (VecR *p)
+{
+  real s, x, y;
+
+  s = 2.;
+  while (s > 1.) {
+    x = 2. * RandR () - 1.;
+    y = 2. * RandR () - 1.;
+    s = Sqr (x) + Sqr (y);
+  }
+  p->z = 1. - 2. * s;
+  s = 2. * sqrt (1. - s);
+  p->x = s * x;
+  p->y = s * y;
+}
+
+#endif
