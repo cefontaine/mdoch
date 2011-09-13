@@ -1,13 +1,12 @@
 CC=gcc
-SRC=allpairs2d.c
+TARGETS=allpairs2d
 COMMON=common.h common.c
-OBJ=$(basename $(SRC))
 CFLAGS=-O -lm
 
-all: $(OBJ) 
+all: $(TARGETS) 
 
 allpairs2d: allpairs2d.c $(COMMON)
-	$(CC) $(CFLAGS) -DDIMS=2 common.c $< -o $@ 
+	$(CC) -o $@ $(CFLAGS) -DDIMS=2 common.c $<  
 
 clean:
-	rm -rf *.o $(OBJ)
+	rm -rf $(TARGETS)

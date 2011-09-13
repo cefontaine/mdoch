@@ -4,7 +4,7 @@ TARGETS=allpairs2d
 
 all: $(TARGETS)
 
-%: %.chpl
+%: %.chpl common.chpl
 	$(CHPL) -o $@ $<
 
 clean:

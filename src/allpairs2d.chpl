@@ -19,9 +19,75 @@
 
 /* allpairs2d.chpl */
 
-config const input: string = "allpairs2d.in";
+use common;
 
-proc main() {
-	writeln("use input file: ", input);
+config const deltaT: real = 0.005;
+config const density: real = 0.8;
+config const temperature: real = 1.0;
+config const initCellX: int = 20;
+config const initCellY: int = 20;
+config const stepAvg: int = 100;
+config const stepEquil: int = 0;
+config const stepLimit: int = 10000;
+const NDIM: int = 2;
+
+// Setup parameters
+var initCell: (int, int) = (initCellX, initCellY);
+var rCut: real = 2.0 ** (1.0/6.0);
+var region: vector2d = (1.0 / sqrt(density) * initCellX, 
+	1.0 / sqrt(density) * initCellY);
+var nMol: int = initCellX * initCellY;
+var velMag: real = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
+var stepCount: int = 0;
+var mol: [1..initCellX, 1..initCellX] mol2d;
+var vSum: vector2d = (0.0, 0.0);
+var kinEnergy, totEnergy, pressure: prop;
+var moreCycles = 1;
+var timeNow: real;
+
+proc init() {
+	// Initial coordinates
+	var c: vector2d, gap: vector2d;
+	
+	gap = region / initCell;
+	for d in mol.domain {
+		c = ((0.5, 0.5) + d) * gap;
+		c += (-0.5, -0.5) * region;
+		mol(d)(1) = c;
+	}
+
+	// Initial velocities
+	for m in mol {
+		m(2) = vrand2d() * (velMag, velMag);
+		vSum += m(2);
+	}
+	for m in mol {
+		m(2) += (-1.0 / nMol, -1.0 / nMol) * vSum;
+	}
+
+	// Initial accelerations
+	for m in mol {
+		m(3) = (0.0, 0.0);
+	}
+
+	totEnergy(2) = 0.0;
+	totEnergy(3) = 0.0;
+	kinEnergy(2) = 0.0;
+	kinEnergy(3) = 0.0;
+	pressure(2) = 0.0;
+	pressure(3) = 0.0;
 }
 
+proc step() {
+	stepCount += 1;
+	timeNow = stepCount * deltaT;
+}
+
+proc main() {
+	init();
+	while (moreCycles) {
+		step();
+		if (stepCount >= stepLimit) then
+			moreCycles = 0;
+	};
+};
