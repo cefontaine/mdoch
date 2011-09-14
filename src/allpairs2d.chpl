@@ -41,7 +41,9 @@ var velMag: real = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
 var stepCount: int = 0;
 var mol: [1..initCellX, 1..initCellY] mol2d;
 var vSum: vector2d = (0.0, 0.0);
-var kinEnergy, totEnergy, pressure: prop;
+var kinEnergy = new Prop();
+var totEnergy = new Prop();
+var pressure = new Prop();
 var moreCycles = 1;
 var timeNow, uSum, virSum, vvSum: real;
 
@@ -62,13 +64,10 @@ proc init() {
 		m(2) += (-1.0 / nMol, -1.0 / nMol) * vSum;
 		m(3) = (0.0, 0.0);
 	}
-
-	totEnergy(2) = 0.0;
-	totEnergy(3) = 0.0;
-	kinEnergy(2) = 0.0;
-	kinEnergy(3) = 0.0;
-	pressure(2) = 0.0;
-	pressure(3) = 0.0;
+	
+	totEnergy.setZero();
+	kinEnergy.setZero();
+	pressure.setZero();
 }
 
 proc step() {
@@ -129,43 +128,31 @@ proc step() {
 		vSum += m(2);
 		vvSum += m(2)(1) ** 2 + m(2)(2) ** 2;
 	}
-	kinEnergy(1) = 0.5 * vvSum / nMol;
-	totEnergy(1) = kinEnergy(1) + uSum / nMol;
-	pressure(1) = density * (vvSum + virSum) / (nMol * NDIM);
+	kinEnergy.v = 0.5 * vvSum / nMol;
+	totEnergy.v = kinEnergy.v + uSum / nMol;
+	pressure.v = density * (vvSum + virSum) / (nMol * NDIM);
 		
 	// Accumulate themodynamics properties
-	totEnergy(2) += totEnergy(1);
-	totEnergy(3) += totEnergy(1) ** 2;
-	kinEnergy(2) += kinEnergy(1);
-	kinEnergy(3) += kinEnergy(1) ** 2;
-	pressure(2) += pressure(1);
-	pressure(3) += pressure(1) ** 2;
+	totEnergy.acc();
+	kinEnergy.acc();
+	pressure.acc();
 		
-	var tmp: real;
 	if stepCount % stepAvg == 0 then {
-		totEnergy(2) /= stepAvg;
-		totEnergy(3) = sqrt(max(totEnergy(3)/stepAvg - totEnergy(2) ** 2, 0));
-
-		kinEnergy(2) /= stepAvg;
-		kinEnergy(3) = sqrt(max(kinEnergy(3)/stepAvg - kinEnergy(2) ** 2, 0));
-
-		pressure(2) /= stepAvg;
-		pressure(3) = sqrt(max(pressure(3)/stepAvg - pressure(2) ** 2, 0));
+		totEnergy.avg(stepAvg);
+		kinEnergy.avg(stepAvg);
+		pressure.avg(stepAvg);
 
 		// Print summary
 		writeln("\t", stepCount, "\t", timeNow, 
 			"\t", (vSum(1) + vSum(2)) / nMol,
-			"\t", totEnergy(2), "\t", totEnergy(3),
-			"\t", kinEnergy(2), "\t", kinEnergy(3),
-			"\t", pressure(2), "\t", pressure(3));
+			"\t", totEnergy.sum, "\t", totEnergy.sum2,
+			"\t", kinEnergy.sum, "\t", kinEnergy.sum2,
+			"\t", pressure.sum, "\t", pressure.sum2);
 		stdout.flush();
 		
-		totEnergy(2) = 0.0;
-		totEnergy(3) = 0.0;
-		kinEnergy(2) = 0.0;
-		kinEnergy(3) = 0.0;
-		pressure(2) = 0.0;
-		pressure(3) = 0.0;
+		totEnergy.setZero();
+		kinEnergy.setZero();
+		pressure.setZero();
 	}
 }
 

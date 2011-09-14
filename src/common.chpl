@@ -56,3 +56,21 @@ proc max(a:real, b:real) {
 	if a > b then return a;
 	else return b;
 }
+
+class Prop {	// Thermodynamic properties
+	var v, sum, sum2: real;
+	proc setZero() {
+		sum = 0;
+		sum2 = 0;
+	}
+	
+	proc acc() {
+		sum += v;
+		sum2 += v ** 2;
+	}
+
+	proc avg(n: real) {
+		sum /= n;
+		sum2 = sqrt(max(sum2 / n - sum ** 2, 0));
+	}
+}
