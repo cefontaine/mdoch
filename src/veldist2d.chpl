@@ -17,53 +17,61 @@
  * See the file COPYING.
  ***************************************************************************/
 
-/* allpairs2d.chpl */
+/* veldist2d.chpl */
 
 use common;
 
-config const deltaT: real = 0.005;
+config const deltaT: real = 0.001;
 config const density: real = 0.8;
 config const temperature: real = 1.0;
-config const initCellX: int = 20;
-config const initCellY: int = 20;
+config const initCellX: int = 50;
+config const initCellY: int = 50;
+config const limitVel: int = 4;
+config const nebrTabFac: int = 4;
+config const randSeed: int = 17;
+config const rangeVel: real = 3.0;
+config const rNebrShell: real = 0.4;
+config const sizeHistVel: int = 50;
 config const stepAvg: int = 100;
 config const stepEquil: int = 0;
 config const stepLimit: int = 10000;
+config const stepVel: int = 5;
 const NDIM: int = 2;
 
-var rCut, velMag, timeNow, uSum, virSum, vvSum: real;
-var initCell: vector2d_i; 
+var rCut, velMag, timeNow, uSum, virSum, vvSum, dispHi, hFunction: real;
 var region, vSum: vector2d;
+var initCell, cells: vector2d_i;
 var nMol, stepCount, moreCycles: int; 
+var mol: [1..initCellX, 1..initCellY] mol2d;
 var kinEnergy, totEnergy, pressure: Prop;
-var mol: [1..initCellX * initCellY] mol2d;
+var nebrNow, nebrTabLen, nebrTabMax: real;
+var countVel: int;
 
 proc init() {
 	// Setup parameters
 	initCell = (initCellX, initCellY);
 	rCut = 2.0 ** (1.0 / 6.0);
-	region = 1.0 / sqrt(density) * initCell;
+	region = 1.0 / sqrt(density) * initCell; 
 	nMol = initCell.dot();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
+	cells = 1.0 / (rCut + rNebrShell) * region;
+	nebrTabMax = nebrTabFac * nMol;
 	stepCount = 0;
 	moreCycles = 1;
+	nebrNow = 1;
+	countVel = 0;
 	vSum.zero();
 	kinEnergy = new Prop();
 	totEnergy = new Prop();
 	pressure = new Prop();
+	initRand(randSeed);
 
 	// Initial coordinates
 	var c, gap: vector2d;
-	var n: int;
 	
 	gap = region / initCell;
-	n = 1;
-	for ny in [0..initCell.y-1] {
-		for nx in [0..initCell.x-1] {
-			mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
-			n += 1;
-		}
-	}
+	for d in mol.domain do // NOTE: index of domain starts from (1, 1)
+		mol(d).r = ((-0.5, -0.5) + d) * gap - 0.5 * region;
 
 	// Initial velocities and accelerations
 	for m in mol {
@@ -106,19 +114,21 @@ proc step() {
 	uSum = 0;
 	virSum = 0;
 	
-	for d in [1..nMol-1] do {
-		for d2 in [d+1..nMol] do {
-			dr = mol(d).r - mol(d2).r;
-			dr = vwrap2d(dr, region);
-			rr = dr.lsqr();
-			if rr < rrCut then {
-				rri = 1.0 / rr;
-				rri3 = rri ** 3;
-				fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
-				mol(d).ra += (fcVal, fcVal) * dr;
-				mol(d2).ra += (-fcVal, -fcVal) * dr;
-				uSum += 4 * rri3 * (rri3 - 1.0) + 1;
-				virSum += fcVal * rr;
+	for d in mol.domain do {
+		for d2 in mol.domain do {
+			if d2 > d then {
+				dr = mol(d).r - mol(d2).r;
+				dr = vwrap2d(dr, region);
+				rr = dr.lsqr();
+				if rr < rrCut then {
+					rri = 1.0 / rr;
+					rri3 = rri ** 3;
+					fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
+					mol(d).ra += (fcVal, fcVal) * dr;
+					mol(d2).ra += (-fcVal, -fcVal) * dr;
+					uSum += 4 * rri3 * (rri3 - 1.0) + 1;
+					virSum += fcVal * rr;
+				}
 			}
 		}
 	}

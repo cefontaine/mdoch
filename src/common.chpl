@@ -19,6 +19,8 @@
 
 /* common.chpl */
 
+use Time;
+
 // Constants
 const IADD: int =  453806245;
 const IMUL: int =  314159269;
@@ -37,15 +39,19 @@ record vector2d {
 	var x, y: real;
 	
 	proc zero() { x = 0; y = 0; }
-	
 	proc set(a: real, b: real) { x = a; y = b; }
-	
 	proc dot() { return x * y; }
-	
 	proc lsqr() { return x ** 2 + y ** 2; }
 }
 
 proc =(v: vector2d, t: (real, real)) {
+	var r: vector2d;
+	r.x = t(1);
+	r.y = t(2);
+	return r;
+}
+
+proc =(v: vector2d, t: (int, int)) {
 	var r: vector2d;
 	r.x = t(1);
 	r.y = t(2);
@@ -81,10 +87,10 @@ proc *(a: real, v: vector2d) {
 }
 
 proc *(a: (real, real), v: vector2d) {
-	var s: vector2d;
-	s.x = a(1) * v.x;
-	s.y = a(2) * v.y;
-	return s;
+	var r: vector2d;
+	r.x = a(1) * v.x;
+	r.y = a(2) * v.y;
+	return r;
 }
 
 proc /(v1: vector2d, v2: vector2d) {
@@ -94,11 +100,51 @@ proc /(v1: vector2d, v2: vector2d) {
 	return s;
 }
 
+record vector2d_i {
+	var x, y: int;
+	proc dot() { return x * y; }
+	proc lsqr() { return x ** 2 + y ** 2; }
+}
+
+proc =(v: vector2d_i, t: (int, int)) {
+	var r: vector2d_i;
+	r.x = t(1);
+	r.y = t(2);
+	return r;
+}
+
+proc =(v1: vector2d_i, v2: vector2d) {
+	var r: vector2d_i;
+	r.x = v2.x: int;
+	r.y = v2.y: int;
+	return r;
+}
+
+proc *(s: real, v: vector2d_i) {
+	var r: vector2d;
+	r.x = s * v.x;
+	r.y = s * v.y;
+	return r;
+}
+
+proc /(v1: vector2d, v2: vector2d_i) {
+	var r: vector2d;
+	r.x = v1.x / v2.x;
+	r.y = v1.y / v2.y;
+	return r;
+}
+
+// 
 record mol2d {
 	var r, rv, ra: vector2d;
 }
 
 var randSeedP: int = 17;
+
+proc initRand(randSeedI: int) {
+  if randSeedI != 0 then randSeedP = randSeedI;
+  else randSeedP = getCurrentTime(): int;
+}
 
 proc vrand2d() {
 	var r: vector2d;
