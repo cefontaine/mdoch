@@ -84,9 +84,8 @@ proc step() {
 	}
 
 	// Apply boundary condition
-	for m in mol {
+	for m in mol do
 		m(1) = vwrap2d(m(1), region);
-	}
 
 	// Compute forces
 	var dr: vector2d;
@@ -125,9 +124,10 @@ proc step() {
 		m(2) += (0.5 * deltaT, 0.5 * deltaT) * m(3);
 
 	// Evaluate themodynamics properties
-	var vv, vvMax: real;
+	var vvMax: real;
 
 	vSum = (0.0, 0.0);
+	vvSum = 0;
 	for m in mol do {
 		vSum += m(2);
 		vvSum += m(2)(1) ** 2 + m(2)(2) ** 2;
@@ -150,18 +150,23 @@ proc step() {
 		tmp = totEnergy(3)/stepAvg - totEnergy(2) ** 2;
 		if tmp < 0 then tmp = 0;
 		totEnergy(3) = sqrt(tmp);
+
 		kinEnergy(2) /= stepAvg;
 		tmp = kinEnergy(3)/stepAvg - kinEnergy(2) ** 2;
 		if tmp < 0 then tmp = 0;
 		kinEnergy(3) = sqrt(tmp);
+
+		pressure(2) /= stepAvg;
 		tmp = pressure(3)/stepAvg - pressure(2) ** 2;
 		if tmp < 0 then tmp = 0;
-		pressure(2) /= stepAvg;
 		pressure(3) = sqrt(tmp);
 
 		// Print summary
-		writeln(stepCount, "\t", timeNow, "\t", (vSum(1) + vSum(2)) / nMol,
-			"\t", totEnergy, "\t",  kinEnergy, "\t", pressure);
+		writeln("\t", stepCount, "\t", timeNow, 
+			"\t", (vSum(1) + vSum(2)) / nMol,
+			"\t", totEnergy(2), "\t", totEnergy(3),
+			"\t", kinEnergy(2), "\t", totEnergy(3),
+			"\t", pressure(2), "\t", pressure(3));
 		stdout.flush();
 		
 		totEnergy(2) = 0.0;
