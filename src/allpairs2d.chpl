@@ -33,13 +33,13 @@ const NDIM: int = 2;
 
 // Setup parameters
 var initCell: (int, int) = (initCellX, initCellY);
-var rCut: real = 2.0 ** (1.0/6.0);
+var rCut: real = 2.0 ** (1.0 / 6.0);
 var region: vector2d = (1.0 / sqrt(density) * initCellX, 
 	1.0 / sqrt(density) * initCellY);
 var nMol: int = initCellX * initCellY;
 var velMag: real = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
 var stepCount: int = 0;
-var mol: [1..initCellX, 1..initCellX] mol2d;
+var mol: [1..initCellX, 1..initCellY] mol2d;
 var vSum: vector2d = (0.0, 0.0);
 var kinEnergy, totEnergy, pressure: prop;
 var moreCycles = 1;
