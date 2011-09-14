@@ -5,7 +5,7 @@
 int GetNameList (int argc, char **argv)
 {
   int id, j, k, match, ok;
-  char buff[80], *token, *res;
+  char buff[80], *token;
   FILE *fp;
 
   strcpy (buff, argv[0]);
@@ -14,9 +14,7 @@ int GetNameList (int argc, char **argv)
   for (k = 0; k < sizeof (nameList) / sizeof (NameList); k ++)
      nameList[k].vStatus = 0;
   ok = 1;
-  while (1) {
-    res = fgets (buff, 80, fp);
-    if (feof (fp)) break;
+  while (fgets (buff, 80, fp) != NULL) {
     token = strtok (buff, " \t\n");
     if (! token) break;
     match = 0;

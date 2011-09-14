@@ -51,3 +51,8 @@ proc vwrap2d(v: vector2d, region: vector2d) {
 
 	return (x, y);
 }
+
+proc max(a:real, b:real) {
+	if a > b then return a;
+	else return b;
+}

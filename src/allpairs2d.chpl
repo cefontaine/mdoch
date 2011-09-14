@@ -53,17 +53,15 @@ proc init() {
 	for d in mol.domain do // NOTE: index of domain starts from (1, 1)
 		mol(d)(1) = ((-0.5, -0.5) + d) * gap + (-0.5, -0.5) * region;
 
-	// Initial velocities
+	// Initial velocities and accelerations
 	for m in mol {
 		m(2) = vrand2d() * (velMag, velMag);
 		vSum += m(2);
 	}
-	for m in mol do
+	for m in mol {
 		m(2) += (-1.0 / nMol, -1.0 / nMol) * vSum;
-
-	// Initial accelerations
-	for m in mol do
 		m(3) = (0.0, 0.0);
+	}
 
 	totEnergy(2) = 0.0;
 	totEnergy(3) = 0.0;
@@ -146,25 +144,19 @@ proc step() {
 	var tmp: real;
 	if stepCount % stepAvg == 0 then {
 		totEnergy(2) /= stepAvg;
-		tmp = totEnergy(3)/stepAvg - totEnergy(2) ** 2;
-		if tmp < 0 then tmp = 0;
-		totEnergy(3) = sqrt(tmp);
+		totEnergy(3) = sqrt(max(totEnergy(3)/stepAvg - totEnergy(2) ** 2, 0));
 
 		kinEnergy(2) /= stepAvg;
-		tmp = kinEnergy(3)/stepAvg - kinEnergy(2) ** 2;
-		if tmp < 0 then tmp = 0;
-		kinEnergy(3) = sqrt(tmp);
+		kinEnergy(3) = sqrt(max(kinEnergy(3)/stepAvg - kinEnergy(2) ** 2, 0));
 
 		pressure(2) /= stepAvg;
-		tmp = pressure(3)/stepAvg - pressure(2) ** 2;
-		if tmp < 0 then tmp = 0;
-		pressure(3) = sqrt(tmp);
+		pressure(3) = sqrt(max(pressure(3)/stepAvg - pressure(2) ** 2, 0));
 
 		// Print summary
 		writeln("\t", stepCount, "\t", timeNow, 
 			"\t", (vSum(1) + vSum(2)) / nMol,
 			"\t", totEnergy(2), "\t", totEnergy(3),
-			"\t", kinEnergy(2), "\t", totEnergy(3),
+			"\t", kinEnergy(2), "\t", kinEnergy(3),
 			"\t", pressure(2), "\t", pressure(3));
 		stdout.flush();
 		
