@@ -54,7 +54,7 @@ proc init() {
 		mol(d)(1) = ((-0.5, -0.5) + d) * gap + (-0.5, -0.5) * region;
 
 	// Initial velocities
-	for m in mol do {
+	for m in mol {
 		m(2) = vrand2d() * (velMag, velMag);
 		vSum += m(2);
 	}
@@ -128,7 +128,7 @@ proc step() {
 
 	vSum = (0.0, 0.0);
 	vvSum = 0;
-	for m in mol do {
+	for m in mol {
 		vSum += m(2);
 		vvSum += m(2)(1) ** 2 + m(2)(2) ** 2;
 	}
