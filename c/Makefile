@@ -1,12 +1,12 @@
 CC=gcc
 TARGETS=allpairs2d
-COMMON=common.h common.c
+DEPENDS=in_errexit.c inmddefs.h in_proto.h in_rand.c in_vdefs.h in_namelist.h in_namelist.c
 CFLAGS=-O -lm
 
 all: $(TARGETS) 
 
-allpairs2d: allpairs2d.c $(COMMON)
-	$(CC) -o $@ $(CFLAGS) -DDIMS=2 common.c $<  
+%: %.c
+	$(CC) -o $@ $< $(CFLAGS) 
 
 clean:
 	rm -rf $(TARGETS)

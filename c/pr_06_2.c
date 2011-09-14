@@ -1,5 +1,5 @@
 
-/* [[pr_02_1 - all pairs, two dimensions]] */
+/* [[pr_06_2 - constrained T]] */
 
 
 /*********************************************************************
@@ -26,8 +26,6 @@
 **********************************************************************/
 
 
-#define NDIM  2
-
 #include "in_mddefs.h"
 
 typedef struct {
@@ -40,6 +38,8 @@ VecI initUcell;
 real deltaT, density, rCut, temperature, timeNow, uSum, velMag, vvSum;
 Prop kinEnergy, totEnergy;
 int moreCycles, nMol, stepAvg, stepCount, stepEquil, stepLimit;
+VecI cells;
+int *cellList;
 real virSum;
 Prop pressure;
 
@@ -47,6 +47,7 @@ NameList nameList[] = {
   NameR (deltaT),
   NameR (density),
   NameI (initUcell),
+  NameR (rCut),
   NameI (stepAvg),
   NameI (stepEquil),
   NameI (stepLimit),
@@ -75,6 +76,7 @@ void SingleStep ()
   LeapfrogStep (1);
   ApplyBoundaryCond ();
   ComputeForces ();
+  ApplyThermostat ();
   LeapfrogStep (2);
   EvalProps ();
   AccumProps (1);
@@ -97,43 +99,91 @@ void SetupJob ()
 
 void SetParams ()
 {
-  rCut = pow (2., 1./6.);
-  VSCopy (region, 1. / sqrt (density), initUcell);
-  nMol = VProd (initUcell);
+  VSCopy (region, 1. / pow (density / 4., 1./3.), initUcell);
+  nMol = 4 * VProd (initUcell);
   velMag = sqrt (NDIM * (1. - 1. / nMol) * temperature);
+  VSCopy (cells, 1. / rCut, region);
 }
 
 void AllocArrays ()
 {
   AllocMem (mol, nMol, Mol);
+  AllocMem (cellList, VProd (cells) + nMol, int);
 }
 
 
 void ComputeForces ()
 {
-  VecR dr;
-  real fcVal, rr, rrCut, rri, rri3;
-  int j1, j2, n;
+  VecR dr, invWid, rs, shift;
+  VecI cc, m1v, m2v, vOff[] = OFFSET_VALS;
+  real fcVal, rr, rrCut, rri, rri3, uVal;
+  int c, j1, j2, m1, m1x, m1y, m1z, m2, n, offset;
 
   rrCut = Sqr (rCut);
+  VDiv (invWid, cells, region);
+  for (n = nMol; n < nMol + VProd (cells); n ++) cellList[n] = -1;
+  DO_MOL {
+    VSAdd (rs, mol[n].r, 0.5, region);
+    VMul (cc, rs, invWid);
+    c = VLinear (cc, cells) + nMol;
+    cellList[n] = cellList[c];
+    cellList[c] = n;
+  }
   DO_MOL VZero (mol[n].ra);
   uSum = 0.;
   virSum = 0.;
-  for (j1 = 0; j1 < nMol - 1; j1 ++) {
-    for (j2 = j1 + 1; j2 < nMol; j2 ++) {
-      VSub (dr, mol[j1].r, mol[j2].r);
-      VWrapAll (dr);
-      rr = VLenSq (dr);
-      if (rr < rrCut) {
-        rri = 1. / rr;
-        rri3 = Cube (rri);
-        fcVal = 48. * rri3 * (rri3 - 0.5) * rri;
-        VVSAdd (mol[j1].ra, fcVal, dr);
-        VVSAdd (mol[j2].ra, - fcVal, dr);
-        uSum += 4. * rri3 * (rri3 - 1.) + 1.;
-        virSum += fcVal * rr;
+  for (m1z = 0; m1z < cells.z; m1z ++) {
+    for (m1y = 0; m1y < cells.y; m1y ++) {
+      for (m1x = 0; m1x < cells.x; m1x ++) {
+        VSet (m1v, m1x, m1y, m1z);
+        m1 = VLinear (m1v, cells) + nMol;
+        for (offset = 0; offset < N_OFFSET; offset ++) {
+          VAdd (m2v, m1v, vOff[offset]);
+          VZero (shift);
+          VCellWrapAll ();
+          m2 = VLinear (m2v, cells) + nMol;
+          DO_CELL (j1, m1) {
+            DO_CELL (j2, m2) {
+              if (m1 != m2 || j2 < j1) {
+                VSub (dr, mol[j1].r, mol[j2].r);
+                VVSub (dr, shift);
+                rr = VLenSq (dr);
+                if (rr < rrCut) {
+                  rri = 1. / rr;
+                  rri3 = Cube (rri);
+                  fcVal = 48. * rri3 * (rri3 - 0.5) * rri;
+                  uVal = 4. * rri3 * (rri3 - 1.);
+                  VVSAdd (mol[j1].ra, fcVal, dr);
+                  VVSAdd (mol[j2].ra, - fcVal, dr);
+                  uSum += uVal;
+                  virSum += fcVal * rr;
+                }
+              }
+            }
+          }
+        }
       }
     }
+  }
+}
+
+
+void ApplyThermostat ()
+{
+  VecR vt;
+  real s1, s2, vFac;
+  int n;
+
+  s1 = s2 = 0.;
+  DO_MOL {
+    VSAdd (vt, mol[n].rv, 0.5 * deltaT, mol[n].ra);
+    s1 += VDot (vt, mol[n].ra);
+    s2 += VLenSq (vt);
+  }
+  vFac = - s1 / s2;
+  DO_MOL {
+    VSAdd (vt, mol[n].rv, 0.5 * deltaT, mol[n].ra);
+    VVSAdd (mol[n].ra, vFac, vt);
   }
 }
 
@@ -164,17 +214,26 @@ void ApplyBoundaryCond ()
 void InitCoords ()
 {
   VecR c, gap;
-  int n, nx, ny;
+  int j, n, nx, ny, nz;
 
   VDiv (gap, region, initUcell);
   n = 0;
-  for (ny = 0; ny < initUcell.y; ny ++) {
-    for (nx = 0; nx < initUcell.x; nx ++) {
-      VSet (c, nx + 0.5, ny + 0.5);
-      VMul (c, c, gap);
-      VVSAdd (c, -0.5, region);
-      mol[n].r = c;
-      ++ n;
+  for (nz = 0; nz < initUcell.z; nz ++) {
+    for (ny = 0; ny < initUcell.y; ny ++) {
+      for (nx = 0; nx < initUcell.x; nx ++) {
+        VSet (c, nx + 0.25, ny + 0.25, nz + 0.25);
+        VMul (c, c, gap);
+        VVSAdd (c, -0.5, region);
+        for (j = 0; j < 4; j ++) {
+          mol[n].r = c;
+          if (j != 3) {
+            if (j != 0) mol[n].r.x += 0.5 * gap.x;
+            if (j != 1) mol[n].r.y += 0.5 * gap.y;
+            if (j != 2) mol[n].r.z += 0.5 * gap.z;
+          }
+          ++ n;
+        }
+      }
     }
   }
 }
