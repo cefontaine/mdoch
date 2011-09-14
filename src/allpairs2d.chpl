@@ -101,8 +101,7 @@ proc step() {
 	
 	for d in mol.domain do {
 		for d2 in mol.domain do {
-			if d2 <= d then continue;
-			else {
+			if d2 > d then {
 				dr = mol(d)(1) - mol(d2)(1);
 				dr = vwrap2d(dr, region);
 				rr = dr(1) ** 2 + dr(2) ** 2;
