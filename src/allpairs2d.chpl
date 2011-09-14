@@ -31,38 +31,42 @@ config const stepEquil: int = 0;
 config const stepLimit: int = 10000;
 const NDIM: int = 2;
 
-// Setup parameters
-var initCell: (int, int) = (initCellX, initCellY);
-var rCut: real = 2.0 ** (1.0 / 6.0);
-var region: vector2d = (1.0 / sqrt(density) * initCellX, 
-	1.0 / sqrt(density) * initCellY);
-var nMol: int = initCellX * initCellY;
-var velMag: real = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
-var stepCount: int = 0;
+var rCut, velMag, timeNow, uSum, virSum, vvSum: real;
+var initCell, region, vSum: vector2d;
+var nMol, stepCount, moreCycles: int; 
 var mol: [1..initCellX, 1..initCellY] mol2d;
-var vSum: vector2d = (0.0, 0.0);
-var kinEnergy = new Prop();
-var totEnergy = new Prop();
-var pressure = new Prop();
-var moreCycles = 1;
-var timeNow, uSum, virSum, vvSum: real;
+var kinEnergy, totEnergy, pressure: Prop;
 
 proc init() {
+	// Setup parameters
+	initCell.set(initCellX, initCellY);
+	rCut = 2.0 ** (1.0 / 6.0);
+	region.set(1.0 / sqrt(density) * initCellX, 
+		1.0 / sqrt(density) * initCellY);
+	nMol = initCellX * initCellY;
+	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
+	stepCount = 0;
+	moreCycles = 1;
+	vSum.zero();
+	kinEnergy = new Prop();
+	totEnergy = new Prop();
+	pressure = new Prop();
+
 	// Initial coordinates
-	var c: vector2d, gap: vector2d;
+	var c, gap: vector2d;
 	
 	gap = region / initCell;
 	for d in mol.domain do // NOTE: index of domain starts from (1, 1)
-		mol(d)(1) = ((-0.5, -0.5) + d) * gap + (-0.5, -0.5) * region;
+		mol(d).r = ((-0.5, -0.5) + d) * gap - 0.5 * region;
 
 	// Initial velocities and accelerations
 	for m in mol {
-		m(2) = vrand2d() * (velMag, velMag);
-		vSum += m(2);
+		m.rv = velMag * vrand2d();
+		vSum += m.rv;
 	}
 	for m in mol {
-		m(2) += (-1.0 / nMol, -1.0 / nMol) * vSum;
-		m(3) = (0.0, 0.0);
+		m.rv += (-1.0 / nMol) * vSum;
+		m.ra.zero();
 	}
 	
 	totEnergy.setZero();
@@ -76,22 +80,22 @@ proc step() {
 	
 	// Leapfrog
 	for m in mol {
-		m(2) += (0.5 * deltaT, 0.5 * deltaT) * m(3);
-		m(1) += (deltaT, deltaT) * m(2);
+		m.rv += (0.5 * deltaT) * m.ra;
+		m.r += deltaT * m.rv;
 	}
 
 	// Apply boundary condition
 	for m in mol do
-		m(1) = vwrap2d(m(1), region);
+		m.r = vwrap2d(m.r, region);
 
 	// Compute forces
 	var dr: vector2d;
 	var fcVal, rr, rrCut, rri, rri3: real;
 	var i, j, n: int;
 
-	rrCut = rCut * rCut;
+	rrCut = rCut ** 2;
 	for m in mol do
-		m(3) = (0.0, 0.0);
+		m.ra.zero();
 
 	uSum = 0;
 	virSum = 0;
@@ -99,15 +103,15 @@ proc step() {
 	for d in mol.domain do {
 		for d2 in mol.domain do {
 			if d2 > d then {
-				dr = mol(d)(1) - mol(d2)(1);
+				dr = mol(d).r - mol(d2).r;
 				dr = vwrap2d(dr, region);
-				rr = dr(1) ** 2 + dr(2) ** 2;
+				rr = dr.lsqr();
 				if rr < rrCut then {
 					rri = 1.0 / rr;
 					rri3 = rri ** 3;
 					fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
-					mol(d)(3) += (fcVal, fcVal) * dr;
-					mol(d2)(3) += (-fcVal, -fcVal) * dr;
+					mol(d).ra += (fcVal, fcVal) * dr;
+					mol(d2).ra += (-fcVal, -fcVal) * dr;
 					uSum += 4 * rri3 * (rri3 - 1.0) + 1;
 					virSum += fcVal * rr;
 				}
@@ -117,16 +121,16 @@ proc step() {
 
 	// Leafrog
 	for m in mol do
-		m(2) += (0.5 * deltaT, 0.5 * deltaT) * m(3);
+		m.rv += (0.5 * deltaT) * m.ra;
 
 	// Evaluate themodynamics properties
 	var vvMax: real;
 
-	vSum = (0.0, 0.0);
+	vSum.zero();
 	vvSum = 0;
 	for m in mol {
-		vSum += m(2);
-		vvSum += m(2)(1) ** 2 + m(2)(2) ** 2;
+		vSum += m.rv;
+		vvSum += m.rv.lsqr();
 	}
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
@@ -144,7 +148,7 @@ proc step() {
 
 		// Print summary
 		writeln("\t", stepCount, "\t", timeNow, 
-			"\t", (vSum(1) + vSum(2)) / nMol,
+			"\t", (vSum.x + vSum.y) / nMol,
 			"\t", totEnergy.sum, "\t", totEnergy.sum2,
 			"\t", kinEnergy.sum, "\t", kinEnergy.sum2,
 			"\t", pressure.sum, "\t", pressure.sum2);
