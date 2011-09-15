@@ -17,15 +17,15 @@
  * See the file COPYING.
  ***************************************************************************/
 
-/* veldist2d.chpl */
+/* veldist.chpl */
 
 use common;
 
 config const deltaT: real = 0.001;
 config const density: real = 0.8;
 config const temperature: real = 1.0;
-config const initCellX: int = 50;
-config const initCellY: int = 50;
+config const initUcellX: int = 50;
+config const initUcellY: int = 50;
 config const limitVel: int = 4;
 config const nebrTabFac: int = 4;
 config const randSeed: int = 17;
@@ -37,55 +37,94 @@ config const stepEquil: int = 0;
 config const stepLimit: int = 10000;
 config const stepVel: int = 5;
 const NDIM: int = 2;
+const OFFSET_VALS: [1..5] vector2d_i;
+OFFSET_VALS(1) = (0, 0);
+OFFSET_VALS(2) = (1, 0);
+OFFSET_VALS(3) = (1, 1);
+OFFSET_VALS(4) = (0, 1);
+OFFSET_VALS(5) = (-1, 1);
 
 var rCut, velMag, timeNow, uSum, virSum, vvSum, dispHi, hFunction: real;
 var region, vSum: vector2d;
-var initCell, cells: vector2d_i;
-var nMol, stepCount, moreCycles: int; 
-var mol: [1..initCellX, 1..initCellY] mol2d;
+var initUcell, cells: vector2d_i;
+var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax, countVel: int; 
 var kinEnergy, totEnergy, pressure: Prop;
-var nebrNow, nebrTabLen, nebrTabMax: real;
-var countVel: int;
+var nebrNow: bool;
+var molDom: domain(1) = [1..2];	// use domain to reallocate array
+var mol: [molDom] mol2d;
+var cellListDom: domain(1) = [1..2];
+var cellList: [cellListDom] int;
+var nebrTabDom: domain(1) = [1..2];
+var nebrTab: [nebrTabDom] int;
+var histVelDom: domain(1) = [1..2];
+var histVel: [histVelDom] real;
 
 proc init() {
 	// Setup parameters
-	initCell = (initCellX, initCellY);
+	initUcell = (initUcellX, initUcellY);
 	rCut = 2.0 ** (1.0 / 6.0);
-	region = 1.0 / sqrt(density) * initCell; 
-	nMol = initCell.dot();
+	region = 1.0 / sqrt(density) * initUcell; 
+	nMol = initUcell.dot();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
 	cells = 1.0 / (rCut + rNebrShell) * region;
 	nebrTabMax = nebrTabFac * nMol;
 	stepCount = 0;
 	moreCycles = 1;
-	nebrNow = 1;
-	countVel = 0;
-	vSum.zero();
+	
+	// Allocate storage
+	molDom = [1..nMol];
+	cellListDom = [1..cells.dot() + nMol];
+	nebrTabDom = [1..2 * nebrTabMax];
+	histVelDom = [1..sizeHistVel];
+	
 	kinEnergy = new Prop();
 	totEnergy = new Prop();
 	pressure = new Prop();
+	
 	initRand(randSeed);
 
 	// Initial coordinates
 	var c, gap: vector2d;
+	var n: int;
 	
-	gap = region / initCell;
-	for d in mol.domain do // NOTE: index of domain starts from (1, 1)
-		mol(d).r = ((-0.5, -0.5) + d) * gap - 0.5 * region;
+	gap = region / initUcell;
+	n = 1;
+	for ny in [0..initUcell.y-1] {
+		for nx in [0..initUcell.x-1] {
+			mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
+			n += 1;
+		}
+	}
 
 	// Initial velocities and accelerations
+	vSum.zero();
 	for m in mol {
 		m.rv = velMag * vrand2d();
 		vSum += m.rv;
 	}
 	for m in mol {
 		m.rv += (-1.0 / nMol) * vSum;
-		m.ra.zero();
+		m.ra.zero();	// accelerations
 	}
 	
 	totEnergy.setZero();
 	kinEnergy.setZero();
 	pressure.setZero();
+	nebrNow = true;
+	countVel = 0;
+}
+
+proc buildNebrList() {
+	var dr, invWid, rs, shift: vector2d;
+	var cc, m1v, m2v: vector2d_i;
+	var vOff: [1..OFFSET_VALS.rank] vector2d_i = OFFSET_VALS;
+	var rrNebr: real;
+	var c, j1, j2, m1, m1x, m1y, m2, offset: int;
+
+	rrNebr = (rCut + rNebrShell) ** 2;
+	invWid = cells / region;
+	for i in [nMol+1..cellList.rank] do
+		cellList(i) = -1;
 }
 
 proc step() {
@@ -101,6 +140,11 @@ proc step() {
 	// Apply boundary condition
 	for m in mol do
 		m.r = vwrap2d(m.r, region);
+	
+	if nebrNow {
+		nebrNow = false;
+		dispHi = 0;
+	}
 
 	// Compute forces
 	var dr: vector2d;

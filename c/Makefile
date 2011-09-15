@@ -1,5 +1,5 @@
 CC=gcc
-TARGETS=allpairs2d veldist2d
+TARGETS=allpairs2d veldist
 DEPENDS=in_errexit.c inmddefs.h in_proto.h in_rand.c in_vdefs.h in_namelist.h in_namelist.c
 CFLAGS=-O -lm
 

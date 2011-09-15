@@ -24,30 +24,33 @@ use common;
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
 config const temperature: real = 1.0;
-config const initCellX: int = 20;
-config const initCellY: int = 20;
+config const initUcellX: int = 20;
+config const initUcellY: int = 20;
 config const stepAvg: int = 100;
 config const stepEquil: int = 0;
 config const stepLimit: int = 10000;
 const NDIM: int = 2;
 
 var rCut, velMag, timeNow, uSum, virSum, vvSum: real;
-var initCell: vector2d_i; 
+var initUcell: vector2d_i; 
 var region, vSum: vector2d;
 var nMol, stepCount, moreCycles: int; 
 var kinEnergy, totEnergy, pressure: Prop;
-var mol: [1..initCellX * initCellY] mol2d;
+var molDom: domain(1) = [1..2];	// use domain to reallocate array
+var mol: [molDom] mol2d;
 
 proc init() {
 	// Setup parameters
-	initCell = (initCellX, initCellY);
+	initUcell = (initUcellX, initUcellY);
 	rCut = 2.0 ** (1.0 / 6.0);
-	region = 1.0 / sqrt(density) * initCell;
-	nMol = initCell.dot();
+	region = 1.0 / sqrt(density) * initUcell;
+	nMol = initUcell.dot();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
 	stepCount = 0;
 	moreCycles = 1;
-	vSum.zero();
+
+	// Allocate storage
+	molDom = [1..nMol];
 	kinEnergy = new Prop();
 	totEnergy = new Prop();
 	pressure = new Prop();
@@ -56,23 +59,24 @@ proc init() {
 	var c, gap: vector2d;
 	var n: int;
 	
-	gap = region / initCell;
+	gap = region / initUcell;
 	n = 1;
-	for ny in [0..initCell.y-1] {
-		for nx in [0..initCell.x-1] {
+	for ny in [0..initUcell.y-1] {
+		for nx in [0..initUcell.x-1] {
 			mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
 			n += 1;
 		}
 	}
 
 	// Initial velocities and accelerations
+	vSum.zero();
 	for m in mol {
 		m.rv = velMag * vrand2d();
 		vSum += m.rv;
 	}
 	for m in mol {
 		m.rv += (-1.0 / nMol) * vSum;
-		m.ra.zero();
+		m.ra.zero();	// accelerations
 	}
 	
 	totEnergy.setZero();
