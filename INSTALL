@@ -1,0 +1,7 @@
+1. Build
+  	$ cd src
+	$ make
+
+2. Build C reference implementation
+	$ cd c
+	$ make
