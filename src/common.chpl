@@ -34,14 +34,25 @@ proc max(a:real, b:real) {
 	else return b;
 }
 
+var randSeedP: int = 17;
+
+proc initRand(randSeedI: int) {
+  if randSeedI != 0 then randSeedP = randSeedI;
+  else randSeedP = getCurrentTime(): int;
+}
+
+proc randR() {
+	randSeedP = (randSeedP * IMUL + IADD) & MASK;
+	return (randSeedP * SCALE);
+}
+
 // 2D-Vector
 record vector2d {
 	var x, y: real;
 	
 	proc zero() { x = 0; y = 0; }
-	proc set(a: real, b: real) { x = a; y = b; }
-	proc dot() { return x * y; }
-	proc lsqr() { return x ** 2 + y ** 2; }
+	proc prod() { return x * y; }
+	proc lensq() { return x ** 2 + y ** 2; }
 }
 
 proc =(v: vector2d, t: (real, real)) {
@@ -102,8 +113,8 @@ proc /(v1: vector2d, v2: vector2d) {
 
 record vector2d_i {
 	var x, y: int;
-	proc dot() { return x * y; }
-	proc lsqr() { return x ** 2 + y ** 2; }
+	proc prod() { return x * y; }
+	proc lensq() { return x ** 2 + y ** 2; }
 }
 
 proc =(v: vector2d_i, t: (int, int)) {
@@ -134,24 +145,11 @@ proc /(v1: vector2d, v2: vector2d_i) {
 	return r;
 }
 
-// 
-record mol2d {
-	var r, rv, ra: vector2d;
-}
-
-var randSeedP: int = 17;
-
-proc initRand(randSeedI: int) {
-  if randSeedI != 0 then randSeedP = randSeedI;
-  else randSeedP = getCurrentTime(): int;
-}
-
 proc vrand2d() {
 	var r: vector2d;
 	var s: real;
 
-	randSeedP = (randSeedP * IMUL + IADD) & MASK;
-	s = 2 * PI * randSeedP * SCALE;
+	s = 2 * PI * randR();
 	r.x = cos(s);
 	r.y = sin(s);
 	return r;
@@ -169,13 +167,47 @@ proc vwrap2d(v: vector2d, region: vector2d) {
 	return s;
 }
 
-class Prop {	// Thermodynamic properties
+//////////////////////////////////////
+// 3D Vector
+//////////////////////////////////////
+record vector {
+	var x, y, z: real;
+	proc zero() { x = 0; y = 0; z = 0;}
+	proc prod() { return x * y * z; }
+	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
+}
+
+proc vrand() {
+	var r: vector;
+	var s, x, y: real;
+
+	s = 2;
+	while s > 1 {
+		x = 2 * randR() - 1;
+		y = 2 * randR() - 1;
+		s = x ** 2 + y ** 2;
+	}
+	r.z = 1 - 2 * s;
+	s = 2 * sqrt(1 - s);
+	r.x = s * x;
+	r.y = s * y;
+}
+
+//////////////////////////////////////
+// Molecular Types
+//////////////////////////////////////
+record mol2d {
+	var r, rv, ra: vector2d;
+}
+
+record mol3d {
+	var r, rv, ra: vector;
+}
+
+record prop {
 	var v, sum, sum2: real;
-	
 	proc setZero() { sum = 0; sum2 = 0; }
-	
 	proc acc() { sum += v; sum2 += v ** 2; }
-	
 	proc avg(n: real) { 
 		sum /= n; 
 		sum2 = sqrt(max(sum2 / n - sum ** 2, 0));

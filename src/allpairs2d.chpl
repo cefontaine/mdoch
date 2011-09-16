@@ -35,8 +35,8 @@ var rCut, velMag, timeNow, uSum, virSum, vvSum: real;
 var initUcell: vector2d_i; 
 var region, vSum: vector2d;
 var nMol, stepCount, moreCycles: int; 
-var kinEnergy, totEnergy, pressure: Prop;
-var molDom: domain(1) = [1..2];	// use domain to reallocate array
+var kinEnergy, totEnergy, pressure: prop;
+var molDom: domain(1) = [1..1];	// use domain to reallocate array
 var mol: [molDom] mol2d;
 
 proc init() {
@@ -44,16 +44,16 @@ proc init() {
 	initUcell = (initUcellX, initUcellY);
 	rCut = 2.0 ** (1.0 / 6.0);
 	region = 1.0 / sqrt(density) * initUcell;
-	nMol = initUcell.dot();
+	nMol = initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
 	stepCount = 0;
 	moreCycles = 1;
 
 	// Allocate storage
 	molDom = [1..nMol];
-	kinEnergy = new Prop();
-	totEnergy = new Prop();
-	pressure = new Prop();
+	kinEnergy = new prop();
+	totEnergy = new prop();
+	pressure = new prop();
 
 	// Initial coordinates
 	var c, gap: vector2d;
@@ -114,7 +114,7 @@ proc step() {
 		for d2 in [d+1..nMol] do {
 			dr = mol(d).r - mol(d2).r;
 			dr = vwrap2d(dr, region);
-			rr = dr.lsqr();
+			rr = dr.lensq();
 			if rr < rrCut then {
 				rri = 1.0 / rr;
 				rri3 = rri ** 3;
@@ -138,7 +138,7 @@ proc step() {
 	vvSum = 0;
 	for m in mol {
 		vSum += m.rv;
-		vvSum += m.rv.lsqr();
+		vvSum += m.rv.lensq();
 	}
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;

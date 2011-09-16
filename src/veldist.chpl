@@ -48,15 +48,15 @@ var rCut, velMag, timeNow, uSum, virSum, vvSum, dispHi, hFunction: real;
 var region, vSum: vector2d;
 var initUcell, cells: vector2d_i;
 var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax, countVel: int; 
-var kinEnergy, totEnergy, pressure: Prop;
+var kinEnergy, totEnergy, pressure: prop;
 var nebrNow: bool;
-var molDom: domain(1) = [1..2];	// use domain to reallocate array
+var molDom: domain(1) = [1..1];	// use domain to reallocate array
 var mol: [molDom] mol2d;
-var cellListDom: domain(1) = [1..2];
+var cellListDom: domain(1) = [1..1];
 var cellList: [cellListDom] int;
-var nebrTabDom: domain(1) = [1..2];
+var nebrTabDom: domain(1) = [1..1];
 var nebrTab: [nebrTabDom] int;
-var histVelDom: domain(1) = [1..2];
+var histVelDom: domain(1) = [1..1];
 var histVel: [histVelDom] real;
 
 proc init() {
@@ -64,7 +64,7 @@ proc init() {
 	initUcell = (initUcellX, initUcellY);
 	rCut = 2.0 ** (1.0 / 6.0);
 	region = 1.0 / sqrt(density) * initUcell; 
-	nMol = initUcell.dot();
+	nMol = initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
 	cells = 1.0 / (rCut + rNebrShell) * region;
 	nebrTabMax = nebrTabFac * nMol;
@@ -73,13 +73,13 @@ proc init() {
 	
 	// Allocate storage
 	molDom = [1..nMol];
-	cellListDom = [1..cells.dot() + nMol];
+	cellListDom = [1..cells.prod() + nMol];
 	nebrTabDom = [1..2 * nebrTabMax];
 	histVelDom = [1..sizeHistVel];
 	
-	kinEnergy = new Prop();
-	totEnergy = new Prop();
-	pressure = new Prop();
+	kinEnergy = new prop();
+	totEnergy = new prop();
+	pressure = new prop();
 	
 	initRand(randSeed);
 
@@ -163,7 +163,7 @@ proc step() {
 			if d2 > d then {
 				dr = mol(d).r - mol(d2).r;
 				dr = vwrap2d(dr, region);
-				rr = dr.lsqr();
+				rr = dr.lensq();
 				if rr < rrCut then {
 					rri = 1.0 / rr;
 					rri3 = rri ** 3;
@@ -188,7 +188,7 @@ proc step() {
 	vvSum = 0;
 	for m in mol {
 		vSum += m.rv;
-		vvSum += m.rv.lsqr();
+		vvSum += m.rv.lensq();
 	}
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
