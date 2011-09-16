@@ -49,7 +49,6 @@ proc randR() {
 // 2D-Vector
 record vector2d {
 	var x, y: real;
-	
 	proc zero() { x = 0; y = 0; }
 	proc prod() { return x * y; }
 	proc lensq() { return x ** 2 + y ** 2; }
@@ -156,15 +155,15 @@ proc vrand2d() {
 }
 
 proc vwrap2d(v: vector2d, region: vector2d) {
-	var s: vector2d = v;
+	var r: vector2d = v;
 
-	if s.x >= 0.5 * region.x then s.x -= region.x;
-	else if s.x < -0.5 * region.x then s.x += region.x;
+	if r.x >= 0.5 * region.x then r.x -= region.x;
+	else if r.x < -0.5 * region.x then r.x += region.x;
 
-	if s.y >= 0.5 * region.y then s.y -= region.y;
-	else if s.y < -0.5 * region.y then s.y += region.y;
+	if r.y >= 0.5 * region.y then r.y -= region.y;
+	else if r.y < -0.5 * region.y then r.y += region.y;
 
-	return s;
+	return r;
 }
 
 //////////////////////////////////////
@@ -175,6 +174,22 @@ record vector {
 	proc zero() { x = 0; y = 0; z = 0;}
 	proc prod() { return x * y * z; }
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
+}
+
+proc =(v: vector, t: (real, real, real)) {
+	var r: vector;
+	r.x = t(1);
+	r.y = t(2);
+	r.z = t(3);
+	return r;
+}
+
+proc =(v: vector, t: (int, int, int)) {
+	var r: vector;
+	r.x = t(1);
+	r.y = t(2);
+	r.z = t(3);
+	return r;
 }
 
 proc vrand() {
@@ -193,6 +208,21 @@ proc vrand() {
 	r.y = s * y;
 }
 
+proc vwrap(v: vector, region: vector) {
+	var r: vector = v;
+	
+	if r.x >= 0.5 * region.x then r.x -= region.x;
+	else if r.x < -0.5 * region.x then r.x += region.x;
+
+	if r.y >= 0.5 * region.y then r.y -= region.y;
+	else if r.y < -0.5 * region.y then r.y += region.y;
+	
+	if r.z >= 0.5 * region.z then r.z -= region.z;
+	else if r.z < -0.5 * region.z then r.z += region.z;
+
+	return r;
+}
+
 //////////////////////////////////////
 // Molecular Types
 //////////////////////////////////////
@@ -206,7 +236,7 @@ record mol3d {
 
 record prop {
 	var v, sum, sum2: real;
-	proc setZero() { sum = 0; sum2 = 0; }
+	proc zero() { sum = 0; sum2 = 0; }
 	proc acc() { sum += v; sum2 += v ** 2; }
 	proc avg(n: real) { 
 		sum /= n; 

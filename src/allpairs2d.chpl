@@ -79,9 +79,9 @@ proc init() {
 		m.ra.zero();	// accelerations
 	}
 	
-	totEnergy.setZero();
-	kinEnergy.setZero();
-	pressure.setZero();
+	totEnergy.zero();
+	kinEnergy.zero();
+	pressure.zero();
 }
 
 proc step() {
@@ -162,9 +162,9 @@ proc step() {
 			"\t", pressure.sum, "\t", pressure.sum2);
 		stdout.flush();
 		
-		totEnergy.setZero();
-		kinEnergy.setZero();
-		pressure.setZero();
+		totEnergy.zero();
+		kinEnergy.zero();
+		pressure.zero();
 	}
 }
 

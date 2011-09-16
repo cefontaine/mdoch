@@ -107,9 +107,9 @@ proc init() {
 		m.ra.zero();	// accelerations
 	}
 	
-	totEnergy.setZero();
-	kinEnergy.setZero();
-	pressure.setZero();
+	totEnergy.zero();
+	kinEnergy.zero();
+	pressure.zero();
 	nebrNow = true;
 	countVel = 0;
 }
@@ -212,9 +212,9 @@ proc step() {
 			"\t", pressure.sum, "\t", pressure.sum2);
 		stdout.flush();
 		
-		totEnergy.setZero();
-		kinEnergy.setZero();
-		pressure.setZero();
+		totEnergy.zero();
+		kinEnergy.zero();
+		pressure.zero();
 	}
 }
 
