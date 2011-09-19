@@ -1,6 +1,6 @@
 CHPL=chpl
 FLAGS=--fast
-TARGETS=array
+TARGETS=array vector
 
 all: $(TARGETS)
 
