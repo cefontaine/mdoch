@@ -24,7 +24,7 @@
 
 use Time;
 
-const arrSize: int = 100000;
+const arrSize: int = 10000000;
 
 type Tuple = (real, real, real);
 record Record {

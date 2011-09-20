@@ -1,6 +1,6 @@
 CHPL=chpl
 FLAGS=--fast
-TARGETS=array vector
+TARGETS=array vector allpairs2d
 
 all: $(TARGETS)
 
