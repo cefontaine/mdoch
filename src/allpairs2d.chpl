@@ -19,6 +19,7 @@
 
 /* allpairs2d.chpl */
 
+use Time;
 use common;
 
 config const deltaT: real = 0.005;
@@ -29,6 +30,7 @@ config const initUcellY: int = 20;
 config const stepAvg: int = 100;
 config const stepEquil: int = 0;
 config const stepLimit: int = 10000;
+config const profLevel: int = 0;
 const NDIM: int = 2;
 
 var rCut, velMag, timeNow, uSum, virSum, vvSum: real;
@@ -38,6 +40,9 @@ var nMol, stepCount, moreCycles: int;
 var kinEnergy, totEnergy, pressure: prop;
 var molDom: domain(1) = [1..1];	// use domain to reallocate array
 var mol: [molDom] mol2d;
+var timer: Timer;
+
+var e: real;
 
 proc init() {
 	// Setup parameters
@@ -109,7 +114,7 @@ proc step() {
 
 	uSum = 0;
 	virSum = 0;
-	
+
 	for d in [1..nMol-1] do {
 		for d2 in [d+1..nMol] do {
 			dr = mol(d).r - mol(d2).r;
@@ -126,7 +131,7 @@ proc step() {
 			}
 		}
 	}
-
+	
 	// Leafrog
 	for m in mol do
 		m.rv += (0.5 * deltaT) * m.ra;
@@ -169,9 +174,20 @@ proc step() {
 }
 
 proc main() {
+	if profLevel >= 1 then timer.start();
 	init();
+	if profLevel >= 1 {
+		timer.stop();
+		writeln("Init: ", timer.elapsed(TimeUnits.microseconds));
+	}
 	while (moreCycles) {
+		if profLevel >= 1 then timer.start();
 		step();
+		if profLevel >= 1 {
+			timer.stop();
+			writeln("Step ", stepCount, ": ", 
+				timer.elapsed(TimeUnits.microseconds));
+		}
 		if (stepCount >= stepLimit) then
 			moreCycles = 0;
 	};

@@ -55,45 +55,41 @@ record vector2d {
 }
 
 proc =(v: vector2d, t: (real, real)) {
-	var r: vector2d;
-	r.x = t(1);
-	r.y = t(2);
-	return r;
+	v.x = t(1);
+	v.y = t(2);
 }
 
 proc =(v: vector2d, t: (int, int)) {
-	var r: vector2d;
-	r.x = t(1);
-	r.y = t(2);
-	return r;
+	v.x = t(1);
+	v.y = t(2);
 }
 
 proc +(v1: vector2d, v2: vector2d) {
-	var s: vector2d;
-	s.x = v1.x + v2.x;
-	s.y = v1.y + v2.y;
-	return s;
+	var r: vector2d;
+	r.x = v1.x + v2.x;
+	r.y = v1.y + v2.y;
+	return r;
 }
 
 proc +(a: real, v: vector2d) {
-	var s: vector2d;
-	s.x = a + v.x;
-	s.y = a + v.y;
-	return s;
+	var r: vector2d;
+	r.x = a + v.x;
+	r.y = a + v.y;
+	return r;
 }
 
 proc -(v1: vector2d, v2: vector2d) {
-	var s: vector2d;
-	s.x = v1.x - v2.x;
-	s.y = v1.y - v2.y;
-	return s;
+	var r: vector2d;
+	r.x = v1.x - v2.x;
+	r.y = v1.y - v2.y;
+	return r;
 }
 
 proc *(a: real, v: vector2d) {
-	var s: vector2d;
-	s.x = a * v.x;
-	s.y = a * v.y;
-	return s;
+	var r: vector2d;
+	r.x = a * v.x;
+	r.y = a * v.y;
+	return r;
 }
 
 proc *(a: (real, real), v: vector2d) {
@@ -104,10 +100,10 @@ proc *(a: (real, real), v: vector2d) {
 }
 
 proc /(v1: vector2d, v2: vector2d) {
-	var s: vector2d;
-	s.x = v1.x / v2.x;
-	s.y = v1.y / v2.y;
-	return s;
+	var r: vector2d;
+	r.x = v1.x / v2.x;
+	r.y = v1.y / v2.y;
+	return r;
 }
 
 record vector2d_i {
@@ -117,17 +113,13 @@ record vector2d_i {
 }
 
 proc =(v: vector2d_i, t: (int, int)) {
-	var r: vector2d_i;
-	r.x = t(1);
-	r.y = t(2);
-	return r;
+	v.x = t(1);
+	v.y = t(2);
 }
 
 proc =(v1: vector2d_i, v2: vector2d) {
-	var r: vector2d_i;
-	r.x = v2.x: int;
-	r.y = v2.y: int;
-	return r;
+	v1.x = v2.x: int;
+	v1.y = v2.y: int;
 }
 
 proc *(s: real, v: vector2d_i) {

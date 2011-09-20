@@ -21,6 +21,8 @@
  * For performance comparison using tuple as vector
  */
 
+use Time;
+
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
 config const temperature: real = 1.0;
@@ -29,6 +31,7 @@ config const initUcellY: int = 20;
 config const stepAvg: int = 100;
 config const stepEquil: int = 0;
 config const stepLimit: int = 10000;
+config const profLevel: int = 0;
 
 const IADD: int =  453806245;
 const IMUL: int =  314159269;
@@ -38,6 +41,8 @@ const PI: real = 3.1415926535;
 
 const NDIM: int = 2;
 var randSeedP: int = 17;
+var timer: Timer;
+var e: real;
 
 type vector2d_i = (int, int);
 type vector2d = (real, real);
@@ -158,7 +163,7 @@ proc step() {
 		m(2) += (0.5 * deltaT) * m(3);
 		m(1) += deltaT * m(2);
 	}
-
+	
 	// Apply boundary condition
 	for m in mol do
 		m(1) = vwrap2d(m(1), region);
@@ -193,7 +198,7 @@ proc step() {
 			}
 		}
 	}
-
+	
 	// Leafrog
 	for m in mol do
 		m(2) += (0.5 * deltaT) * m(3);
@@ -217,7 +222,7 @@ proc step() {
 	kinEnergy.acc();
 	pressure.acc();
 		
-	if stepCount % stepAvg == 0 then {
+	if stepCount % stepAvg == 0 {
 		totEnergy.avg(stepAvg);
 		kinEnergy.avg(stepAvg);
 		pressure.avg(stepAvg);
@@ -237,9 +242,21 @@ proc step() {
 }
 
 proc main() {
+	if profLevel >= 1 then timer.start();
 	init();
+	if profLevel >= 1 {
+		timer.stop();
+		writeln("Init: ", timer.elapsed(TimeUnits.microseconds));
+	}
+	
 	while (moreCycles) {
+		if profLevel >= 1 then timer.start();
 		step();
+		if profLevel >= 1 {
+			timer.stop();
+			writeln("Step ", stepCount, ": ",
+				timer.elapsed(TimeUnits.microseconds));
+		}
 		if (stepCount >= stepLimit) then
 			moreCycles = 0;
 	};
