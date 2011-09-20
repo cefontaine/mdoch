@@ -171,7 +171,6 @@ proc step() {
 	// Compute forces
 	var dr: vector2d;
 	var fcVal, rr, rrCut, rri, rri3: real;
-	var i, j, n: int;
 
 	rrCut = rCut ** 2;
 	for m in mol {
@@ -181,13 +180,13 @@ proc step() {
 
 	uSum = 0;
 	virSum = 0;
-	
-	for d in [1..nMol-1] do {
-		for d2 in [d+1..nMol] do {
+
+	for d in [1..nMol-1] {
+		for d2 in [d+1..nMol] {
 			dr = mol(d)(1) - mol(d2)(1);
 			dr = vwrap2d(dr, region);
 			rr = dr(1) ** 2 + dr(2) ** 2;
-			if rr < rrCut then {
+			if rr < rrCut {
 				rri = 1.0 / rr;
 				rri3 = rri ** 3;
 				fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
@@ -242,15 +241,21 @@ proc step() {
 }
 
 proc main() {
-	if profLevel >= 1 then timer.start();
+	if profLevel >= 1 {
+		timer.clear();
+		timer.start();
+	}
 	init();
 	if profLevel >= 1 {
 		timer.stop();
 		writeln("Init: ", timer.elapsed(TimeUnits.microseconds));
 	}
-	
+
 	while (moreCycles) {
-		if profLevel >= 1 then timer.start();
+		if profLevel >= 1 {
+			timer.clear();
+			timer.start();
+		}
 		step();
 		if profLevel >= 1 {
 			timer.stop();

@@ -24,7 +24,7 @@
 
 use Time;
 
-const arrSize: int = 100000;
+config const arrSize: int = 10000;
 
 type Tuple = (real, real, real);
 record Record {
@@ -55,6 +55,12 @@ proc =(a: Record, b: (real, real, real)) {
 	a.z = b(3);
 }
 
+proc =(a: Record, b: (int, int, int)) {
+	a.x = b(1);
+	a.y = b(2);
+	a.z = b(3);
+}
+
 proc +(a: Record, b: Record) {
 	var r: Record;
 	r.x = a.x + b.x;
@@ -63,6 +69,22 @@ proc +(a: Record, b: Record) {
 	return r;
 }
 
+proc -(a: Record, b: Record) {
+	var r: Record;
+	r.x = a.x - b.x;
+	r.y = a.y - b.y;
+	r.z = a.z - b.z;
+	return r;
+}
+
+
+proc *(a: (real, real, real), b: Record) {
+	var r: Record;
+	r.x = a(1) * b.x;
+	r.y = a(2) * b.y;
+	r.z = a(3) * b.z;
+	return r;
+}
 
 proc *(a: Record, b: (real, real, real)) {
 	var r: Record;
@@ -90,10 +112,12 @@ proc /(a: Record, b: Record) {
 
 writeln("============== 1D Types ================");
 // Assignment
+t.clear();
 t.start();
 for d in arrDom do arrTuple(d) = (1.0, 1.0, 1.0);
 t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
+t.clear();
 t.start();
 for d in arrDom do arrRecord(d) = (1.0, 1.0, 1.0);
 t.stop();
@@ -104,12 +128,14 @@ stdout.flush();
 
 // Addition
 tmpTuple = (2.0, 2.0, 2.0);
+t.clear();
 t.start();
 for d in arrDom do arrTuple(d) += tmpTuple;
 t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
 
 tmpRecord = (2.0, 2.0, 2.0);
+t.clear();
 t.start();
 for d in arrDom do arrRecord(d) += tmpRecord;
 t.stop();
@@ -120,12 +146,14 @@ stdout.flush();
 
 // Multiplication
 tmpTuple = (3.0, 3.0, 3.0);
+t.clear();
 t.start();
 for d in arrDom do arrTuple(d) *= tmpTuple;
 t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
 
 tmpRecord = (3.0, 3.0, 3.0);
+t.clear();
 t.start();
 for d in arrDom do arrRecord(d) *= tmpRecord;
 t.stop();
@@ -135,12 +163,14 @@ stdout.flush();
 
 // Division
 tmpTuple = (4.0, 4.0, 4.0);
+t.clear();
 t.start();
 for d in arrDom do arrTuple(d) /= tmpTuple;
 t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
 
 tmpRecord = (4.0, 4.0, 4.0);
+t.clear();
 t.start();
 for d in arrDom do arrRecord(d) /= tmpRecord;
 t.stop();
@@ -152,6 +182,7 @@ stdout.flush();
 writeln("============== 2D Types ================");
 stdout.flush();
 // Assignment
+t.clear();
 t.start();
 for d in arrDom {
 	arrMolTuple(d)(1) = (1.0, 1.0, 1.0);
@@ -161,6 +192,7 @@ for d in arrDom {
 t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
 
+t.clear();
 t.start();
 for d in arrDom {
 	arrMolRecord(d).r = (1.0, 1.0, 1.0);
@@ -174,6 +206,7 @@ stdout.flush();
 
 // Addition
 tmpTuple = (2.0, 2.0, 2.0);
+t.clear();
 t.start();
 for d in arrDom { 
 	arrMolTuple(d)(1) += tmpTuple;
@@ -184,6 +217,7 @@ t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
 
 tmpRecord = (2.0, 2.0, 2.0);
+t.clear();
 t.start();
 for d in arrDom {
 	arrMolRecord(d).r += tmpRecord;
@@ -197,6 +231,7 @@ stdout.flush();
 
 // Multiplication
 tmpTuple = (3.0, 3.0, 3.0);
+t.clear();
 t.start();
 for d in arrDom {
 	arrMolTuple(d)(1) *= tmpTuple;
@@ -207,6 +242,7 @@ t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
 
 tmpRecord = (3.0, 3.0, 3.0);
+t.clear();
 t.start();
 for d in arrDom {
 	arrMolRecord(d).r *= tmpRecord;
@@ -219,6 +255,7 @@ writeln("Multiplication elapsed: tuple=", e_tuple, ", record=", e_record);
 
 // Division
 tmpTuple = (4.0, 4.0, 4.0);
+t.clear();
 t.start();
 for d in arrDom {
 	arrMolTuple(d)(1) /= tmpTuple;
@@ -229,6 +266,8 @@ t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
 
 tmpRecord = (4.0, 4.0, 4.0);
+
+t.clear();
 t.start();
 for d in arrDom {
 	arrMolRecord(d).r /= tmpRecord;
@@ -241,9 +280,10 @@ writeln("Division elapsed: tuple=", e_tuple, ", record=", e_record);
 stdout.flush();
 
 // Complex calculation
-tmpTuple = (5.0, 5.0, 5.0);
+t.clear();
 t.start();
 for d in arrDom {
+	tmpTuple = (d, d, d);
 	arrMolTuple(d)(1) += arrMolTuple((d+1) % arrSize)(1) * tmpTuple;
 	arrMolTuple(d)(2) += arrMolTuple((d+1) % arrSize)(2) * tmpTuple;
 	arrMolTuple(d)(3) += arrMolTuple((d+1) % arrSize)(3) * tmpTuple;
@@ -251,9 +291,10 @@ for d in arrDom {
 t.stop();
 e_tuple = t.elapsed(TimeUnits.microseconds);
 
-tmpRecord = (5.0, 5.0, 5.0);
+t.clear();
 t.start();
 for d in arrDom {
+	tmpRecord = (d, d, d);
 	arrMolRecord(d).r += arrMolRecord(d % arrSize + 1).r * tmpRecord;
 	arrMolRecord(d).rv += arrMolRecord(d % arrSize + 1).rv * tmpRecord;
 	arrMolRecord(d).ra += arrMolRecord(d % arrSize + 1).ra * tmpRecord;
@@ -264,3 +305,93 @@ e_record = t.elapsed(TimeUnits.microseconds);
 writeln("Complex calc elapsed: tuple=", e_tuple, ", record=", e_record);
 stdout.flush();
 
+
+// Nested types in function
+writeln("========= 2D Types in Function =========");
+stdout.flush();
+
+proc complexCals() {
+	var tmpTuple, tmpRecord: (real, real, real);
+	var coTuple: (real, real, real);
+	var coRecord: Record;
+	
+	t.clear();
+	t.start();
+	for d in arrDom {
+		tmpTuple = (d, d, d);
+		coTuple = (arrMolTuple((d+1) % arrSize + 1)(1) +
+				   arrMolTuple((d+1) % arrSize + 1)(2) +
+				   arrMolTuple((d+1) % arrSize + 1)(3)) * tmpTuple;
+		arrMolTuple(d)(1) += arrMolTuple(d % arrSize + 1)(1) * coTuple;
+		arrMolTuple(d)(2) += arrMolTuple(d % arrSize + 1)(2) * coTuple;
+		arrMolTuple(d)(3) += arrMolTuple(d % arrSize + 1)(3) * coTuple;
+	}
+	t.stop();
+	e_tuple = t.elapsed(TimeUnits.microseconds);
+	
+	t.clear();
+	t.start();
+	for d in arrDom {
+		tmpRecord = (d, d, d);
+		coRecord = (arrMolRecord((d+1) % arrSize + 1).r +
+		            arrMolRecord((d+1) % arrSize + 1).rv +
+					arrMolRecord((d+1) % arrSize + 1).ra) * tmpRecord;
+		arrMolRecord(d).r += arrMolRecord(d % arrSize + 1).r * coRecord;
+		arrMolRecord(d).rv += arrMolRecord(d % arrSize + 1).rv * coRecord;
+		arrMolRecord(d).ra += arrMolRecord(d % arrSize + 1).ra * coRecord;
+	}
+	t.stop();
+	e_record = t.elapsed(TimeUnits.microseconds);
+
+	writeln("Calc in function: tuple=", e_tuple, ", record=", e_record);
+	stdout.flush();
+}
+
+complexCals();
+
+proc ljCals() {
+	var drTuple: (real, real, real);
+	var drRecord: Record;
+	var fcVal, rr, rrCut, rri, rri3, uSum, virSum: real;
+
+	t.clear();
+	t.start();
+	for d in [1..arrSize-1] {
+		for d2 in [d+1..arrSize] {
+			drTuple = arrMolTuple(d)(1) - arrMolTuple(d2)(1);
+			rr = drTuple(1) ** 2 + drTuple(2) ** 2 + drTuple(3) ** 2;
+			rri = 1.0 / rr;
+			rri3 = rri ** 3;
+			fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
+			arrMolTuple(d)(2) += (fcVal, fcVal, fcVal) * drTuple;
+			arrMolTuple(d2)(2) += (-fcVal, -fcVal, -fcVal) * drTuple;
+			uSum = 4 * rri3 * (rri3 - 1.0) + 1;
+			virSum += fcVal * rr;
+		}
+	}
+	t.stop();
+	e_tuple = t.elapsed(TimeUnits.microseconds);
+	
+	t.clear();
+	t.start();
+	for d in [1..arrSize-1] {
+		for d2 in [d+1..arrSize] {
+			drRecord = arrMolRecord(d).r - arrMolRecord(d2).r;
+			rr = drRecord.x ** 2 + drRecord.y ** 2 + drRecord.z ** 2;
+			rri = 1.0 / rr;
+			rri3 = rri ** 3;
+			fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
+			arrMolRecord(d).ra += (fcVal, fcVal, fcVal) * drRecord;
+			arrMolRecord(d2).ra += (-fcVal, -fcVal, -fcVal) * drRecord;
+			uSum = 4 * rri3 * (rri3 - 1.0) + 1;
+			virSum += fcVal * rr;
+		}
+	}
+	t.stop();
+	e_record = t.elapsed(TimeUnits.microseconds);
+	
+	writeln("LJ in function: tuple=", e_tuple, ", record=", e_record);
+	stdout.flush();
+}
+
+ljCals();

@@ -42,7 +42,6 @@ var molDom: domain(1) = [1..1];	// use domain to reallocate array
 var mol: [molDom] mol2d;
 var timer: Timer;
 
-var e: real;
 
 proc init() {
 	// Setup parameters
@@ -106,7 +105,6 @@ proc step() {
 	// Compute forces
 	var dr: vector2d;
 	var fcVal, rr, rrCut, rri, rri3: real;
-	var i, j, n: int;
 
 	rrCut = rCut ** 2;
 	for m in mol do
@@ -115,12 +113,12 @@ proc step() {
 	uSum = 0;
 	virSum = 0;
 
-	for d in [1..nMol-1] do {
-		for d2 in [d+1..nMol] do {
+	for d in [1..nMol-1] {
+		for d2 in [d+1..nMol] {
 			dr = mol(d).r - mol(d2).r;
 			dr = vwrap2d(dr, region);
 			rr = dr.lensq();
-			if rr < rrCut then {
+			if rr < rrCut {
 				rri = 1.0 / rr;
 				rri3 = rri ** 3;
 				fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
@@ -154,7 +152,7 @@ proc step() {
 	kinEnergy.acc();
 	pressure.acc();
 		
-	if stepCount % stepAvg == 0 then {
+	if stepCount % stepAvg == 0 {
 		totEnergy.avg(stepAvg);
 		kinEnergy.avg(stepAvg);
 		pressure.avg(stepAvg);
@@ -174,18 +172,25 @@ proc step() {
 }
 
 proc main() {
-	if profLevel >= 1 then timer.start();
+	if profLevel >= 1 {
+		timer.clear();
+		timer.start();
+	}
 	init();
 	if profLevel >= 1 {
 		timer.stop();
 		writeln("Init: ", timer.elapsed(TimeUnits.microseconds));
 	}
+
 	while (moreCycles) {
-		if profLevel >= 1 then timer.start();
+		if profLevel >= 1 {
+			timer.clear();
+			timer.start();
+		}
 		step();
 		if profLevel >= 1 {
 			timer.stop();
-			writeln("Step ", stepCount, ": ", 
+			writeln("Step ", stepCount, ": ",
 				timer.elapsed(TimeUnits.microseconds));
 		}
 		if (stepCount >= stepLimit) then
