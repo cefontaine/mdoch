@@ -63,7 +63,10 @@ var resNstRec: nstRecord;
 var tmpTuple: Tuple;
 var tmpRecord: Record;
 var t: myTimer;
-var e_tuple, e_record: real;	// elapsed time
+var asg1dt, asg1dr, add1dt, add1dr, sub1dt, sub1dr, mul1dt, mul1dr, 
+	div1dt, div1dr, 
+	asg2dt, asg2dr, add2dt, add2dr, sub2dt, sub2dr, mul2dt, mul2dr, 
+	div2dt, div2dr: real;
 
 proc =(a: Record, b: (real, real, real)) {
 	a.x = b(1);
@@ -164,128 +167,113 @@ proc /(a: nstRecord, b: nstRecord) {
 }
 
 writeln("# of ops: ", arrSize, ", time unit: msec");
-writeln("Manipulations on 1D Types ...");
 // Assignment
 t.start();
 for d in arrDom do arrTup(d) = (1.0, 1.0, 1.0);
-e_tuple = t.stop();
+asg1dt = t.stop();
 
 t.start();
 for d in arrDom do arrRec(d) = (1.0, 1.0, 1.0);
-e_record = t.stop(); 
-
-writeln("  Assignment: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+asg1dr = t.stop(); 
 
 // Addition
 t.start();
 for d in arrDom do resTup = arrTup(d) + arrTup(d % arrSize + 1);
-e_tuple = t.stop();;
+add1dt = t.stop();;
 
 t.start();
 for d in arrDom do resRec = arrRec(d) + arrRec(d % arrSize + 1);
-e_record = t.stop();
-
-writeln("  Addition: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+add1dr = t.stop();
 
 // Subtraction
 t.start();
 for d in arrDom do resTup = arrTup(d) - arrTup(d % arrSize + 1);
-e_tuple = t.stop();
+sub1dt = t.stop();
 
 t.start();
 for d in arrDom do resRec = arrRec(d) - arrRec(d % arrSize + 1);
-e_record = t.stop();
-
-writeln("  Subtraction: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+sub1dr = t.stop();
 
 // Multiplication
 t.start();
 for d in arrDom do resTup = arrTup(d) * arrTup(d % arrSize + 1);
-e_tuple = t.stop();
+mul1dt = t.stop();
 
 t.start();
 for d in arrDom do resRec = arrRec(d) * arrRec(d % arrSize + 1);
-e_record = t.stop();
-writeln("  Multiplication: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+mul1dr = t.stop();
 
 // Division
 t.start();
 for d in arrDom do resTup = arrTup(d) / arrTup(d % arrSize + 1);
-e_tuple = t.stop();
+div1dt = t.stop();
 
 t.start();
 for d in arrDom do resRec = arrRec(d) / arrRec(d % arrSize + 1);
-e_record = t.stop();
-writeln("  Division: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+div1dr = t.stop();
 
-// Opeztions on nested types
-writeln("Manipulations on 2D Types ...");
-stdout.flush();
+// Manipulation on nested types
 // Assignment
 t.start();
 for d in arrDom do
 	arrNstTup(d) = ((1.0, 1.0, 1.0), (2.0, 2.0, 2.0), (3.0, 3.0, 3.0));
-e_tuple = t.stop();
+asg2dt = t.stop();
 
 t.start();
 for d in arrDom do
 	arrNstRec(d) = ((1.0, 1.0, 1.0), (2.0, 2.0, 2.0), (3.0, 3.0, 3.0));
-e_record = t.stop();
-writeln("  Assignment: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+asg2dr = t.stop();
 
 // Addition
 t.start();
 for d in arrDom do
 	resNstTup = arrNstTup(d) + arrNstTup(d % arrSize + 1);
-e_tuple = t.stop();
+add2dt = t.stop();
 
 t.start();
 for d in arrDom do
 	resNstRec = arrNstRec(d) + arrNstRec(d % arrSize + 1);
-e_record = t.stop();
-writeln("  Addition: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+add2dr = t.stop();
 
 // Subtraction
 t.start();
 for d in arrDom do
 	resNstTup = arrNstTup(d) - arrNstTup(d % arrSize + 1);
-e_tuple = t.stop();
+sub2dt = t.stop();
 
 t.start();
 for d in arrDom do
 	resNstRec = arrNstRec(d) - arrNstRec(d % arrSize + 1);
-e_record = t.stop();
-writeln("  Subtraction: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+sub2dr = t.stop();
 
 // Multiplication
 t.start();
 for d in arrDom do
 	resNstTup = arrNstTup(d) * arrNstTup(d % arrSize + 1);
-e_tuple = t.stop();
+mul2dt = t.stop();
 
 t.start();
 for d in arrDom do
 	resNstRec = arrNstRec(d) * arrNstRec(d % arrSize + 1);
-e_record = t.stop();
-writeln("  Multiplication: tuple=", e_tuple, ", record=", e_record);
+mul2dr = t.stop();
 
 // Division
 t.start();
 for d in arrDom do
 	resNstTup = arrNstTup(d) / arrNstTup(d % arrSize + 1);
-e_tuple = t.stop();
+div2dt = t.stop();
 
 t.start();
 for d in arrDom do
 	resNstRec = arrNstRec(d) / arrNstRec(d % arrSize + 1);
-e_record = t.stop();
-writeln("  Division: tuple=", e_tuple, ", record=", e_record);
-stdout.flush();
+div2dr = t.stop();
+
+writeln("\t\tasg\tadd\tsub\tmul\tdiv"); 
+writeln("tuple1D\t\t", asg1dt, "\t", add1dt,"\t", sub1dt, 
+	"\t", mul1dt, "\t", div1dt);
+writeln("record1D\t", asg1dr, "\t", add1dr,"\t", sub1dr, 
+	"\t", mul1dr, "\t", div1dr);
+writeln("tuple2D\t\t", asg2dt, "\t", add2dt,"\t", sub2dt, 
+	"\t", mul2dt, "\t", div2dt);
+writeln("record2D\t", asg2dr, "\t", add2dr,"\t", sub2dr, 
+	"\t", mul2dr, "\t", div2dr);
