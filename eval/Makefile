@@ -9,10 +9,10 @@ all: $(TARGETS) basic_c basic_chpl
 %: %.chpl
 	$(CHPL) -o $@ $< $(CHFLAGS)
 
-basic_c: basic_cmp.c 
+basic_c: basic.c 
 	$(CC) -o $@ $< $(CFLAGS)
 
-basic_chpl: basic_cmp.chpl
+basic_chpl: basic.chpl
 	$(CHPL) -o $@ $< $(CHFLAGS)
 
 clean:
