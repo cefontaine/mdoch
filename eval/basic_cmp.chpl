@@ -63,10 +63,7 @@ var resNstRec: nstRecord;
 var tmpTuple: Tuple;
 var tmpRecord: Record;
 var t: myTimer;
-var asg1dt, asg1dr, add1dt, add1dr, sub1dt, sub1dr, mul1dt, mul1dr, 
-	div1dt, div1dr, 
-	asg2dt, asg2dr, add2dt, add2dr, sub2dt, sub2dr, mul2dt, mul2dr, 
-	div2dt, div2dr: real;
+var res, asg, add, sub, mul, div: real;
 
 proc =(a: Record, b: (real, real, real)) {
 	a.x = b(1);
@@ -166,114 +163,172 @@ proc /(a: nstRecord, b: nstRecord) {
 	return r;
 }
 
-writeln("# of ops: ", arrSize, ", time unit: msec");
-// Assignment
+var devnull = new file("basic_chpl.out", FileAccessMode.write);
+devnull.open();
+
+writeln("# of ops: ", arrSize, ", time unit: usec");
+writeln("\t\tasg\t\tadd\t\tsub\t\tmul\t\tdiv"); 
+
+// Basic double operation
+t.start();
+for d in arrDom do res = d;
+asg = t.stop();
+devnull.write(res);
+
+t.start();
+for d in arrDom do res = d + 1.0;
+add = t.stop();
+devnull.write(res);
+
+t.start();
+for d in arrDom do res = d - 2.0;
+sub = t.stop();
+devnull.write(res);
+
+t.start();
+for d in arrDom do res = d * 3.0;
+mul = t.stop();
+devnull.write(res);
+
+t.start();
+for d in arrDom do res = d / 4.0;
+div = t.stop();
+devnull.write(res);
+writeln("float\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+
+// Array
+var arr: [arrDom] real;
+t.start();
+for d in arrDom do arr[d] = d;
+asg = t.stop();
+devnull.write(arr(1));
+
+t.start();
+for d in arrDom do res = arr(d) + arr(d % arrSize + 1);
+add = t.stop();
+devnull.write(res);
+
+t.start();
+for d in arrDom do res = arr(d) - arr(d % arrSize + 1);
+sub = t.stop();
+devnull.write(res);
+
+t.start();
+for d in arrDom do res = arr(d) * arr(d % arrSize + 1);
+mul = t.stop();
+devnull.write(res);
+
+t.start();
+for d in arrDom do res = arr(d) / arr(d % arrSize + 1);
+div = t.stop();
+devnull.write(res);
+writeln("array\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+
+// 1D-array vs.struct
 t.start();
 for d in arrDom do arrTup(d) = (1.0, 1.0, 1.0);
-asg1dt = t.stop();
+asg = t.stop();
+devnull.write(arrTup(1));
+
+t.start();
+for d in arrDom do resTup = arrTup(d) + arrTup(d % arrSize + 1);
+add = t.stop();;
+devnull.write(resTup);
+
+t.start();
+for d in arrDom do resTup = arrTup(d) - arrTup(d % arrSize + 1);
+sub = t.stop();
+devnull.write(resTup);
+
+t.start();
+for d in arrDom do resTup = arrTup(d) * arrTup(d % arrSize + 1);
+mul = t.stop();
+devnull.write(resTup);
+
+t.start();
+for d in arrDom do resTup = arrTup(d) / arrTup(d % arrSize + 1);
+div = t.stop();
+devnull.write(resTup);
+writeln("1D-tup\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 t.start();
 for d in arrDom do arrRec(d) = (1.0, 1.0, 1.0);
-asg1dr = t.stop(); 
-
-// Addition
-t.start();
-for d in arrDom do resTup = arrTup(d) + arrTup(d % arrSize + 1);
-add1dt = t.stop();;
+asg = t.stop(); 
+devnull.write(resRec);
 
 t.start();
 for d in arrDom do resRec = arrRec(d) + arrRec(d % arrSize + 1);
-add1dr = t.stop();
-
-// Subtraction
-t.start();
-for d in arrDom do resTup = arrTup(d) - arrTup(d % arrSize + 1);
-sub1dt = t.stop();
+add = t.stop();
+devnull.write(resRec);
 
 t.start();
 for d in arrDom do resRec = arrRec(d) - arrRec(d % arrSize + 1);
-sub1dr = t.stop();
-
-// Multiplication
-t.start();
-for d in arrDom do resTup = arrTup(d) * arrTup(d % arrSize + 1);
-mul1dt = t.stop();
+sub = t.stop();
+devnull.write(resRec);
 
 t.start();
 for d in arrDom do resRec = arrRec(d) * arrRec(d % arrSize + 1);
-mul1dr = t.stop();
-
-// Division
-t.start();
-for d in arrDom do resTup = arrTup(d) / arrTup(d % arrSize + 1);
-div1dt = t.stop();
+mul = t.stop();
+devnull.write(resRec);
 
 t.start();
 for d in arrDom do resRec = arrRec(d) / arrRec(d % arrSize + 1);
-div1dr = t.stop();
+div = t.stop();
+devnull.write(resRec);
+writeln("1D-rec\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
-// Manipulation on nested types
-// Assignment
+
+// 2D-array vs. struct
 t.start();
 for d in arrDom do
 	arrNstTup(d) = ((1.0, 1.0, 1.0), (2.0, 2.0, 2.0), (3.0, 3.0, 3.0));
-asg2dt = t.stop();
+asg = t.stop();
+
+t.start();
+for d in arrDom do
+	resNstTup = arrNstTup(d) + arrNstTup(d % arrSize + 1);
+add = t.stop();
+
+t.start();
+for d in arrDom do
+	resNstTup = arrNstTup(d) - arrNstTup(d % arrSize + 1);
+sub = t.stop();
+
+t.start();
+for d in arrDom do
+	resNstTup = arrNstTup(d) * arrNstTup(d % arrSize + 1);
+mul = t.stop();
+
+t.start();
+for d in arrDom do
+	resNstTup = arrNstTup(d) / arrNstTup(d % arrSize + 1);
+div = t.stop();
+writeln("2D-tup\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 t.start();
 for d in arrDom do
 	arrNstRec(d) = ((1.0, 1.0, 1.0), (2.0, 2.0, 2.0), (3.0, 3.0, 3.0));
-asg2dr = t.stop();
-
-// Addition
-t.start();
-for d in arrDom do
-	resNstTup = arrNstTup(d) + arrNstTup(d % arrSize + 1);
-add2dt = t.stop();
+asg = t.stop();
 
 t.start();
 for d in arrDom do
 	resNstRec = arrNstRec(d) + arrNstRec(d % arrSize + 1);
-add2dr = t.stop();
-
-// Subtraction
-t.start();
-for d in arrDom do
-	resNstTup = arrNstTup(d) - arrNstTup(d % arrSize + 1);
-sub2dt = t.stop();
+add = t.stop();
 
 t.start();
 for d in arrDom do
 	resNstRec = arrNstRec(d) - arrNstRec(d % arrSize + 1);
-sub2dr = t.stop();
-
-// Multiplication
-t.start();
-for d in arrDom do
-	resNstTup = arrNstTup(d) * arrNstTup(d % arrSize + 1);
-mul2dt = t.stop();
+sub = t.stop();
 
 t.start();
 for d in arrDom do
 	resNstRec = arrNstRec(d) * arrNstRec(d % arrSize + 1);
-mul2dr = t.stop();
-
-// Division
-t.start();
-for d in arrDom do
-	resNstTup = arrNstTup(d) / arrNstTup(d % arrSize + 1);
-div2dt = t.stop();
+mul = t.stop();
 
 t.start();
 for d in arrDom do
 	resNstRec = arrNstRec(d) / arrNstRec(d % arrSize + 1);
-div2dr = t.stop();
+div = t.stop();
+writeln("2D-rec\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
-writeln("\t\tasg\tadd\tsub\tmul\tdiv"); 
-writeln("tuple1D\t\t", asg1dt, "\t", add1dt,"\t", sub1dt, 
-	"\t", mul1dt, "\t", div1dt);
-writeln("record1D\t", asg1dr, "\t", add1dr,"\t", sub1dr, 
-	"\t", mul1dr, "\t", div1dr);
-writeln("tuple2D\t\t", asg2dt, "\t", add2dt,"\t", sub2dt, 
-	"\t", mul2dt, "\t", div2dt);
-writeln("record2D\t", asg2dr, "\t", add2dr,"\t", sub2dr, 
-	"\t", mul2dr, "\t", div2dr);
+devnull.close();
