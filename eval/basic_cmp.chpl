@@ -163,9 +163,6 @@ proc /(a: nstRecord, b: nstRecord) {
 	return r;
 }
 
-var devnull = new file("basic_chpl.out", FileAccessMode.write);
-devnull.open();
-
 writeln("# of ops: ", arrSize, ", time unit: usec");
 writeln("\t\tasg\t\tadd\t\tsub\t\tmul\t\tdiv"); 
 
@@ -173,27 +170,22 @@ writeln("\t\tasg\t\tadd\t\tsub\t\tmul\t\tdiv");
 t.start();
 for d in arrDom do res = d;
 asg = t.stop();
-devnull.write(res);
 
 t.start();
 for d in arrDom do res = d + 1.0;
 add = t.stop();
-devnull.write(res);
 
 t.start();
 for d in arrDom do res = d - 2.0;
 sub = t.stop();
-devnull.write(res);
 
 t.start();
 for d in arrDom do res = d * 3.0;
 mul = t.stop();
-devnull.write(res);
 
 t.start();
 for d in arrDom do res = d / 4.0;
 div = t.stop();
-devnull.write(res);
 writeln("float\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 // Array
@@ -201,80 +193,65 @@ var arr: [arrDom] real;
 t.start();
 for d in arrDom do arr[d] = d;
 asg = t.stop();
-devnull.write(arr(1));
 
 t.start();
 for d in arrDom do res = arr(d) + arr(d % arrSize + 1);
 add = t.stop();
-devnull.write(res);
 
 t.start();
 for d in arrDom do res = arr(d) - arr(d % arrSize + 1);
 sub = t.stop();
-devnull.write(res);
 
 t.start();
 for d in arrDom do res = arr(d) * arr(d % arrSize + 1);
 mul = t.stop();
-devnull.write(res);
 
 t.start();
 for d in arrDom do res = arr(d) / arr(d % arrSize + 1);
 div = t.stop();
-devnull.write(res);
 writeln("array\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 // 1D-array vs.struct
 t.start();
 for d in arrDom do arrTup(d) = (1.0, 1.0, 1.0);
 asg = t.stop();
-devnull.write(arrTup(1));
 
 t.start();
 for d in arrDom do resTup = arrTup(d) + arrTup(d % arrSize + 1);
 add = t.stop();;
-devnull.write(resTup);
 
 t.start();
 for d in arrDom do resTup = arrTup(d) - arrTup(d % arrSize + 1);
 sub = t.stop();
-devnull.write(resTup);
 
 t.start();
 for d in arrDom do resTup = arrTup(d) * arrTup(d % arrSize + 1);
 mul = t.stop();
-devnull.write(resTup);
 
 t.start();
 for d in arrDom do resTup = arrTup(d) / arrTup(d % arrSize + 1);
 div = t.stop();
-devnull.write(resTup);
 writeln("1D-tup\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 t.start();
 for d in arrDom do arrRec(d) = (1.0, 1.0, 1.0);
 asg = t.stop(); 
-devnull.write(resRec);
 
 t.start();
 for d in arrDom do resRec = arrRec(d) + arrRec(d % arrSize + 1);
 add = t.stop();
-devnull.write(resRec);
 
 t.start();
 for d in arrDom do resRec = arrRec(d) - arrRec(d % arrSize + 1);
 sub = t.stop();
-devnull.write(resRec);
 
 t.start();
 for d in arrDom do resRec = arrRec(d) * arrRec(d % arrSize + 1);
 mul = t.stop();
-devnull.write(resRec);
 
 t.start();
 for d in arrDom do resRec = arrRec(d) / arrRec(d % arrSize + 1);
 div = t.stop();
-devnull.write(resRec);
 writeln("1D-rec\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 
@@ -331,4 +308,8 @@ for d in arrDom do
 div = t.stop();
 writeln("2D-rec\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
-devnull.close();
+for d in arrDom {
+	res = arr(d);
+	resNstTup = arrNstTup(d);
+	resNstRec = arrNstRec(d);
+}
