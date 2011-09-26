@@ -308,6 +308,8 @@ for d in arrDom do
 div = t.stop();
 writeln("2D-rec\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
+
+// Though not clear yet, add reference to prevent memory free happen in timing
 for d in arrDom {
 	res = arr(d);
 	resNstTup = arrNstTup(d);
