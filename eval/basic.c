@@ -333,11 +333,17 @@ int main(int argc, char **argv)
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		for (j = 0; j < 3; j++) {
-			arr_nst_tup[i][j][0] = 1.0;
-			arr_nst_tup[i][j][1] = 1.0;
-			arr_nst_tup[i][j][2] = 1.0;
-		}
+		arr_nst_tup[i][0][0] = 1.0;
+		arr_nst_tup[i][0][1] = 1.0;
+		arr_nst_tup[i][0][2] = 1.0;
+		
+		arr_nst_tup[i][1][0] = 1.0;
+		arr_nst_tup[i][1][1] = 1.0;
+		arr_nst_tup[i][1][2] = 1.0;
+		
+		arr_nst_tup[i][2][0] = 1.0;
+		arr_nst_tup[i][2][1] = 1.0;
+		arr_nst_tup[i][2][2] = 1.0;
 	}
 	gettimeofday(&tv_end, NULL);
 	asg = tv_elapsed(&tv_end, &tv_start);
@@ -346,14 +352,26 @@ int main(int argc, char **argv)
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		for (j = 0; j < 3; j++) {
-			res_nst_tup[j][0] = arr_nst_tup[i][j][0] 
-				+ arr_nst_tup[(i+1) % opcnt][j][0];
-			res_nst_tup[j][1] = arr_nst_tup[i][j][1] 
-				+ arr_nst_tup[(i+1) % opcnt][j][1];
-			res_nst_tup[j][2] = arr_nst_tup[i][j][2] 
-				+ arr_nst_tup[(i+1) % opcnt][j][2];
-		}
+		res_nst_tup[0][0] = arr_nst_tup[i][0][0] 
+			+ arr_nst_tup[(i+1) % opcnt][0][0];
+		res_nst_tup[0][1] = arr_nst_tup[i][0][1] 
+			+ arr_nst_tup[(i+1) % opcnt][0][1];
+		res_nst_tup[0][2] = arr_nst_tup[i][0][2] 
+			+ arr_nst_tup[(i+1) % opcnt][0][2];
+		
+		res_nst_tup[1][0] = arr_nst_tup[i][1][0] 
+			+ arr_nst_tup[(i+1) % opcnt][1][0];
+		res_nst_tup[1][1] = arr_nst_tup[i][1][1] 
+			+ arr_nst_tup[(i+1) % opcnt][1][1];
+		res_nst_tup[1][2] = arr_nst_tup[i][1][2] 
+			+ arr_nst_tup[(i+1) % opcnt][1][2];
+		
+		res_nst_tup[2][0] = arr_nst_tup[i][2][0] 
+			+ arr_nst_tup[(i+1) % opcnt][2][0];
+		res_nst_tup[2][1] = arr_nst_tup[i][2][1] 
+			+ arr_nst_tup[(i+1) % opcnt][2][1];
+		res_nst_tup[2][2] = arr_nst_tup[i][2][2] 
+			+ arr_nst_tup[(i+1) % opcnt][2][2];
 	}
 	gettimeofday(&tv_end, NULL);
 	add = tv_elapsed(&tv_end, &tv_start);
@@ -362,14 +380,26 @@ int main(int argc, char **argv)
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		for (j = 0; j < 3; j++) {
-			res_nst_tup[j][0] = arr_nst_tup[i][j][0] 
-				- arr_nst_tup[(i+1) % opcnt][j][0];
-			res_nst_tup[j][1] = arr_nst_tup[i][j][1] 
-				- arr_nst_tup[(i+1) % opcnt][j][1];
-			res_nst_tup[j][2] = arr_nst_tup[i][j][2] 
-				- arr_nst_tup[(i+1) % opcnt][j][2];
-		}
+		res_nst_tup[0][0] = arr_nst_tup[i][0][0] 
+			- arr_nst_tup[(i+1) % opcnt][0][0];
+		res_nst_tup[0][1] = arr_nst_tup[i][0][1] 
+			- arr_nst_tup[(i+1) % opcnt][0][1];
+		res_nst_tup[0][2] = arr_nst_tup[i][0][2] 
+			- arr_nst_tup[(i+1) % opcnt][0][2];
+		
+		res_nst_tup[1][0] = arr_nst_tup[i][1][0] 
+			- arr_nst_tup[(i+1) % opcnt][1][0];
+		res_nst_tup[1][1] = arr_nst_tup[i][1][1] 
+			- arr_nst_tup[(i+1) % opcnt][1][1];
+		res_nst_tup[1][2] = arr_nst_tup[i][1][2] 
+			- arr_nst_tup[(i+1) % opcnt][1][2];
+		
+		res_nst_tup[2][0] = arr_nst_tup[i][2][0] 
+			- arr_nst_tup[(i+1) % opcnt][2][0];
+		res_nst_tup[2][1] = arr_nst_tup[i][2][1] 
+			- arr_nst_tup[(i+1) % opcnt][2][1];
+		res_nst_tup[2][2] = arr_nst_tup[i][2][2] 
+			- arr_nst_tup[(i+1) % opcnt][2][2];
 	}
 	gettimeofday(&tv_end, NULL);
 	sub = tv_elapsed(&tv_end, &tv_start);
@@ -378,14 +408,26 @@ int main(int argc, char **argv)
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		for (j = 0; j < 3; j++) {
-			res_nst_tup[j][0] = arr_nst_tup[i][j][0] 
-				* arr_nst_tup[(i+1) % opcnt][j][0];
-			res_nst_tup[j][1] = arr_nst_tup[i][j][1] 
-				* arr_nst_tup[(i+1) % opcnt][j][1];
-			res_nst_tup[j][2] = arr_nst_tup[i][j][2] 
-				* arr_nst_tup[(i+1) % opcnt][j][2];
-		}
+		res_nst_tup[0][0] = arr_nst_tup[i][0][0] 
+			* arr_nst_tup[(i+1) % opcnt][0][0];
+		res_nst_tup[0][1] = arr_nst_tup[i][0][1] 
+			* arr_nst_tup[(i+1) % opcnt][0][1];
+		res_nst_tup[0][2] = arr_nst_tup[i][0][2] 
+			* arr_nst_tup[(i+1) % opcnt][0][2];
+		
+		res_nst_tup[1][0] = arr_nst_tup[i][1][0] 
+			* arr_nst_tup[(i+1) % opcnt][1][0];
+		res_nst_tup[1][1] = arr_nst_tup[i][1][1] 
+			* arr_nst_tup[(i+1) % opcnt][1][1];
+		res_nst_tup[1][2] = arr_nst_tup[i][1][2] 
+			* arr_nst_tup[(i+1) % opcnt][1][2];
+		
+		res_nst_tup[2][0] = arr_nst_tup[i][2][0] 
+			* arr_nst_tup[(i+1) % opcnt][2][0];
+		res_nst_tup[2][1] = arr_nst_tup[i][2][1] 
+			* arr_nst_tup[(i+1) % opcnt][2][1];
+		res_nst_tup[2][2] = arr_nst_tup[i][2][2] 
+			* arr_nst_tup[(i+1) % opcnt][2][2];
 	}
 	gettimeofday(&tv_end, NULL);
 	mul = tv_elapsed(&tv_end, &tv_start);
@@ -394,14 +436,26 @@ int main(int argc, char **argv)
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		for (j = 0; j < 3; j++) {
-			res_nst_tup[j][0] = arr_nst_tup[i][j][0] 
-				/ arr_nst_tup[(i+1) % opcnt][j][0];
-			res_nst_tup[j][1] = arr_nst_tup[i][j][1] 
-				/ arr_nst_tup[(i+1) % opcnt][j][1];
-			res_nst_tup[j][2] = arr_nst_tup[i][j][2] 
-				/ arr_nst_tup[(i+1) % opcnt][j][2];
-		}
+		res_nst_tup[0][0] = arr_nst_tup[i][0][0] 
+			/ arr_nst_tup[(i+1) % opcnt][0][0];
+		res_nst_tup[0][1] = arr_nst_tup[i][0][1] 
+			/ arr_nst_tup[(i+1) % opcnt][0][1];
+		res_nst_tup[0][2] = arr_nst_tup[i][0][2] 
+			/ arr_nst_tup[(i+1) % opcnt][0][2];
+		
+		res_nst_tup[1][0] = arr_nst_tup[i][1][0] 
+			/ arr_nst_tup[(i+1) % opcnt][1][0];
+		res_nst_tup[1][1] = arr_nst_tup[i][1][1] 
+			/ arr_nst_tup[(i+1) % opcnt][1][1];
+		res_nst_tup[1][2] = arr_nst_tup[i][1][2] 
+			/ arr_nst_tup[(i+1) % opcnt][1][2];
+		
+		res_nst_tup[2][0] = arr_nst_tup[i][2][0] 
+			/ arr_nst_tup[(i+1) % opcnt][2][0];
+		res_nst_tup[2][1] = arr_nst_tup[i][2][1] 
+			/ arr_nst_tup[(i+1) % opcnt][2][1];
+		res_nst_tup[2][2] = arr_nst_tup[i][2][2] 
+			/ arr_nst_tup[(i+1) % opcnt][2][2];
 	}
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
