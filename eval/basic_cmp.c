@@ -482,7 +482,7 @@ int main(int argc, char **argv)
 			+ (arr_nst_rec[(i+1) % opcnt].x)->z;
 	}
 	gettimeofday(&tv_end, NULL);
-	asg = tv_elapsed(&tv_end, &tv_start);
+	add = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f%f%f", 
 		res_nst_rec.x->x, res_nst_rec.x->y, res_nst_rec.x->z);
 	
