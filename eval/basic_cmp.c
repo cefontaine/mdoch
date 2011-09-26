@@ -30,9 +30,9 @@ struct rec {
 };
 
 struct nst_rec {
-	struct rec *x;
-	struct rec *y;
-	struct rec *z;
+	struct rec x;
+	struct rec y;
+	struct rec z;
 };
 
 static double tv_elapsed(struct timeval *end, struct timeval *start)
@@ -424,160 +424,141 @@ int main(int argc, char **argv)
 		fprintf(stderr, "failed to allocate memory\n");
 		exit(1);
 	}
-	for (i = 0; i < opcnt; i++) {
-		arr_nst_rec[i].x = (struct rec *) malloc(sizeof(struct rec));
-		arr_nst_rec[i].y = (struct rec *) malloc(sizeof(struct rec));
-		arr_nst_rec[i].z = (struct rec *) malloc(sizeof(struct rec));
-		if (arr_nst_rec[i].x == NULL || arr_nst_rec[i].y == NULL ||
-			arr_nst_rec[i].z == NULL) {
-			fprintf(stderr, "failed to allocate memory\n");
-			exit(1);
-		}
-	}
-	struct rec x, y, z;
-	res_nst_rec.x = &x;
-	res_nst_rec.y = &y;
-	res_nst_rec.z = &z;
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		(arr_nst_rec[i].x)->x = 1.0;
-		(arr_nst_rec[i].x)->y = 1.0;
-		(arr_nst_rec[i].x)->z = 1.0;
+		(arr_nst_rec[i].x).x = 1.0;
+		(arr_nst_rec[i].x).y = 1.0;
+		(arr_nst_rec[i].x).z = 1.0;
 		
-		(arr_nst_rec[i].y)->x = 1.0;
-		(arr_nst_rec[i].y)->y = 1.0;
-		(arr_nst_rec[i].y)->z = 1.0;
+		(arr_nst_rec[i].y).x = 1.0;
+		(arr_nst_rec[i].y).y = 1.0;
+		(arr_nst_rec[i].y).z = 1.0;
 		
-		(arr_nst_rec[i].z)->x = 1.0;
-		(arr_nst_rec[i].z)->y = 1.0;
-		(arr_nst_rec[i].z)->z = 1.0;
+		(arr_nst_rec[i].z).x = 1.0;
+		(arr_nst_rec[i].z).y = 1.0;
+		(arr_nst_rec[i].z).z = 1.0;
 	}
 	gettimeofday(&tv_end, NULL);
 	asg = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f%f%f", 
-		arr_nst_rec[0].x->x, arr_nst_rec[0].x->y, arr_nst_rec[0].x->z);
+		arr_nst_rec[0].x.x, arr_nst_rec[0].x.y, arr_nst_rec[0].x.z);
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		res_nst_rec.x->x = (arr_nst_rec[i].x)->x 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.x->y = (arr_nst_rec[i].x)->y 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.x->z = (arr_nst_rec[i].x)->z 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.x.x = (arr_nst_rec[i].x).x 
+			+ (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.x.y = (arr_nst_rec[i].x).y 
+			+ (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.x.z = (arr_nst_rec[i].x).z 
+			+ (arr_nst_rec[(i+1) % opcnt].x).z;
 		
-		res_nst_rec.y->x = (arr_nst_rec[i].x)->x 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.y->y = (arr_nst_rec[i].x)->y 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.y->z = (arr_nst_rec[i].x)->z 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.y.x = (arr_nst_rec[i].x).x 
+			+ (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.y.y = (arr_nst_rec[i].x).y 
+			+ (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.y.z = (arr_nst_rec[i].x).z 
+			+ (arr_nst_rec[(i+1) % opcnt].x).z;
 		
-		res_nst_rec.z->x = (arr_nst_rec[i].x)->x 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.z->y = (arr_nst_rec[i].x)->y 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.z->z = (arr_nst_rec[i].x)->z 
-			+ (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.z.x = (arr_nst_rec[i].x).x 
+			+ (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.z.y = (arr_nst_rec[i].x).y 
+			+ (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.z.z = (arr_nst_rec[i].x).z 
+			+ (arr_nst_rec[(i+1) % opcnt].x).z;
 	}
 	gettimeofday(&tv_end, NULL);
 	add = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f%f%f", 
-		res_nst_rec.x->x, res_nst_rec.x->y, res_nst_rec.x->z);
+		res_nst_rec.x.x, res_nst_rec.x.y, res_nst_rec.x.z);
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		res_nst_rec.x->x = (arr_nst_rec[i].x)->x 
-			- (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.x->y = (arr_nst_rec[i].x)->y 
-			- (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.x->z = (arr_nst_rec[i].x)->z 
-			- (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.x.x = (arr_nst_rec[i].x).x 
+			- (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.x.y = (arr_nst_rec[i].x).y 
+			- (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.x.z = (arr_nst_rec[i].x).z 
+			- (arr_nst_rec[(i+1) % opcnt].x).z;
 		
-		res_nst_rec.y->x = (arr_nst_rec[i].x)->x 
-			- (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.y->y = (arr_nst_rec[i].x)->y 
-			- (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.y->z = (arr_nst_rec[i].x)->z 
-			- (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.y.x = (arr_nst_rec[i].x).x 
+			- (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.y.y = (arr_nst_rec[i].x).y 
+			- (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.y.z = (arr_nst_rec[i].x).z 
+			- (arr_nst_rec[(i+1) % opcnt].x).z;
 		
-		res_nst_rec.z->x = (arr_nst_rec[i].x)->x 
-			- (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.z->y = (arr_nst_rec[i].x)->y 
-			- (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.z->z = (arr_nst_rec[i].x)->z 
-			- (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.z.x = (arr_nst_rec[i].x).x 
+			- (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.z.y = (arr_nst_rec[i].x).y 
+			- (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.z.z = (arr_nst_rec[i].x).z 
+			- (arr_nst_rec[(i+1) % opcnt].x).z;
 	}
 	gettimeofday(&tv_end, NULL);
 	sub = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f%f%f", 
-		res_nst_rec.x->x, res_nst_rec.x->y, res_nst_rec.x->z);
+		res_nst_rec.x.x, res_nst_rec.x.y, res_nst_rec.x.z);
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		res_nst_rec.x->x = (arr_nst_rec[i].x)->x 
-			* (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.x->y = (arr_nst_rec[i].x)->y 
-			* (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.x->z = (arr_nst_rec[i].x)->z 
-			* (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.x.x = (arr_nst_rec[i].x).x 
+			* (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.x.y = (arr_nst_rec[i].x).y 
+			* (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.x.z = (arr_nst_rec[i].x).z 
+			* (arr_nst_rec[(i+1) % opcnt].x).z;
 		
-		res_nst_rec.y->x = (arr_nst_rec[i].x)->x 
-			* (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.y->y = (arr_nst_rec[i].x)->y 
-			* (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.y->z = (arr_nst_rec[i].x)->z 
-			* (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.y.x = (arr_nst_rec[i].x).x 
+			* (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.y.y = (arr_nst_rec[i].x).y 
+			* (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.y.z = (arr_nst_rec[i].x).z 
+			* (arr_nst_rec[(i+1) % opcnt].x).z;
 		
-		res_nst_rec.z->x = (arr_nst_rec[i].x)->x 
-			* (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.z->y = (arr_nst_rec[i].x)->y 
-			* (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.z->z = (arr_nst_rec[i].x)->z 
-			* (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.z.x = (arr_nst_rec[i].x).x 
+			* (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.z.y = (arr_nst_rec[i].x).y 
+			* (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.z.z = (arr_nst_rec[i].x).z 
+			* (arr_nst_rec[(i+1) % opcnt].x).z;
 	}
 	gettimeofday(&tv_end, NULL);
 	mul = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f%f%f", 
-		res_nst_rec.x->x, res_nst_rec.x->y, res_nst_rec.x->z);
+		res_nst_rec.x.x, res_nst_rec.x.y, res_nst_rec.x.z);
 	
 	gettimeofday(&tv_start, NULL);
 	for	(i = 0; i < opcnt; i++) {
-		res_nst_rec.x->x = (arr_nst_rec[i].x)->x 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.x->y = (arr_nst_rec[i].x)->y 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.x->z = (arr_nst_rec[i].x)->z 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.x.x = (arr_nst_rec[i].x).x 
+			/ (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.x.y = (arr_nst_rec[i].x).y 
+			/ (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.x.z = (arr_nst_rec[i].x).z 
+			/ (arr_nst_rec[(i+1) % opcnt].x).z;
 		
-		res_nst_rec.y->x = (arr_nst_rec[i].x)->x 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.y->y = (arr_nst_rec[i].x)->y 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.y->z = (arr_nst_rec[i].x)->z 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.y.x = (arr_nst_rec[i].x).x 
+			/ (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.y.y = (arr_nst_rec[i].x).y 
+			/ (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.y.z = (arr_nst_rec[i].x).z 
+			/ (arr_nst_rec[(i+1) % opcnt].x).z;
 		
-		res_nst_rec.z->x = (arr_nst_rec[i].x)->x 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->x;
-		res_nst_rec.z->y = (arr_nst_rec[i].x)->y 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->y;
-		res_nst_rec.z->z = (arr_nst_rec[i].x)->z 
-			/ (arr_nst_rec[(i+1) % opcnt].x)->z;
+		res_nst_rec.z.x = (arr_nst_rec[i].x).x 
+			/ (arr_nst_rec[(i+1) % opcnt].x).x;
+		res_nst_rec.z.y = (arr_nst_rec[i].x).y 
+			/ (arr_nst_rec[(i+1) % opcnt].x).y;
+		res_nst_rec.z.z = (arr_nst_rec[i].x).z 
+			/ (arr_nst_rec[(i+1) % opcnt].x).z;
 	}
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f%f%f", 
-		res_nst_rec.x->x, res_nst_rec.x->y, res_nst_rec.x->z);
+		res_nst_rec.x.x, res_nst_rec.x.y, res_nst_rec.x.z);
 
 	printf("2D-rec\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", 
 		asg, add, sub, mul, div);
 
-	for (i = 0; i < opcnt; i++) {
-		free(arr_nst_rec[i].x);
-		free(arr_nst_rec[i].y);
-		free(arr_nst_rec[i].z);
-	}
 	free(arr_nst_rec);
 
 	close(devnull);	
