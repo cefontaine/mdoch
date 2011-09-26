@@ -1,13 +1,21 @@
+CC=gcc
 CHPL=chpl
-FLAGS=--fast
-TARGETS=array vector allpairs2d
+CFLAGS=-O -lm
+CHFLAGS=--fast
+TARGETS=array allpairs2d
 
-all: $(TARGETS)
+.PHONY: basic_cmp
+all: $(TARGETS) basic_cmp
 
 %: %.chpl
-	$(CHPL) -o $@ $< $(FLAGS)
+	$(CHPL) -o $@ $< $(CHFLAGS)
+
+basic_cmp: basic_cmp.c basic_cmp.chpl
+	$(CC) -o basic_c basic_cmp.c $(CFLAGS)
+	$(CHPL) -o basic_chpl basic_cmp.chpl $(CHFLAGS)
 
 clean:
-	rm -f $(TARGETS)
+	rm -f $(CTARGETS)
+	rm -f $(CHTARGETS)
 
 
