@@ -55,13 +55,17 @@ record vector2d {
 }
 
 proc =(v: vector2d, t: (real, real)) {
-	v.x = t(1);
-	v.y = t(2);
+	var r: vector2d;
+	r.x = t(1);
+	r.y = t(2);
+	return r;
 }
 
 proc =(v: vector2d, t: (int, int)) {
-	v.x = t(1);
-	v.y = t(2);
+	var r: vector2d;
+	r.x = t(1);
+	r.y = t(2);
+	return r;
 }
 
 proc +(v1: vector2d, v2: vector2d) {
@@ -113,13 +117,17 @@ record vector2d_i {
 }
 
 proc =(v: vector2d_i, t: (int, int)) {
-	v.x = t(1);
-	v.y = t(2);
+	var r: vector2d_i;
+	r.x = t(1);
+	r.y = t(2);
+	return r;
 }
 
 proc =(v1: vector2d_i, v2: vector2d) {
-	v1.x = v2.x: int;
-	v1.y = v2.y: int;
+	var r: vector2d_i;
+	r.x = v2.x: int;
+	r.y = v2.y: int;
+	return r;
 }
 
 proc *(s: real, v: vector2d_i) {

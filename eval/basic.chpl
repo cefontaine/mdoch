@@ -66,21 +66,27 @@ var t: myTimer;
 var res, asg, add, sub, mul, div: real;
 
 proc =(a: Record, b: (real, real, real)) {
-	a.x = b(1);
-	a.y = b(2);
-	a.z = b(3);
+	var r: Record;
+	r.x = b(1);
+	r.y = b(2);
+	r.z = b(3);
+	return r;
 }
 
 proc =(a: Record, b: (int, int, int)) {
-	a.x = b(1);
-	a.y = b(2);
-	a.z = b(3);
+	var r: Record;
+	r.x = b(1);
+	r.y = b(2);
+	r.z = b(3);
+	return r;
 }
 
 proc =(a: nstRecord, b: (3*real, 3*real, 3*real)) {
-	a.x = b(1);
-	a.y = b(2);
-	a.z = b(3);
+	var r: nstRecord;
+	r.x = b(1);
+	r.y = b(2);
+	r.z = b(3);
+	return r;
 }
 
 proc +(a: Record, b: Record) {
@@ -253,7 +259,6 @@ t.start();
 for d in arrDom do resRec = arrRec(d) / arrRec(d % arrSize + 1);
 div = t.stop();
 writeln("1D-rec\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-
 
 // 2D-array vs. struct
 t.start();
