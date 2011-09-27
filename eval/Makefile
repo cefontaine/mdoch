@@ -16,7 +16,6 @@ basic_chpl: basic.chpl
 	$(CHPL) -o $@ $< $(CHFLAGS)
 
 clean:
-	rm -f $(CTARGETS)
-	rm -f $(CHTARGETS)
+	rm -f $(TARGETS) basic_c basic_chpl
 
 
