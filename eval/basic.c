@@ -99,35 +99,35 @@ int main(int argc, char **argv)
 
 	/* basic double operation */
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = i;
 	gettimeofday(&tv_end, NULL);
 	asg = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", res);	/* force compiler not to optimize */
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = i + 1.0;
 	gettimeofday(&tv_end, NULL);
 	add = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", res);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = i - 2.0;
 	gettimeofday(&tv_end, NULL);
 	sub = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", res);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = i * 3.0;
 	gettimeofday(&tv_end, NULL);
 	mul = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", res);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = i / 4.0;
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
@@ -144,35 +144,35 @@ int main(int argc, char **argv)
 	}
 
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		arr[i] = i;
 	gettimeofday(&tv_end, NULL);
 	asg = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", res);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = arr[i] + arr[(i+1) % opcnt];
 	gettimeofday(&tv_end, NULL);
 	add = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", res);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = arr[i] - arr[(i+1) % opcnt];
 	gettimeofday(&tv_end, NULL);
 	sub = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", res);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = arr[i] * arr[(i+1) % opcnt];
 	gettimeofday(&tv_end, NULL);
 	mul = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", res);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++)
+	for (i = 0; i < opcnt; i++)
 		res = arr[i] / arr[(i+1) % opcnt];
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
@@ -197,7 +197,7 @@ int main(int argc, char **argv)
 	}
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		arr_tup[i][0] = 1.0;
 		arr_tup[i][1] = 1.0;
 		arr_tup[i][2] = 1.0;
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 	fprintf(devnull, "%f%f%f", arr_tup[0][0], arr_tup[0][1], arr_tup[0][2]);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_tup[0] = arr_tup[i][0] + arr_tup[(i+1) % opcnt][0];
 		res_tup[1] = arr_tup[i][1] + arr_tup[(i+1) % opcnt][1];
 		res_tup[2] = arr_tup[i][2] + arr_tup[(i+1) % opcnt][2];
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
 	fprintf(devnull, "%f%f%f", res_tup[0], res_tup[1], res_tup[2]);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_tup[0] = arr_tup[i][0] - arr_tup[(i+1) % opcnt][0];
 		res_tup[1] = arr_tup[i][1] - arr_tup[(i+1) % opcnt][1];
 		res_tup[2] = arr_tup[i][2] - arr_tup[(i+1) % opcnt][2];
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 	}
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		arr_rec[i].x = 1.0;
 		arr_rec[i].y = 1.0;
 		arr_rec[i].z = 1.0;
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
 	fprintf(devnull, "%f%f%f", arr_rec[0].x, arr_rec[0].y, arr_rec[0].z);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_rec.x = arr_rec[i].x + arr_rec[(i+1) % opcnt].x;
 		res_rec.y = arr_rec[i].y + arr_rec[(i+1) % opcnt].y;
 		res_rec.z = arr_rec[i].z + arr_rec[(i+1) % opcnt].z;
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
 	fprintf(devnull, "%f%f%f", res_rec.x, res_rec.y, res_rec.z);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_rec.x = arr_rec[i].x - arr_rec[(i+1) % opcnt].x;
 		res_rec.y = arr_rec[i].y - arr_rec[(i+1) % opcnt].y;
 		res_rec.z = arr_rec[i].z - arr_rec[(i+1) % opcnt].z;
@@ -287,7 +287,7 @@ int main(int argc, char **argv)
 	fprintf(devnull, "%f%f%f", res_rec.x, res_rec.y, res_rec.z);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_rec.x = arr_rec[i].x * arr_rec[(i+1) % opcnt].x;
 		res_rec.y = arr_rec[i].y * arr_rec[(i+1) % opcnt].y;
 		res_rec.z = arr_rec[i].z * arr_rec[(i+1) % opcnt].z;
@@ -297,7 +297,7 @@ int main(int argc, char **argv)
 	fprintf(devnull, "%f%f%f", res_rec.x, res_rec.y, res_rec.z);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_rec.x = arr_rec[i].x / arr_rec[(i+1) % opcnt].x;
 		res_rec.y = arr_rec[i].y / arr_rec[(i+1) % opcnt].y;
 		res_rec.z = arr_rec[i].z / arr_rec[(i+1) % opcnt].z;
@@ -332,18 +332,18 @@ int main(int argc, char **argv)
 	}
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		arr_nst_tup[i][0][0] = 1.0;
 		arr_nst_tup[i][0][1] = 1.0;
 		arr_nst_tup[i][0][2] = 1.0;
 		
-		arr_nst_tup[i][1][0] = 1.0;
-		arr_nst_tup[i][1][1] = 1.0;
-		arr_nst_tup[i][1][2] = 1.0;
+		arr_nst_tup[i][1][0] = 2.0;
+		arr_nst_tup[i][1][1] = 2.0;
+		arr_nst_tup[i][1][2] = 2.0;
 		
-		arr_nst_tup[i][2][0] = 1.0;
-		arr_nst_tup[i][2][1] = 1.0;
-		arr_nst_tup[i][2][2] = 1.0;
+		arr_nst_tup[i][2][0] = 3.0;
+		arr_nst_tup[i][2][1] = 3.0;
+		arr_nst_tup[i][2][2] = 3.0;
 	}
 	gettimeofday(&tv_end, NULL);
 	asg = tv_elapsed(&tv_end, &tv_start);
@@ -351,7 +351,7 @@ int main(int argc, char **argv)
 		arr_nst_tup[0][0][0], arr_nst_tup[0][0][1], arr_nst_tup[0][0][2]);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_nst_tup[0][0] = arr_nst_tup[i][0][0] 
 			+ arr_nst_tup[(i+1) % opcnt][0][0];
 		res_nst_tup[0][1] = arr_nst_tup[i][0][1] 
@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 		res_nst_tup[0][0], res_nst_tup[0][1], res_nst_tup[0][2]);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_nst_tup[0][0] = arr_nst_tup[i][0][0] 
 			- arr_nst_tup[(i+1) % opcnt][0][0];
 		res_nst_tup[0][1] = arr_nst_tup[i][0][1] 
@@ -407,7 +407,7 @@ int main(int argc, char **argv)
 		res_nst_tup[0][0], res_nst_tup[0][1], res_nst_tup[0][2]);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_nst_tup[0][0] = arr_nst_tup[i][0][0] 
 			* arr_nst_tup[(i+1) % opcnt][0][0];
 		res_nst_tup[0][1] = arr_nst_tup[i][0][1] 
@@ -435,7 +435,7 @@ int main(int argc, char **argv)
 		res_nst_tup[0][0], res_nst_tup[0][1], res_nst_tup[0][2]);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_nst_tup[0][0] = arr_nst_tup[i][0][0] 
 			/ arr_nst_tup[(i+1) % opcnt][0][0];
 		res_nst_tup[0][1] = arr_nst_tup[i][0][1] 
@@ -480,7 +480,7 @@ int main(int argc, char **argv)
 	}
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		(arr_nst_rec[i].x).x = 1.0;
 		(arr_nst_rec[i].x).y = 1.0;
 		(arr_nst_rec[i].x).z = 1.0;
@@ -499,7 +499,7 @@ int main(int argc, char **argv)
 		arr_nst_rec[0].x.x, arr_nst_rec[0].x.y, arr_nst_rec[0].x.z);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_nst_rec.x.x = (arr_nst_rec[i].x).x 
 			+ (arr_nst_rec[(i+1) % opcnt].x).x;
 		res_nst_rec.x.y = (arr_nst_rec[i].x).y 
@@ -527,7 +527,7 @@ int main(int argc, char **argv)
 		res_nst_rec.x.x, res_nst_rec.x.y, res_nst_rec.x.z);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_nst_rec.x.x = (arr_nst_rec[i].x).x 
 			- (arr_nst_rec[(i+1) % opcnt].x).x;
 		res_nst_rec.x.y = (arr_nst_rec[i].x).y 
@@ -555,7 +555,7 @@ int main(int argc, char **argv)
 		res_nst_rec.x.x, res_nst_rec.x.y, res_nst_rec.x.z);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_nst_rec.x.x = (arr_nst_rec[i].x).x 
 			* (arr_nst_rec[(i+1) % opcnt].x).x;
 		res_nst_rec.x.y = (arr_nst_rec[i].x).y 
@@ -583,7 +583,7 @@ int main(int argc, char **argv)
 		res_nst_rec.x.x, res_nst_rec.x.y, res_nst_rec.x.z);
 	
 	gettimeofday(&tv_start, NULL);
-	for	(i = 0; i < opcnt; i++) {
+	for (i = 0; i < opcnt; i++) {
 		res_nst_rec.x.x = (arr_nst_rec[i].x).x 
 			/ (arr_nst_rec[(i+1) % opcnt].x).x;
 		res_nst_rec.x.y = (arr_nst_rec[i].x).y 
