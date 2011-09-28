@@ -27,6 +27,7 @@ const IMUL: int =  314159269;
 const MASK: int =  2147483647;
 const SCALE: real = 0.4656612873e-9;
 const PI: real = 3.1415926535;
+const MAX_MPEX_ORD: int = 2;
 
 // Utilities
 proc max(a:real, b:real) {
@@ -184,6 +185,15 @@ proc vwrap2d(v: vector2d, region: vector2d) {
 //////////////////////////////////////
 record vector {
 	var x, y, z: real;
+	proc set(v: real) {x = v; y = v; z = v;}
+	proc zero() { x = 0; y = 0; z = 0;}
+	proc prod() { return x * y * z; }
+	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
+}
+
+record vector_i {
+	var x, y, z: int;
+	proc set(v: int) {x = v; y = v; z = v;}
 	proc zero() { x = 0; y = 0; z = 0;}
 	proc prod() { return x * y * z; }
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
@@ -202,6 +212,62 @@ proc =(v: vector, t: (int, int, int)) {
 	r.x = t(1);
 	r.y = t(2);
 	r.z = t(3);
+	return r;
+}
+
+proc =(v: vector_i, t: (int, int, int)) {
+	var r: vector_i;
+	r.x = t(1);
+	r.y = t(2);
+	r.z = t(3);
+	return r;
+}
+
+proc =(v1: vector_i, v2: vector) {
+	var r: vector_i;
+	r.x = v2.x: int;
+	r.y = v2.y: int;
+	r.z = v2.z: int;
+	return r;
+}
+
+proc =(v1: vector, v2: vector_i) {
+	var r: vector;
+	r.x = v2.x;
+	r.y = v2.y;
+	r.z = v2.z;
+	return r;
+}
+
+proc *(s: real, v: vector) {
+	var r: vector;
+	r.x = s * v.x;
+	r.y = s * v.y;
+	r.z = s * v.z;
+	return r;
+}
+
+proc *(v: vector, s: real) {
+	var r: vector;
+	r.x = s * v.x;
+	r.y = s * v.y;
+	r.z = s * v.z;
+	return r;
+}
+
+proc *(s: real, v: vector_i) {
+	var r: vector;
+	r.x = s * v.x;
+	r.y = s * v.y;
+	r.z = s * v.z;
+	return r;
+}
+
+proc *(v: vector_i, s: real) {
+	var r: vector;
+	r.x = s * v.x;
+	r.y = s * v.y;
+	r.z = s * v.z;
 	return r;
 }
 
@@ -256,4 +322,15 @@ record prop {
 		sum /= n; 
 		sum2 = sqrt(max(sum2 / n - sum ** 2, 0));
 	}
+}
+
+const mptermsi = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD;
+record mpterms {
+	var c: [1..10] real;
+	var s: [1..10] real;
+}
+
+record mpcell {
+	var le, me: mpterms;
+	var occ: int;
 }

@@ -28,9 +28,9 @@ use common;
 config const chargeMag: real = 4.0;
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
-config const initUcellX: int = 20;
-config const initUcellY: int = 20;
-config const initUcellZ: int = 20;
+config const initUcellX: int = 2;
+config const initUcellY: int = 2;
+config const initUcellZ: int = 2;
 config const maxLevel: int = 3;
 config const rNebrShell: real = 0.4;
 config const limitRdf: int = 50;
@@ -46,13 +46,51 @@ config const wellSep: int = 1;
 config const profLevel: int = 0;
 const NDIM: int = 3;
 
+var rCut, velMag: real;
+var initUcell, cells, mpCells: vector_i;
+var region, vSum: vector;
+var nMol, nebrTabFac, nebrTabMax: int;
 var timer: elapsedTimer;
+var molDom: domain(1) = [1..1];
+var mol: [molDom] mol3d;
+var cellListDom: domain(1) = [1..1];
+var cellList: [cellListDom] int;
+var mpCellDom: domain(int);
+var mpCell: [mpCellDom] mpcell;
+var maxCellsEdge, maxOrd: int;
 
 proc init() {
+	// Setup parameters
+	initUcell = (initUcellX, initUcellY, initUcellZ);
+	rCut = 2.0 ** (1.0 / 6.0);
+	region = 1.0 / (density ** (1.0/3.0)) * initUcell;
+	nMol = initUcell.prod();
+	nMol = 8;
+	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol) * temperature);
+	cells = 1.0 / (rCut + rNebrShell) * region;
+	nebrTabMax = nebrTabFac * nMol;
+	maxOrd = MAX_MPEX_ORD;
+	
+	// Allocate storage
+	molDom = [1..nMol];
+	cellListDom = [1..(cells.prod()+nMol)];
+	
+	/* Synthesize irregualr domain
+	 * According to specification, removing indices from super-domain is
+	 * dangerous, so add up subdomains */
+	/*
+	mpCellDom = [1..maxLevel, 1..1];
+	maxCellsEdge = 2;
+	for n in [2..maxLevel] {
+		maxCellsEdge *= 2;
+		mpCells.set(maxCellsEdge);
+		mpCellDom += [n..n, 1..mpCells.prod()];
+	}
+	*/
 }
 
 proc main() {
-	if profLevel >= 1 then timer.start();
+	//if profLevel >= 1 then timer.start();
 	init();
-	if profLevel >= 1 then writeln("Init: ", timer.stop());
+	//if profLevel >= 1 then writeln("Init: ", timer.stop());
 }

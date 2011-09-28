@@ -41,7 +41,6 @@ var molDom: domain(1) = [1..1];	// use domain to reallocate array
 var mol: [molDom] mol2d;
 var timer: elapsedTimer;
 
-
 proc init() {
 	// Setup parameters
 	initUcell = (initUcellX, initUcellY);

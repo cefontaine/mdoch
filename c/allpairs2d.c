@@ -108,7 +108,6 @@ void AllocArrays ()
   AllocMem (mol, nMol, Mol);
 }
 
-
 void ComputeForces ()
 {
   VecR dr;
