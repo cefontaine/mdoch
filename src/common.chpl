@@ -46,6 +46,19 @@ proc randR() {
 	return (randSeedP * SCALE);
 }
 
+record elapsedTimer {
+	var t: Timer;
+	var u: TimeUnits = TimeUnits.microseconds;
+	proc start() {
+		t.clear();
+		t.start();
+	}
+	proc stop() {
+		t.stop();
+		return t.elapsed(u);
+	}
+}
+
 // 2D-Vector
 record vector2d {
 	var x, y: real;
@@ -232,6 +245,7 @@ record mol2d {
 
 record mol3d {
 	var r, rv, ra: vector;
+	var chg: real;
 }
 
 record prop {

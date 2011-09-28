@@ -19,7 +19,6 @@
 
 /* allpairs2d.chpl */
 
-use Time;
 use common;
 
 config const deltaT: real = 0.005;
@@ -40,7 +39,7 @@ var nMol, stepCount, moreCycles: int;
 var kinEnergy, totEnergy, pressure: prop;
 var molDom: domain(1) = [1..1];	// use domain to reallocate array
 var mol: [molDom] mol2d;
-var timer: Timer;
+var timer: elapsedTimer;
 
 
 proc init() {
@@ -172,28 +171,16 @@ proc step() {
 }
 
 proc main() {
-	if profLevel >= 1 {
-		timer.clear();
-		timer.start();
-	}
+	if profLevel >= 1 then timer.start();
 	init();
-	if profLevel >= 1 {
-		timer.stop();
-		writeln("Init: ", timer.elapsed(TimeUnits.microseconds));
-	}
+	if profLevel >= 1 then writeln("Init: ", timer.stop());
 
 	while (moreCycles) {
-		if profLevel >= 1 {
-			timer.clear();
-			timer.start();
-		}
+		if profLevel >= 1 then timer.start();
 		step();
-		if profLevel >= 1 {
-			timer.stop();
-			writeln("Step ", stepCount, ": ",
-				timer.elapsed(TimeUnits.microseconds));
-		}
+		if profLevel >= 1 then
+			writeln("Step ", stepCount, ": ", timer.stop());
 		if (stepCount >= stepLimit) then
 			moreCycles = 0;
 	};
-};
+}
