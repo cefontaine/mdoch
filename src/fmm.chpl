@@ -147,14 +147,19 @@ proc buildNebrList() {
 
 	rrNebr = (rCut + rNebrShell) ** 2;
 	invWid = cells / region;
-	for n in [nMol + 1..(cells.prod() + nMol)] do cellList(n) = -1;
+	writeln(cellList.numElements);
+	for n in [nMol+1..(cells.prod() + nMol)] cellList(n) = -1; 
 	for n in mol.domain {
 		cc = (mol(n).r + 0.5 * region) * invWid;
-		c = vlinear(cc, cells) + nMol;
+		c = vlinear(cc, cells) + nMol + 1; // array starts from 1
 		cellList(n) = cellList(c);
 		cellList(c) = n;
 	}
 	nebrTabLen = 0;
+
+	for c in cellList do writeln(c);
+
+	exit(0);
 	
 	for m1z in [0..cells.z-1] {
 		for m1y in [0..cells.y-1] {
@@ -169,8 +174,10 @@ proc buildNebrList() {
 					m2 = vlinear(m2v, cells) + nMol;
 					j1 = cellList[m1];
 					while j1 >= 0 {
+						writeln("j1=", j1);
 						j2 = cellList[m2];
 						while j2 >= 0 {
+							writeln("j2=", j2, "c[j2]=", cellList[j2]);
 							if (m1 != m2 || j2 < j1) {
 								dr = mol(j1).r - mol(j2).r;
 								if dr.lensq() < rrNebr {
@@ -525,7 +532,9 @@ proc step() {
 		dispHi = 0.0;
 		buildNebrList();
 	}
-	exit(0);
+	writeln("finish buildNebrList");
+	
+	/*
 	computeForces();
 	multipoleCalc();
 	computeWallForces();
@@ -583,6 +592,7 @@ proc step() {
 
 	if stepCount >= stepEquil && (stepCount - stepEquil) % stepRdf == 0 then
 		evalRdf();
+	*/
 }
 
 proc main() {
@@ -592,10 +602,11 @@ proc main() {
 	
 	moreCycles = 1;
 	while (moreCycles) {
-		if profLevel >= 1 then timer.start();
+		//if profLevel >= 1 then timer.start();
+		writeln("befor step()");
 		step();
-		if profLevel >= 1 then
-			writeln("Step ", stepCount, ": ", timer.stop());
+		//if profLevel >= 1 then
+		//	writeln("Step ", stepCount, ": ", timer.stop());
 		if stepCount >= stepLimit then moreCycles = 0;
 	};
 }
