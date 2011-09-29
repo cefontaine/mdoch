@@ -49,7 +49,6 @@ proc init() {
 	nMol = initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
 	stepCount = 0;
-	moreCycles = 1;
 
 	// Allocate storage
 	molDom = [1..nMol];
@@ -174,12 +173,12 @@ proc main() {
 	init();
 	if profLevel >= 1 then writeln("Init: ", timer.stop());
 
+	moreCycles = 1;
 	while (moreCycles) {
 		if profLevel >= 1 then timer.start();
 		step();
 		if profLevel >= 1 then
 			writeln("Step ", stepCount, ": ", timer.stop());
-		if (stepCount >= stepLimit) then
-			moreCycles = 0;
+		if (stepCount >= stepLimit) then moreCycles = 0;
 	};
 }

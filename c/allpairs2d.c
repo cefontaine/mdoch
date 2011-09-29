@@ -151,7 +151,6 @@ void LeapfrogStep (int part)
   }
 }
 
-
 void ApplyBoundaryCond ()
 {
   int n;

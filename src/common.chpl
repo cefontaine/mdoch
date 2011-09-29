@@ -165,6 +165,7 @@ proc vrand2d() {
 	s = 2 * PI * randR();
 	r.x = cos(s);
 	r.y = sin(s);
+	
 	return r;
 }
 
@@ -186,6 +187,7 @@ proc vwrap2d(v: vector2d, region: vector2d) {
 record vector {
 	var x, y, z: real;
 	proc set(v: real) {x = v; y = v; z = v;}
+	proc set(a: real, b: real, c: real) {x = a; y = b; z = c;}
 	proc zero() { x = 0; y = 0; z = 0;}
 	proc prod() { return x * y * z; }
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
@@ -194,6 +196,7 @@ record vector {
 record vector_i {
 	var x, y, z: int;
 	proc set(v: int) {x = v; y = v; z = v;}
+	proc set(a: int, b: int, c: int) {x = a; y = b; z = c;}
 	proc zero() { x = 0; y = 0; z = 0;}
 	proc prod() { return x * y * z; }
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
@@ -239,6 +242,22 @@ proc =(v1: vector, v2: vector_i) {
 	return r;
 }
 
+proc +(v1: vector, v2: vector) {
+	var r: vector;
+	r.x = v1.x + v2.x;
+	r.y = v1.y + v2.y;
+	r.z = v1.z + v2.z;
+	return r;
+}
+
+proc -(v1: vector, v2: vector) {
+	var r: vector;
+	r.x = v1.x - v2.x;
+	r.y = v1.y - v2.y;
+	r.z = v1.z - v2.z;
+	return r;
+}
+
 proc *(s: real, v: vector) {
 	var r: vector;
 	r.x = s * v.x;
@@ -271,20 +290,78 @@ proc *(v: vector_i, s: real) {
 	return r;
 }
 
+proc *(s: (real, real, real), v: vector) {
+	var r: vector;
+	r.x = s(1) * v.x;
+	r.y = s(2) * v.y;
+	r.z = s(3) * v.z;
+	return r;
+}
+
+proc *(v1: vector, v2: vector) {
+	var r: vector;
+	r.x = v1.x * v2.x;
+	r.y = v1.y * v2.y;
+	r.z = v1.z * v2.z;
+	return r;
+}
+
+proc /(v1: vector, v2: vector_i) {
+	var r: vector;
+	r.x = v1.x / v2.x;
+	r.y = v1.y / v2.y;
+	r.z = v1.z / v2.z;
+	return r;
+}
+
+proc /(v1: vector_i, v2: vector) {
+	var r: vector;
+	r.x = v1.x / v2.x;
+	r.y = v1.y / v2.y;
+	r.z = v1.z / v2.z;
+	return r;
+}
+
+proc /(v1: vector, v2: vector) {
+	var r: vector;
+	r.x = v1.x / v2.x;
+	r.y = v1.y / v2.y;
+	r.z = v1.z / v2.z;
+	return r;
+}
+
+proc vlinear(v1: vector, v2: vector) {
+	return (v1.z * v2.y + v1.y) * v2.x + v1.x;
+}
+
+proc vlinear(v1: vector, v2: vector_i) {
+	return (v1.z * v2.y + v1.y) * v2.x + v1.x;
+}
+
+proc vlinear(v1: vector_i, v2: vector) {
+	return (v1.z * v2.y + v1.y) * v2.x + v1.x;
+}
+
+proc vlinear(v1: vector_i, v2: vector_i) {
+	return (v1.z * v2.y + v1.y) * v2.x + v1.x;
+}
+
 proc vrand() {
 	var r: vector;
 	var s, x, y: real;
 
-	s = 2;
+	s = 2.0;
 	while s > 1 {
-		x = 2 * randR() - 1;
-		y = 2 * randR() - 1;
+		x = 2.0 * randR() - 1.0;
+		y = 2.0 * randR() - 1.0;
 		s = x ** 2 + y ** 2;
 	}
-	r.z = 1 - 2 * s;
-	s = 2 * sqrt(1 - s);
+	r.z = 1.0 - 2.0 * s;
+	s = 2.0 * sqrt(1.0 - s);
 	r.x = s * x;
 	r.y = s * y;
+
+	return r;
 }
 
 proc vwrap(v: vector, region: vector) {
@@ -324,13 +401,13 @@ record prop {
 	}
 }
 
-const mptermsi = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD;
-record mpterms {
-	var c: [1..10] real;
-	var s: [1..10] real;
+record mp_terms {
+	// size = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD;
+	var c: 5*real;
+	var s: 5*real;
 }
 
-record mpcell {
-	var le, me: mpterms;
+record mp_cell {
+	var le, me: mp_terms;
 	var occ: int;
 }

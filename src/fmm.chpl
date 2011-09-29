@@ -28,9 +28,9 @@ use common;
 config const chargeMag: real = 4.0;
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
-config const initUcellX: int = 2;
-config const initUcellY: int = 2;
-config const initUcellZ: int = 2;
+config const initUcellX: int = 20;
+config const initUcellY: int = 20;
+config const initUcellZ: int = 20;
 config const maxLevel: int = 3;
 config const rNebrShell: real = 0.4;
 config const limitRdf: int = 50;
@@ -46,18 +46,25 @@ config const wellSep: int = 1;
 config const profLevel: int = 0;
 const NDIM: int = 3;
 
-var rCut, velMag: real;
+var rCut, timeNow, velMag, kinEnInitSum, dispHi: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum: vector;
-var nMol, nebrTabFac, nebrTabMax: int;
-var timer: elapsedTimer;
+var nMol, moreCycles, stepCount, 
+	nebrNow, nebrTabFac, nebrTabMax, nebrTabLen: int;
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
 var cellListDom: domain(1) = [1..1];
 var cellList: [cellListDom] int;
-var mpCellDom: domain(int);
-var mpCell: [mpCellDom] mpcell;
+var mpCellDom: domain(2*int);	// associate/irregular domain
+var mpCell: [mpCellDom] mp_cell;
 var maxCellsEdge, maxOrd: int;
+var mpCellListDom: domain(1) = [1..1];
+var mpCellList: [mpCellListDom] int;
+var histRdfDom, cumRdfDom: domain(2) = [1..1, 1..1];
+var histRdf: [histRdfDom] real;
+var cumRdf: [cumRdfDom] real;
+var kinEnergy, totEnergy: prop;
+var timer: elapsedTimer;
 
 proc init() {
 	// Setup parameters
@@ -65,7 +72,6 @@ proc init() {
 	rCut = 2.0 ** (1.0 / 6.0);
 	region = 1.0 / (density ** (1.0/3.0)) * initUcell;
 	nMol = initUcell.prod();
-	nMol = 8;
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol) * temperature);
 	cells = 1.0 / (rCut + rNebrShell) * region;
 	nebrTabMax = nebrTabFac * nMol;
@@ -73,24 +79,115 @@ proc init() {
 	
 	// Allocate storage
 	molDom = [1..nMol];
-	cellListDom = [1..(cells.prod()+nMol)];
+	cellListDom = [1..(cells.prod() + nMol)];
 	
 	/* Synthesize irregualr domain
 	 * According to specification, removing indices from super-domain is
 	 * dangerous, so add up subdomains */
-	/*
 	mpCellDom = [1..maxLevel, 1..1];
 	maxCellsEdge = 2;
-	for n in [2..maxLevel] {
+	for n in [2..maxLevel] {	/* TO CHECK */
 		maxCellsEdge *= 2;
 		mpCells.set(maxCellsEdge);
 		mpCellDom += [n..n, 1..mpCells.prod()];
 	}
-	*/
+
+	mpCellListDom = [1..(nMol + mpCells.prod())];
+	histRdfDom = [1..2, 1..sizeHistRdf];
+	cumRdfDom = [1..2, 1..sizeHistRdf];
+
+	stepCount = 0;
+	
+	// Initial coordinates
+	var c, gap: vector;
+	var n: int;
+
+	gap = region / initUcell;
+	n = 1;
+	for nz in [0..initUcell.z-1] {
+		for ny in [0..initUcell.y-1] {
+			for nx in [0..initUcell.x-1] {
+				mol(n).r = (nx + 0.5, ny + 0.5, nz + 0.5) * gap
+					- (0.5 * region);
+				n += 1;
+			}
+		}
+	}
+
+	// Initial velocities, accelerations, and charges
+	vSum.zero();
+	for m in mol {
+		m.rv = velMag * vrand();
+		vSum += m.rv;
+	}
+	for m in mol {
+		m.rv += (-1.0 / nMol) * vSum;
+		m.ra.zero();	// accelerations
+		if randR() > 0.5 then m.chg = chargeMag;	// charges
+		else m.chg = -chargeMag;
+	}
+	
+	totEnergy.zero();
+	kinEnergy.zero();
+	nebrNow = 1;
+	kinEnInitSum = 0.0;
+}
+
+proc buildNebrList() {
+	var dr, invWid: vector;
+	var cc, m1v: vector_i;
+	var rrNebr: real;
+	var c: int;
+
+	rrNebr = (rCut + rNebrShell) ** 2;
+	invWid = cells / region;
+	
+	for n in [nMol+1..(cells.prod() + nMol)] do cellList(n) = -1;
+	for n in mol.domain {
+		cc = (mol(n).r + 0.5 * region) * invWid;
+		c = vlinear(cc, cells) + nMol;
+		cellList(n) = cellList(c);
+		cellList(c) = n;
+	}
+	nebrTabLen = 0;
+	
+	for m1z in [0..cells.z] {
+		for m1y in [0..cells.y] {
+			for m1x in [0..cells.x] {
+				m1v.set(m1x, m1y, m1z);
+			}
+		}
+	}
+}
+
+proc step() {
+	stepCount += 1;
+	timeNow = stepCount * deltaT;
+
+	// Leapfrog
+	for m in mol {
+		m.rv += (0.5 * deltaT) * m.ra;
+		m.r += deltaT * m.rv;
+	}
+
+	if nebrNow {
+		nebrNow = 0;
+		dispHi = 0.0;
+		buildNebrList();
+	}
 }
 
 proc main() {
-	//if profLevel >= 1 then timer.start();
+	if profLevel >= 1 then timer.start();
 	init();
-	//if profLevel >= 1 then writeln("Init: ", timer.stop());
+	if profLevel >= 1 then writeln("Init: ", timer.stop());
+	
+	moreCycles = 1;
+	while (moreCycles) {
+		if profLevel >= 1 then timer.start();
+		step();
+		if profLevel >= 1 then
+			writeln("Step ", stepCount, ": ", timer.stop());
+		if (stepCount >= stepLimit) then moreCycles = 0;
+	};
 }
