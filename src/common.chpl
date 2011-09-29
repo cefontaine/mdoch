@@ -222,6 +222,8 @@ record vector {
 	proc zero() { x = 0; y = 0; z = 0;}
 	proc prod() { return x * y * z; }
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
+	proc scale(s: real) { x *= s; y *= s; z *= s; }
+	proc csum() { return x + y + z; }
 }
 
 record vector_i {
@@ -231,6 +233,14 @@ record vector_i {
 	proc zero() { x = 0; y = 0; z = 0;}
 	proc prod() { return x * y * z; }
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
+	proc scale(s: int) { x *= s; y *= s; z *= s; }
+	proc csum() { return x + y + z; }
+	proc llim_x(ws: int) { return x % 1 - 2 * ws; }
+	proc llim_y(ws: int) { return y % 1 - 2 * ws; }
+	proc llim_z(ws: int) { return z % 1 - 2 * ws; }
+	proc hlim_x(ws: int) { return x % 1 + 2 * ws + 1; }
+	proc hlim_y(ws: int) { return y % 1 + 2 * ws + 1; }
+	proc hlim_z(ws: int) { return z % 1 + 2 * ws + 1; }
 }
 
 proc =(v: vector, t: (real, real, real)) {

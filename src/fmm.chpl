@@ -46,10 +46,10 @@ config const wellSep: int = 1;
 config const profLevel: int = 0;
 const NDIM: int = 3;
 
-var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum: real;
+var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
-var nMol, moreCycles, stepCount, 
+var nMol, moreCycles, stepCount, countRdf,
 	nebrNow, nebrTabFac, nebrTabMax, nebrTabLen,
 	curCellsEdge, curLevel: int;
 var molDom: domain(1) = [1..1];
@@ -338,6 +338,38 @@ proc combineMpCell() {
 	}
 }
 
+proc gatherWellSepLo() {
+	var m1v, m2v: vector_i;
+	var m1, m2: int;
+
+	for m1z in [0..mpCells.z] {
+		for m1y in [0..mpCells.y] {
+			for m1x in [0..mpCells.x] {
+				m1v.set(m1x, m1y, m1z);
+				m1 = vlinear(m1v, mpCells);
+				if mpCell((curLevel, m1)).occ == 0 then continue;
+				for m2z in [m1v.llim_z(wellSep)..m1v.hlim_z(wellSep)] {
+					for m2y in [m1v.llim_y(wellSep)..m1v.hlim_y(wellSep)] {
+						for m2x in [m1v.llim_z(wellSep)..m1v.hlim_z(wellSep)] {
+							m2v.set(m2x, m2y, m2z);
+							/* RESUME */
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+proc propagateCellLo() {
+}
+
+proc computeFarCellInt() {
+}
+
+proc computeNearCellInt() {
+}
+
 proc multipoleCalc() {
 	var le: mp_terms;
 	var invWid, cMid, dr: vector;
@@ -404,6 +436,85 @@ proc multipoleCalc() {
 		combineMpCell();
 		curLevel -= 1;
 	}
+
+	for m1 in [1..64] {
+		for j in [1..maxOrd+1] {
+			for k in [1..j+1] {
+				mpCell((2, m1)).me.set_c(0.0, j, k);
+				mpCell((2, m1)).me.set_s(0.0, j, k);
+			}
+		}
+	}
+
+	curCellsEdge = 2;
+	for curLevel in [2..maxLevel] {
+		curCellsEdge *= 2;
+		mpCells.set(curCellsEdge);
+		cellWid = region / mpCells;
+		gatherWellSepLo();
+		if curLevel < maxLevel then propagateCellLo();
+	}
+	computeFarCellInt();
+	computeNearCellInt();
+}
+
+proc computeWallForces() {
+}
+	
+proc applyThermostat() {
+}
+
+proc evalRdf() {
+	var dr: vector;
+	var deltaR, rr, normFac: real;
+	var n: int;
+
+	if countRdf == 0 {
+		for n in [1..sizeHistRdf] {
+			histRdf(0, n) = 0.0;
+			histRdf(1, n) = 0.0;
+		}
+	}
+
+	deltaR = rangeRdf / sizeHistRdf;
+	for j1 in [1..nMol-1] {
+		for j2 in [j1+1..nMol] {
+			dr = mol(j1).r - mol(j2).r;
+			rr = dr.lensq();
+			if rr < rangeRdf ** 2 {
+				n = (sqrt(rr) / deltaR): int;
+				if mol(j1).chg * mol(j2).chg > 0 then histRdf(1, n) += 1;
+				else histRdf(0, n) += 1;
+			}
+		}
+	}
+
+	countRdf += 1;
+	if countRdf == limitRdf {
+		normFac = region.prod() / (2.0 * PI * (deltaR ** 3) * (nMol ** 2) *
+			countRdf);
+		for k in [1..2] {
+			cumRdf(k, 0) = 0.0;
+			for n in [2..sizeHistRdf] do
+				cumRdf(k, n) = cumRdf(k, n - 1) + histRdf(k, n);
+			for n in [1..sizeHistRdf] {
+				histRdf(k, n) *= normFac / ((n - 0.5) ** 2);
+				cumRdf(k, n) /= 0.5 * nMol * countRdf;
+			}
+		}
+	
+		var rb: real;
+		writeln("rdf");
+		for n in [1..sizeHistRdf] {
+			rb = (n + 0.5) * rangeRdf / sizeHistRdf;
+			write(rb);
+			for k in [1..2] do
+				write(histRdf(k, n), " ", cumRdf(k, n));
+			write("\n");
+		}
+		stdout.flush();
+		countRdf = 0;
+	}
 }
 
 proc step() {
@@ -423,6 +534,61 @@ proc step() {
 	}
 	computeForces();
 	multipoleCalc();
+	computeWallForces();
+	applyThermostat();
+
+	// Leapfrog
+	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
+
+	// Evaluate thermodynamics proerties
+	var vv, vvMax: real;
+
+	vSum.zero();
+	vvSum = 0;
+	vvMax = 0.0;
+	for m in mol {
+		vSum += m.rv;
+		vv = m.rv.lensq();
+		vvSum += vv;
+		vvMax = max(vvMax, vv);
+	}
+	dispHi += sqrt(vvMax) * deltaT;
+	if dispHi > 0.5 * rNebrShell then nebrNow = 1;
+	kinEnergy.v = 0.5 * vvSum / nMol;
+	totEnergy.v = kinEnergy.v + uSum / nMol;
+
+	// Adjust initial temp
+	var vFac: real;
+
+	if stepCount < stepEquil {
+		kinEnInitSum += kinEnergy.v;
+		if stepCount % stepInitlzTemp == 0 {
+			kinEnInitSum /= stepInitlzTemp;
+			vFac = velMag / sqrt(2.0 * kinEnInitSum);
+			for m in mol do m.rv.scale(vFac);
+			kinEnInitSum = 0.0;
+		}
+	}
+
+	// Accumulate thermodynamics properties
+	totEnergy.acc();
+	kinEnergy.acc();
+
+	if stepCount % stepAvg == 0 {
+		totEnergy.avg(stepAvg);
+		kinEnergy.avg(stepAvg);
+
+		// Print summary
+		writeln("\t", stepCount, "\t", timeNow, "\t", vSum.csum() / nMol,
+			"\t", totEnergy.sum, "\t", totEnergy.sum2, "\t", kinEnergy.sum,
+			"\t", kinEnergy.sum2);
+		
+		totEnergy.zero();
+		kinEnergy.zero();
+	}
+
+	if stepCount >= stepEquil && (stepCount - stepEquil) % stepRdf == 0 then
+		evalRdf();
 }
 
 proc main() {

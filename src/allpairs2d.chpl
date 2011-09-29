@@ -131,9 +131,7 @@ proc step() {
 	for m in mol do
 		m.rv += (0.5 * deltaT) * m.ra;
 
-	// Evaluate themodynamics properties
-	var vvMax: real;
-
+	// Evaluate thermodynamics properties
 	vSum.zero();
 	vvSum = 0;
 	for m in mol {
