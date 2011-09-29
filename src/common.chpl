@@ -30,8 +30,39 @@ const PI: real = 3.1415926535;
 const MAX_MPEX_ORD: int = 2;
 
 // Utilities
+proc errExit(s: string) {
+	writeln(s);
+	stdin.flush();
+	exit(0);
+}
+
+proc isOdd(a: int) { 
+	if a % 2 == 0 then return false;
+	else return true;
+}
+
+proc isEven(a: int) {
+	if a % 2 == 0 then return true;
+	else return false;
+}
+
 proc max(a:real, b:real) {
 	if a > b then return a;
+	else return b;
+}
+
+proc max(a:int, b:int) {
+	if a > b then return a;
+	else return b;
+}
+
+proc min(a:real, b:real) {
+	if a < b then return a;
+	else return b;
+}
+
+proc min(a:int, b:int) {
+	if a < b then return a;
 	else return b;
 }
 
@@ -242,11 +273,35 @@ proc =(v1: vector, v2: vector_i) {
 	return r;
 }
 
+proc +(v: vector_i, s: real) {
+	var r: vector;
+	r.x = v.x + s;
+	r.y = v.y + s;
+	r.z = v.z + s;
+	return r;
+}
+
+proc +(v: vector, s: real) {
+	var r: vector;
+	r.x = v.x + s;
+	r.y = v.y + s;
+	r.z = v.z + s;
+	return r;
+}
+
 proc +(v1: vector, v2: vector) {
 	var r: vector;
 	r.x = v1.x + v2.x;
 	r.y = v1.y + v2.y;
 	r.z = v1.z + v2.z;
+	return r;
+}
+
+proc +(v: vector_i, t: (int, int, int)) {
+	var r: vector_i;
+	r.x = v.x + t(1);
+	r.y = v.y + t(2);
+	r.z = v.z + t(3); 
 	return r;
 }
 
@@ -382,6 +437,11 @@ proc vwrap(v: vector, region: vector) {
 //////////////////////////////////////
 // Molecular Types
 //////////////////////////////////////
+const OFFSET_VALS = ((0,0,0), (1,0,0), (1,1,0), (0,1,0), (-1,1,0), 
+     (0,0,1), (1,0,1), (1,1,1), (0,1,1), (-1,1,1), (-1,0,1), 
+     (-1,-1,1), (0,-1,1), (1,-1,1));
+const N_OFFSET = 14;
+
 record mol2d {
 	var r, rv, ra: vector2d;
 }
@@ -401,10 +461,20 @@ record prop {
 	}
 }
 
+proc mpidx (i: int, j: int) { return i * (i + 1) / 2 + j; }
+
 record mp_terms {
 	// size = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD;
-	var c: 5*real;
-	var s: 5*real;
+	var _c: 5*real;
+	var _s: 5*real;
+	proc c(i: int) { return _c(i); }
+	proc s(i: int) { return _s(i); }
+	proc c(i: int, j: int) { return _c(i * (i + 1) / 2 + j); }
+	proc s(i: int, j: int) { return _s(i * (i + 1) / 2 + j); }
+	proc set_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j) = v; }
+	proc set_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j) = v; }
+	proc add_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j) += v; }
+	proc add_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j) += v; }
 }
 
 record mp_cell {

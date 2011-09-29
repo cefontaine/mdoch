@@ -46,15 +46,18 @@ config const wellSep: int = 1;
 config const profLevel: int = 0;
 const NDIM: int = 3;
 
-var rCut, timeNow, velMag, kinEnInitSum, dispHi: real;
+var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum: real;
 var initUcell, cells, mpCells: vector_i;
-var region, vSum: vector;
+var region, vSum, cellWid: vector;
 var nMol, moreCycles, stepCount, 
-	nebrNow, nebrTabFac, nebrTabMax, nebrTabLen: int;
+	nebrNow, nebrTabFac, nebrTabMax, nebrTabLen,
+	curCellsEdge, curLevel: int;
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
 var cellListDom: domain(1) = [1..1];
 var cellList: [cellListDom] int;
+var nebrTabDom: domain(1) = [1..1];
+var nebrTab: [nebrTabDom] int;
 var mpCellDom: domain(2*int);	// associate/irregular domain
 var mpCell: [mpCellDom] mp_cell;
 var maxCellsEdge, maxOrd: int;
@@ -80,6 +83,7 @@ proc init() {
 	// Allocate storage
 	molDom = [1..nMol];
 	cellListDom = [1..(cells.prod() + nMol)];
+	nebrTabDom = [1..2 * nebrTabMax];
 	
 	/* Synthesize irregualr domain
 	 * According to specification, removing indices from super-domain is
@@ -133,11 +137,23 @@ proc init() {
 	kinEnInitSum = 0.0;
 }
 
+iter cellIdx(m: int): int {
+	var i: int;
+
+	i = cellList[m];
+	writeln("iter: m=", m, " i=", i);
+	if i >= 0 {
+		yield cellList(i);
+	}
+	return;
+}
+
 proc buildNebrList() {
 	var dr, invWid: vector;
-	var cc, m1v: vector_i;
+	var cc, m1v, m2v: vector_i;
 	var rrNebr: real;
-	var c: int;
+	var c, m1, m2, j1, j2: int;
+	var vOff = OFFSET_VALS;
 
 	rrNebr = (rCut + rNebrShell) ** 2;
 	invWid = cells / region;
@@ -155,8 +171,238 @@ proc buildNebrList() {
 		for m1y in [0..cells.y] {
 			for m1x in [0..cells.x] {
 				m1v.set(m1x, m1y, m1z);
+				m1 = vlinear(m1v, cells) + nMol;
+				for f in [1..N_OFFSET] {
+					m2v = m1v + vOff(f);
+					if m2v.x < 0 || m2v.x >= cells.x || m2v.y < 0 ||
+					   m2v.y >= cells.y || m2v.z >= cells.z then continue;
+					m2 = vlinear(m2v, cells) + nMol;
+					j1 = cellList[m1];
+					while j1 >= 0 {
+						j2 = cellList[m2];
+						while j2 >= 0 {
+							if (m1 != m2 || j2 < j1) then
+								dr = mol(j1).r - mol(j2).r;
+							if dr.lensq() < rrNebr {
+								if nebrTabLen >= nebrTabMax then
+									errExit("Too many neighbours");
+								nebrTab(2 * nebrTabLen) = j1;
+								nebrTab(2 * nebrTabLen + 1) = j2;
+								nebrTabLen += 1;
+							}
+							j2 = cellList[j2];
+						}
+						j1 = cellList[j1];
+					}
+				}
 			}
 		}
+	}
+}
+
+proc computeForces() {
+	var dr: vector;
+	var rrCut, rr, rri, rri3, fcVal, uVal: real;
+	var j1, j2: int;
+
+	rrCut = rCut ** 2;
+	for m in mol do m.ra.zero();
+	uSum = 0.0;
+	for n in [1..nebrTabLen] {
+		j1 = nebrTab[2 * n];
+		j2 = nebrTab[2 * n + 1];
+		dr = mol(j1).r - mol(j2).r;
+		rr = dr.lensq();
+		if rr < rrCut {
+			rri = 1.0 / rr;
+			rri3 = rri ** 3;
+			fcVal = 48.0 * rri3 * (rri3 - 0.5) * rri;
+			uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
+			mol(j1).ra += fcVal * dr;
+			mol(j2).ra += (-fcVal) * dr;
+			uSum += uVal;
+		}
+	}
+}
+
+proc evalMpL (inout le: mp_terms, inout v: vector, maxOrd: int) {
+	var rr, a, a1, a2: real;
+	var k: int;
+
+	rr = v.lensq();
+	le.set_c(1.0, 0, 0);
+	le.set_s(0.0, 0, 0);
+	for j in [1..maxOrd+1] {
+		k = j;
+		a = - 1.0 / (2 * k);
+		le.set_c(a * (v.x * le.c(j - 1, k - 1) - v.y * le.s(j - 1, k - 1)), 
+			j, k);
+		le.set_s(a * (v.y * le.c(j - 1, k - 1) + v.x * le.s(j - 1, k - 1)), 
+			j, k);
+		k = j - 1;
+		while k >= 0 {
+			a = 1.0 / ((j + k) * (j - k));
+			a1 = (2 * j - 1) * v.z * a;
+			a2 = rr * a;
+			le.set_c(a1 * le.c(j - 1, k), j, k);
+			le.set_s(a1 * le.s(j - 1, k), j, k);
+			if k < j - 1 {
+				le.set_c((le.c(j, k) - a2 * le.c(j - 2, k)), j, k);
+				le.set_s((le.s(j, k) - a2 * le.s(j - 2, k)), j, k);
+			}
+			k -= 1;
+		}
+	}
+}
+
+proc evalMpProdLL(inout le1: mp_terms, inout le2: mp_terms, 
+	inout le3: mp_terms, maxOrd: int) {
+  	var s2, s3, v1c2, v1c3, v1s2, v1s3: real;
+	var j3, k3: int;
+
+	for j1 in [1..maxOrd+1] {
+		for k1 in [1..j1+1] {
+			le1.set_c(0.0, j1, k1);
+			le1.set_s(0.0, j1, k1);
+			for j2 in [1..j1+1] {
+				j3 = j1 - j2;
+				for k2 in [max(-j2, k1-j3)..min(j2, k1+j3)] {
+					k3 = k1 - k2;
+					v1c2 = le2.c(j2, abs(k2));
+					v1s2 = le2.s(j2, abs(k2));
+					if k2 < 0 then v1s2 = -v1s2;
+					v1c3 = le3.c(j3, abs(k3));
+					v1s3 = le3.s(j3, abs(k3));
+					if k3 < 0 then v1s3 = -v1s3;
+					if k2 < 0 && isOdd(k2) then s2 = -1.0;
+					else s2 = 1.0;
+					if k3 < 0 && isOdd(k3) then s3 = -1.0;
+					else s3 = 1.0;
+					le1.add_c(s2 * s3 * (v1c2 * v1c3 - v1s2 * v1s3), j1, k1);
+					le1.add_s(s2 * s3 * (v1c2 * v1c3 + v1s2 * v1s3), j1, k1);
+				}
+			}
+		}
+	}
+}
+
+proc combineMpCell() {
+	var le, le2: mp_terms;
+	var rShift: vector;
+	var mpCellsN, m1v, m2v: vector_i;
+	var m1, m2: int;
+	
+	mpCellsN = 2 * mpCells;
+	for m1z in [0..mpCells.z] {
+		for m1y in [0..mpCells.y] {
+			for m1x in [0..mpCells.x] {
+				m1v.set(m1x, m1y, m1z);
+				m1 = vlinear(m1v, mpCells);
+				for j in [1..maxOrd+1] {
+					for k in [1..j+1] {
+						mpCell((curLevel, m1)).le.set_c(0.0, j, k);
+						mpCell((curLevel, m1)).le.set_s(0.0, j, k);
+					}
+				}
+				mpCell((curLevel, m1)).occ = 0;
+				for iDir in [0..7] {
+					m2v = 2 * m1v;
+					rShift = (-0.25) * cellWid;
+					if isOdd(iDir) {
+						m2v.x += 1;
+						rShift.x *= -1.0;
+					}
+					if isOdd(iDir / 2) {
+						m2v.y += 1;
+						rShift.y *= -1.0;
+					}
+					if (isOdd(iDir / 4)) {
+						m2v.z += 1;
+						rShift.z *= -1.0;
+					}
+					m2 = vlinear(m2v, mpCellsN);
+					if mpCell((curLevel + 1, m2)).occ == 0 then continue;
+					mpCell((curLevel, m1)).occ += 
+						mpCell((curLevel + 1, m2)).occ;
+					evalMpL(le2, rShift, maxOrd);
+					evalMpProdLL(le, mpCell((curLevel+1, m2)).le, le2, maxOrd);
+					for j in [1..maxOrd] {
+						for k in [1..j] {
+							mpCell((curLevel, m1)).le.add_c(le.c(j, k), j, k);
+							mpCell((curLevel, m1)).le.add_s(le.s(j, k), j, k);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+proc multipoleCalc() {
+	var le: mp_terms;
+	var invWid, cMid, dr: vector;
+	var cc, m1v: vector_i;
+	var c, m1, j1: int;
+
+	mpCells.set(maxCellsEdge);
+
+	// Assign mpCells
+	invWid = mpCells / region;
+	for n in [nMol+1..nMol+mpCells.prod()] do mpCellList[n] = -1;
+	for n in mol.domain {
+		cc = (mol(n).r + 0.5 * region) * invWid;
+		c = vlinear(cc, mpCells) + nMol;
+		mpCellList(n) = mpCellList(c);
+		mpCellList(c) = n;
+	}
+
+	cellWid = region / mpCells;
+
+	// Evaluate mpCells
+	for m1z in [0..mpCells.z] {
+		for m1y in [0..mpCells.y] {
+			for m1x in [0..mpCells.x] {
+				m1v.set(m1x, m1y, m1z);
+				m1 = vlinear(m1v, mpCells);
+				mpCell((maxLevel, m1)).occ = 0;
+				for j in [1..maxOrd+1] {
+					for k in [0..j] {
+						mpCell((maxLevel, m1)).le.set_c(0.0, j, k);
+						mpCell((maxLevel, m1)).le.set_s(0.0, j, k);
+					}
+				}
+				if mpCellList(m1 + nMol) >= 0 {
+					cMid = m1v + 0.5;
+					cMid *= cellWid;
+					cMid += (-0.5) * region;
+					j1 = mpCellList(m1 + nMol);
+					while j1 >= 0 {
+						mpCell((maxLevel, m1)).occ += 1;
+						dr = mol(j1).r - cMid;
+						evalMpL (le, dr, maxOrd);
+						for j in [1..maxOrd+1] {
+							for k in [1..j+1] {
+								mpCell((maxLevel, m1)).le.add_c(
+									mol(j1).chg * le.c(j, k), j, k);
+								mpCell((maxLevel, m1)).le.add_s(
+									mol(j1).chg * le.s(j, k), j, k);
+							}
+						}
+						j1 = mpCellList(j1);
+					}
+				}
+			}
+		}
+	}
+
+	curCellsEdge = maxCellsEdge;
+	curLevel = maxLevel - 1;
+	while curLevel >= 2 {
+		curCellsEdge /= 2;
+		mpCells.set(curCellsEdge);
+		cellWid = region / mpCells;
+		combineMpCell();
+		curLevel -= 1;
 	}
 }
 
@@ -175,6 +421,8 @@ proc step() {
 		dispHi = 0.0;
 		buildNebrList();
 	}
+	computeForces();
+	multipoleCalc();
 }
 
 proc main() {
@@ -188,6 +436,6 @@ proc main() {
 		step();
 		if profLevel >= 1 then
 			writeln("Step ", stepCount, ": ", timer.stop());
-		if (stepCount >= stepLimit) then moreCycles = 0;
+		if stepCount >= stepLimit then moreCycles = 0;
 	};
 }

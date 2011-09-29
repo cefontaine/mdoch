@@ -119,8 +119,8 @@ proc step() {
 				rri = 1.0 / rr;
 				rri3 = rri ** 3;
 				fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
-				mol(d).ra += (fcVal, fcVal) * dr;
-				mol(d2).ra += (-fcVal, -fcVal) * dr;
+				mol(d).ra += fcVal * dr;
+				mol(d2).ra += (-fcVal) * dr;
 				uSum += 4 * rri3 * (rri3 - 1.0) + 1;
 				virSum += fcVal * rr;
 			}
