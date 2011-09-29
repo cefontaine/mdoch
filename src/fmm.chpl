@@ -33,6 +33,7 @@ config const initUcellY: int = 20;
 config const initUcellZ: int = 20;
 config const maxLevel: int = 3;
 config const rNebrShell: real = 0.4;
+config const nebrTabFac: int = 12;
 config const limitRdf: int = 50;
 config const rangeRdf: real = 6.0;
 config const sizeHistRdf: int = 200;
@@ -50,7 +51,7 @@ var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
 var nMol, moreCycles, stepCount, countRdf,
-	nebrNow, nebrTabFac, nebrTabMax, nebrTabLen,
+	nebrNow, nebrTabMax, nebrTabLen,
 	curCellsEdge, curLevel: int;
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
@@ -137,17 +138,6 @@ proc init() {
 	kinEnInitSum = 0.0;
 }
 
-iter cellIdx(m: int): int {
-	var i: int;
-
-	i = cellList[m];
-	writeln("iter: m=", m, " i=", i);
-	if i >= 0 {
-		yield cellList(i);
-	}
-	return;
-}
-
 proc buildNebrList() {
 	var dr, invWid: vector;
 	var cc, m1v, m2v: vector_i;
@@ -157,8 +147,7 @@ proc buildNebrList() {
 
 	rrNebr = (rCut + rNebrShell) ** 2;
 	invWid = cells / region;
-	
-	for n in [nMol+1..(cells.prod() + nMol)] do cellList(n) = -1;
+	for n in [nMol + 1..(cells.prod() + nMol)] do cellList(n) = -1;
 	for n in mol.domain {
 		cc = (mol(n).r + 0.5 * region) * invWid;
 		c = vlinear(cc, cells) + nMol;
@@ -167,28 +156,32 @@ proc buildNebrList() {
 	}
 	nebrTabLen = 0;
 	
-	for m1z in [0..cells.z] {
-		for m1y in [0..cells.y] {
-			for m1x in [0..cells.x] {
+	for m1z in [0..cells.z-1] {
+		for m1y in [0..cells.y-1] {
+			for m1x in [0..cells.x-1] {
 				m1v.set(m1x, m1y, m1z);
 				m1 = vlinear(m1v, cells) + nMol;
 				for f in [1..N_OFFSET] {
 					m2v = m1v + vOff(f);
-					if m2v.x < 0 || m2v.x >= cells.x || m2v.y < 0 ||
-					   m2v.y >= cells.y || m2v.z >= cells.z then continue;
+					if m2v.x < 0 || m2v.x >= cells.x || 
+					   m2v.y < 0 || m2v.y >= cells.y || m2v.z >= cells.z 
+					   then continue;
 					m2 = vlinear(m2v, cells) + nMol;
 					j1 = cellList[m1];
 					while j1 >= 0 {
 						j2 = cellList[m2];
 						while j2 >= 0 {
-							if (m1 != m2 || j2 < j1) then
+							if (m1 != m2 || j2 < j1) {
 								dr = mol(j1).r - mol(j2).r;
-							if dr.lensq() < rrNebr {
-								if nebrTabLen >= nebrTabMax then
-									errExit("Too many neighbours");
-								nebrTab(2 * nebrTabLen) = j1;
-								nebrTab(2 * nebrTabLen + 1) = j2;
-								nebrTabLen += 1;
+								if dr.lensq() < rrNebr {
+									if nebrTabLen >= nebrTabMax {
+										writeln(nebrTabLen, " ", nebrTabMax);
+										errExit("Too many neighbours");
+									}
+									nebrTab(2 * nebrTabLen) = j1;
+									nebrTab(2 * nebrTabLen + 1) = j2;
+									nebrTabLen += 1;
+								}
 							}
 							j2 = cellList[j2];
 						}
@@ -532,6 +525,7 @@ proc step() {
 		dispHi = 0.0;
 		buildNebrList();
 	}
+	exit(0);
 	computeForces();
 	multipoleCalc();
 	computeWallForces();
