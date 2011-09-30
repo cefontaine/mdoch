@@ -221,6 +221,7 @@ record vector {
 	proc set(a: real, b: real, c: real) {x = a; y = b; z = c;}
 	proc zero() { x = 0; y = 0; z = 0;}
 	proc prod() { return x * y * z; }
+	proc len() { return sqrt(x ** 2 + y ** 2 + z ** 2); }
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
 	proc scale(s: real) { x *= s; y *= s; z *= s; }
 	proc csum() { return x + y + z; }
@@ -232,15 +233,16 @@ record vector_i {
 	proc set(a: int, b: int, c: int) {x = a; y = b; z = c;}
 	proc zero() { x = 0; y = 0; z = 0;}
 	proc prod() { return x * y * z; }
+	proc len() { return sqrt(x ** 2 + y ** 2 + z ** 2); }
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
 	proc scale(s: int) { x *= s; y *= s; z *= s; }
 	proc csum() { return x + y + z; }
-	proc llim_x(ws: int) { return x % 1 - 2 * ws; }
-	proc llim_y(ws: int) { return y % 1 - 2 * ws; }
-	proc llim_z(ws: int) { return z % 1 - 2 * ws; }
-	proc hlim_x(ws: int) { return x % 1 + 2 * ws + 1; }
-	proc hlim_y(ws: int) { return y % 1 + 2 * ws + 1; }
-	proc hlim_z(ws: int) { return z % 1 + 2 * ws + 1; }
+	proc ll_x(ws: int) { return x - 2 * ws; }
+	proc ll_y(ws: int) { return y - 2 * ws; }
+	proc ll_z(ws: int) { return z - 2 * ws; }
+	proc hl_x(ws: int) { return x + 2 * ws + 1; }
+	proc hl_y(ws: int) { return y + 2 * ws + 1; }
+	proc hl_z(ws: int) { return z + 2 * ws + 1; }
 }
 
 proc =(v: vector, t: (real, real, real)) {
@@ -323,6 +325,14 @@ proc -(v1: vector, v2: vector) {
 	return r;
 }
 
+proc -(v1: vector_i, v2: vector_i) {
+	var r: vector_i;
+	r.x = v1.x - v2.x;
+	r.y = v1.y - v2.y;
+	r.z = v1.z - v2.z;
+	return r;
+}
+
 proc *(s: real, v: vector) {
 	var r: vector;
 	r.x = s * v.x;
@@ -371,6 +381,30 @@ proc *(v1: vector, v2: vector) {
 	return r;
 }
 
+proc *(v1: vector_i, v2: vector_i) {
+	var r: vector_i;
+	r.x = v1.x * v2.x;
+	r.y = v1.y * v2.y;
+	r.z = v1.z * v2.z;
+	return r;
+}
+
+proc *(v1: vector_i, v2: vector) {
+	var r: vector;
+	r.x = v1.x * v2.x;
+	r.y = v1.y * v2.y;
+	r.z = v1.z * v2.z;
+	return r;
+}
+
+proc *(v1: vector, v2: vector_i) {
+	var r: vector;
+	r.x = v1.x * v2.x;
+	r.y = v1.y * v2.y;
+	r.z = v1.z * v2.z;
+	return r;
+}
+
 proc /(v1: vector, v2: vector_i) {
 	var r: vector;
 	r.x = v1.x / v2.x;
@@ -395,20 +429,26 @@ proc /(v1: vector, v2: vector) {
 	return r;
 }
 
+proc vdot(v1: vector, v2: vector) {
+	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+// Calculate index of 3D array by using 1D implementaion
+// Remember array starts from 1, thus plus 1
 proc vlinear(v1: vector, v2: vector) {
-	return (v1.z * v2.y + v1.y) * v2.x + v1.x;
+	return (v1.z * v2.y + v1.y) * v2.x + v1.x + 1;
 }
 
 proc vlinear(v1: vector, v2: vector_i) {
-	return (v1.z * v2.y + v1.y) * v2.x + v1.x;
+	return (v1.z * v2.y + v1.y) * v2.x + v1.x + 1;
 }
 
 proc vlinear(v1: vector_i, v2: vector) {
-	return (v1.z * v2.y + v1.y) * v2.x + v1.x;
+	return (v1.z * v2.y + v1.y) * v2.x + v1.x + 1;
 }
 
 proc vlinear(v1: vector_i, v2: vector_i) {
-	return (v1.z * v2.y + v1.y) * v2.x + v1.x;
+	return (v1.z * v2.y + v1.y) * v2.x + v1.x + 1;
 }
 
 proc vrand() {
@@ -474,17 +514,19 @@ record prop {
 proc mpidx (i: int, j: int) { return i * (i + 1) / 2 + j; }
 
 record mp_terms {
-	// size = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD;
-	var _c: 5*real;
-	var _s: 5*real;
+	// size = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD + 1;
+	var _c: 6*real;
+	var _s: 6*real;
 	proc c(i: int) { return _c(i); }
 	proc s(i: int) { return _s(i); }
-	proc c(i: int, j: int) { return _c(i * (i + 1) / 2 + j); }
-	proc s(i: int, j: int) { return _s(i * (i + 1) / 2 + j); }
-	proc set_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j) = v; }
-	proc set_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j) = v; }
-	proc add_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j) += v; }
-	proc add_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j) += v; }
+	proc c(i: int, j: int) { return _c(i * (i + 1) / 2 + j + 1); }
+	proc s(i: int, j: int) { return _s(i * (i + 1) / 2 + j + 1); }
+	proc set_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) = v; }
+	proc set_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j + 1) = v; }
+	proc add_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) += v; }
+	proc add_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j + 1) += v; }
+	proc sub_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) -= v; }
+	proc sub_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j + 1) -= v; }
 }
 
 record mp_cell {
