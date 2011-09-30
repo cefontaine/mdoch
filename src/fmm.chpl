@@ -138,11 +138,27 @@ proc init() {
 	kinEnInitSum = 0.0;
 }
 
+iter iterCellList(n: int) {
+	var i = cellList(n);
+	while i >= 1 {
+		yield i;
+		i = cellList(i);
+	}
+}
+
+iter iterMpCellList(n: int) {
+	var i = mpCellList(n + nMol);
+	while i >= 1 {
+		yield i;
+		i = mpCellList(i);
+	}
+}
+
 proc buildNebrList() {
 	var dr, invWid: vector;
 	var cc, m1v, m2v: vector_i;
 	var rrNebr: real;
-	var c, m1, m2, j1, j2: int;
+	var c, m1, m2: int;
 	var vOff = OFFSET_VALS;
 
 	rrNebr = (rCut + rNebrShell) ** 2;
@@ -167,10 +183,8 @@ proc buildNebrList() {
 					   m2v.y < 0 || m2v.y >= cells.y || m2v.z >= cells.z 
 					   then continue;
 					m2 = vlinear(m2v, cells) + nMol;
-					j1 = cellList[m1];
-					while j1 >= 1 {
-						j2 = cellList[m2];
-						while j2 >= 1 {
+					for j1 in iterCellList(m1) {
+						for j2 in iterCellList(m2) {
 							if (m1 != m2 || j2 < j1) {
 								dr = mol(j1).r - mol(j2).r;
 								if dr.lensq() < rrNebr {
@@ -181,9 +195,7 @@ proc buildNebrList() {
 									nebrTabLen += 1;
 								}
 							}
-							j2 = cellList[j2];
 						}
-						j1 = cellList[j1];
 					}
 				}
 			}
@@ -419,7 +431,6 @@ proc gatherWellSepLo() {
 			for m1x in [0..mpCells.x - 1] {
 				m1v.set(m1x, m1y, m1z);
 				m1 = vlinear(m1v, mpCells);
-				writeln(curLevel, " ", m1);
 				if mpCell((curLevel, m1)).occ == 0 then continue;
 				for m2z in [m1v.ll_z(wellSep)..m1v.hl_z(wellSep)] {
 					for m2y in [m1v.ll_y(wellSep)..m1v.hl_y(wellSep)] {
@@ -497,7 +508,7 @@ proc computeFarCellInt() {
 	var cMid, dr, f: vector;
 	var m1v: vector_i;
 	var u: real;
-	var j1, m1: int;
+	var m1: int;
 
 	for m1z in [0..mpCells.z - 1] {
 		for m1y in [0..mpCells.y - 1] {
@@ -506,14 +517,12 @@ proc computeFarCellInt() {
 				m1 = vlinear(m1v, mpCells);
 				if mpCell((maxLevel, m1)).occ == 0 then continue;
 				cMid = (m1v + 0.5) * cellWid - 0.5 * region;
-				j1 = mpCellList(m1 + nMol);
-				while j1 >= 1 {
-					dr = mol(j1).r - cMid;
+				for j in iterMpCellList(m1) {
+					dr = mol(j).r - cMid;
 					evalMpL(le, dr, maxOrd);
 					evalMpForce(f, u, mpCell((maxLevel, m1)).me, le, maxOrd);
-					mol(j1).ra = mol(j1).ra - mol(j1).chg * f;
-					uSum += 0.5 * mol(j1).chg * u;
-					j1 = mpCellList(j1);
+					mol(j).ra = mol(j).ra - mol(j).chg * f;
+					uSum += 0.5 * mol(j).chg * u;
 				}
 			}
 		}
@@ -524,7 +533,7 @@ proc computeNearCellInt() {
 	var dr, ft: vector;
 	var m1v, m2v: vector_i;
 	var qq, ri: real;
-	var j1, j2, m1, m2, m2xLo, m2yLo: int;
+	var m1, m2, m2xLo, m2yLo: int;
 
 	for m1z in [0..mpCells.z - 1] {
 		for m1y in [0..mpCells.y - 1] {
@@ -542,10 +551,8 @@ proc computeNearCellInt() {
 							m2v.set(m2x, m2y, m2z);
 							m2 = vlinear(m2v, mpCells);
 							if mpCell((maxLevel, m2)).occ == 0 then continue;
-							j1 = mpCellList(m1 + nMol);
-							while j1 >= 1 {
-								j2 = mpCellList(m2 + nMol);
-								while j2 >= 1 {
+							for j1 in iterMpCellList(m1) {
+								for j2 in iterMpCellList(m2) {
 									if m1 != m2 || j2 < j1 {
 										dr = mol(j1).r - mol(j2).r;
 										ri = 1.0 / dr.len();
@@ -555,9 +562,7 @@ proc computeNearCellInt() {
 										mol(j2).ra += ft;
 										uSum += qq * ri;
 									}
-									j2 = mpCellList(j2);
 								}
-								j1 = mpCellList(j1);
 							}
 						}
 					}
@@ -571,7 +576,7 @@ proc multipoleCalc() {
 	var le: mp_terms;
 	var invWid, cMid, dr: vector;
 	var cc, m1v: vector_i;
-	var c, m1, j1: int;
+	var c, m1: int;
 
 	mpCells.set(maxCellsEdge);
 
@@ -593,7 +598,6 @@ proc multipoleCalc() {
 			for m1x in [0..mpCells.x - 1] {
 				m1v.set(m1x, m1y, m1z);
 				m1 = vlinear(m1v, mpCells);
-				writeln("maxLevel=", maxLevel, ", m1=", m1);
 				mpCell((maxLevel, m1)).occ = 0;
 				for j in [0..maxOrd] {
 					for k in [0..j] {
@@ -605,8 +609,7 @@ proc multipoleCalc() {
 					cMid = m1v + 0.5;
 					cMid *= cellWid;
 					cMid += (-0.5) * region;
-					j1 = mpCellList(m1 + nMol);
-					while j1 >= 1 {
+					for j1 in iterMpCellList(m1) {
 						mpCell((maxLevel, m1)).occ += 1;
 						dr = mol(j1).r - cMid;
 						evalMpL (le, dr, maxOrd);
@@ -618,7 +621,6 @@ proc multipoleCalc() {
 									mol(j1).chg * le.s(j, k), j, k);
 							}
 						}
-						j1 = mpCellList(j1);
 					}
 				}
 			}
@@ -707,8 +709,8 @@ proc evalRdf() {
 	}
 
 	deltaR = rangeRdf / sizeHistRdf;
-	for j1 in [1..nMol-1] {
-		for j2 in [j1+1..nMol] {
+	for j1 in [1..nMol - 1] {
+		for j2 in [j1 + 1..nMol] {
 			dr = mol(j1).r - mol(j2).r;
 			rr = dr.lensq();
 			if rr < rangeRdf ** 2 {
@@ -765,9 +767,6 @@ proc step() {
 	
 	computeForces();
 	multipoleCalc();
-	
-	for n in mol.domain do writeln(n, ": ", mol(n).r);
-	
 	computeWallForces();
 
 	// Apply thermo statistics

@@ -142,7 +142,7 @@ proc step() {
 	totEnergy.v = kinEnergy.v + uSum / nMol;
 	pressure.v = density * (vvSum + virSum) / (nMol * NDIM);
 		
-	// Accumulate themodynamics properties
+	// Accumulate thermodynamics properties
 	totEnergy.acc();
 	kinEnergy.acc();
 	pressure.acc();
