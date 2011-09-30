@@ -1,7 +1,7 @@
 chargeMag         4.
 deltaT            0.005
 density           0.8
-initUcell         20 20 20
+initUcell         2 2 2
 limitRdf          50
 maxLevel          3
 nebrTabFac        12
@@ -9,7 +9,7 @@ rangeRdf          6.
 rNebrShell        0.4
 sizeHistRdf       200
 stepAvg           100
-stepEquil         2000
+stepEquil         200
 stepInitlzTemp    200
 stepLimit         8000
 stepRdf           20
