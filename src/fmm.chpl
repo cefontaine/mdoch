@@ -729,8 +729,8 @@ proc evalRdf() {
 
 	countRdf += 1;
 	if countRdf == limitRdf {
-		normFac = region.prod() / (2.0 * PI * (deltaR ** 3) * (nMol ** 2) *
-			countRdf);
+		normFac = region.prod() / (2.0 * PI * (deltaR ** 3) * 
+			(nMol ** 2) * countRdf);
 		for k in [1..2] {
 			cumRdf(k, 1) = 0.0;
 			for n in [2..sizeHistRdf] do
@@ -744,10 +744,9 @@ proc evalRdf() {
 		var rb: real;
 		writeln("rdf");
 		for n in [1..sizeHistRdf] {
-			rb = (n + 0.5) * rangeRdf / sizeHistRdf;
-			write(rb);
-			for k in [1..2] do
-				write(histRdf(k, n), " ", cumRdf(k, n));
+			rb = (n - 0.5) * rangeRdf / sizeHistRdf;
+			write(rb, " ", n, " ");
+			for k in [1..2] do 	write(histRdf(k, n), " ", cumRdf(k, n), " ");
 			write("\n");
 		}
 		stdout.flush();
