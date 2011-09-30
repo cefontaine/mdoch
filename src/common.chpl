@@ -42,7 +42,7 @@ proc isOdd(a: int) {
 }
 
 proc isEven(a: int) {
-	if a % 2 == 0 then return true;
+	if a & 1 == 0 then return true;
 	else return false;
 }
 
@@ -237,12 +237,12 @@ record vector_i {
 	proc lensq() { return x ** 2 + y ** 2 + z ** 2; }
 	proc scale(s: int) { x *= s; y *= s; z *= s; }
 	proc csum() { return x + y + z; }
-	proc ll_x(ws: int) { return x - 2 * ws; }
-	proc ll_y(ws: int) { return y - 2 * ws; }
-	proc ll_z(ws: int) { return z - 2 * ws; }
-	proc hl_x(ws: int) { return x + 2 * ws + 1; }
-	proc hl_y(ws: int) { return y + 2 * ws + 1; }
-	proc hl_z(ws: int) { return z + 2 * ws + 1; }
+	proc ll_x(ws: int) { return (x & ~1) - 2 * ws; }
+	proc ll_y(ws: int) { return (y & ~1) - 2 * ws; }
+	proc ll_z(ws: int) { return (z & ~1) - 2 * ws; }
+	proc hl_x(ws: int) { return (x & ~1) + 2 * ws + 1; }
+	proc hl_y(ws: int) { return (y & ~1) + 2 * ws + 1; }
+	proc hl_z(ws: int) { return (z & ~1) + 2 * ws + 1; }
 }
 
 proc =(v: vector, t: (real, real, real)) {

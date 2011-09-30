@@ -52,7 +52,7 @@ var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
 var nMol, moreCycles, stepCount, countRdf,
 	nebrNow, nebrTabMax, nebrTabLen,
-	curCellsEdge, curLevel: int;
+	curCellsEdge, curLevel, rMaxLevel: int;
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
 var cellListDom: domain(1) = [1..1];
@@ -80,6 +80,7 @@ proc init() {
 	cells = 1.0 / (rCut + rNebrShell) * region;
 	nebrTabMax = nebrTabFac * nMol;
 	maxOrd = MAX_MPEX_ORD;
+	rMaxLevel = maxLevel + 1;
 	
 	// Allocate storage
 	molDom = [1..nMol];
@@ -89,9 +90,9 @@ proc init() {
 	/* Synthesize irregualr domain
 	 * According to specification, removing indices from super-domain is
 	 * dangerous, so add up subdomains */
-	mpCellDom = [1..maxLevel, 1..1];
+	mpCellDom = [1..rMaxLevel, 1..1];
 	maxCellsEdge = 2;
-	for n in [2..maxLevel] {	/* TO CHECK */
+	for n in [3..rMaxLevel] {	/* TO CHECK */
 		maxCellsEdge *= 2;
 		mpCells.set(maxCellsEdge);
 		mpCellDom += [n..n, 1..mpCells.prod()];
@@ -212,8 +213,8 @@ proc computeForces() {
 	for m in mol do m.ra.zero();
 	uSum = 0.0;
 	for i in [1..nebrTabLen] {	// nebrTab.domain excced the nebrTabLen
-		j1 = nebrTab(i);
-		j2 = nebrTab(i + 1);
+		j1 = nebrTab(2 * i - 1);
+		j2 = nebrTab(2 * i);
 		dr = mol(j1).r - mol(j2).r;
 		rr = dr.lensq();
 		if rr < rrCut {
@@ -228,22 +229,17 @@ proc computeForces() {
 	}
 }
 
-proc evalMpL (inout le: mp_terms, inout v: vector, maxOrd: int) {
+proc evalMpL (inout le: mp_terms, v: vector, maxOrd: int) {
 	var rr, a, a1, a2: real;
-	var k: int;
 
 	rr = v.lensq();
 	le.set_c(1.0, 0, 0);
 	le.set_s(0.0, 0, 0);
 	for j in [1..maxOrd] {
-		k = j;
-		a = - 1.0 / (2 * k);
-		le.set_c(a * (v.x * le.c(j - 1, k - 1) - v.y * le.s(j - 1, k - 1)), 
-			j, k);
-		le.set_s(a * (v.y * le.c(j - 1, k - 1) + v.x * le.s(j - 1, k - 1)), 
-			j, k);
-		k = j - 1;
-		while k >= 0 {
+		a = - 1.0 / (2 * j);
+		le.set_c(a*(v.x*le.c(j-1, j-1) - v.y * le.s(j-1, j-1)), j, j);
+		le.set_s(a*(v.y*le.c(j-1, j-1) + v.x * le.s(j-1, j-1)), j, j);
+		for k in [0..j-1 by -1] {
 			a = 1.0 / ((j + k) * (j - k));
 			a1 = (2 * j - 1) * v.z * a;
 			a2 = rr * a;
@@ -253,13 +249,12 @@ proc evalMpL (inout le: mp_terms, inout v: vector, maxOrd: int) {
 				le.sub_c(a2 * le.c(j - 2, k), j, k);
 				le.sub_s(a2 * le.s(j - 2, k), j, k);
 			}
-			k -= 1;
 		}
 	}
 }
 
-proc evalMpProdLL(inout le1: mp_terms, inout le2: mp_terms, 
-	inout le3: mp_terms, maxOrd: int) {
+proc evalMpProdLL(inout le1: mp_terms, le2: mp_terms, le3: mp_terms, 
+	maxOrd: int) {
   	var s2, s3, v1c2, v1c3, v1s2, v1s3: real;
 	var j3, k3: int;
 
@@ -280,7 +275,7 @@ proc evalMpProdLL(inout le1: mp_terms, inout le2: mp_terms,
 					if k2 < 0 && isOdd(k2) then s2 = -1.0; else s2 = 1.0;
 					if k3 < 0 && isOdd(k3) then s3 = -1.0; else s3 = 1.0;
 					le1.add_c(s2 * s3 * (v1c2 * v1c3 - v1s2 * v1s3), j1, k1);
-					le1.add_s(s2 * s3 * (v1c2 * v1c3 + v1s2 * v1s3), j1, k1);
+					le1.add_s(s2 * s3 * (v1s2 * v1c3 + v1c2 * v1s3), j1, k1);
 				}
 			}
 		}
@@ -289,21 +284,19 @@ proc evalMpProdLL(inout le1: mp_terms, inout le2: mp_terms,
 
 proc evalMpM(inout me: mp_terms, inout v: vector, maxOrd: int) {
 	var a, a1, a2, rri: real;
-	var k: int;
 
 	rri = 1.0 / v.lensq();
 	me.set_c(sqrt(rri), 0, 0);
 	me.set_s(0.0, 0, 0);
 	for j in [1..maxOrd] {
-		k = j;
-		a = - (2 * k - 1) * rri;
-		me.set_c(a * (v.x * me.c(j-1, k-1) - v.y * me.s(j-1, k-1)), j, k);
-		me.set_s(a * (v.y * me.c(j-1, k-1) + v.x * me.s(j-1, k-1)), j, k);
-		for k in [j-1..0 by -1] {
+		a = - (2 * j - 1) * rri;
+		me.set_c(a * (v.x * me.c(j-1, j-1) - v.y * me.s(j-1, j-1)), j, j);
+		me.set_s(a * (v.y * me.c(j-1, j-1) + v.x * me.s(j-1, j-1)), j, j);
+		for k in [0..j-1 by -1] {
 			a1 = (2 * j - 1) * v.z * rri;
 			a2 = (j - 1 + k) * (j - 1 - k) * rri;
-			me.sub_c(a2 * me.c(j - 2, k), j, k);
-			me.sub_s(a2 * me.s(j - 2, k), j, k);
+			me.set_c(a1 * me.c(j - 1, k), j, k);
+			me.set_s(a1 * me.s(j - 1, k), j, k);
 			if k < j - 1 {
 				me.sub_c(a2 * me.c(j - 2, k), j, k);
 				me.sub_s(a2 * me.s(j - 2, k), j, k);
@@ -312,7 +305,7 @@ proc evalMpM(inout me: mp_terms, inout v: vector, maxOrd: int) {
 	}
 }
 
-proc evalMpProdLM(inout me1:mp_terms, inout le2:mp_terms, inout me3: mp_terms,
+proc evalMpProdLM(inout me1:mp_terms, inout le2:mp_terms, inout me3: mp_terms, 
 	maxOrd: int) {
 	var s2, s3, v1c2, v1s2, vmc3, vms3: real;
 	var j3, k3: int;
@@ -334,7 +327,7 @@ proc evalMpProdLM(inout me1:mp_terms, inout le2:mp_terms, inout me3: mp_terms,
 					if k2 < 0 && isOdd(k2) then s2 = -1.0; else s2 = 1.0;
 					if k3 < 0 && isOdd(k3) then s3 = -1.0; else s3 = 1.0;
 					me1.add_c(s2 * s3 * (v1c2 * vmc3 + v1s2 * vms3), j1, k1);
-					me1.add_s(s2 * s3 * (v1c2 * vmc3 - v1s2 * vms3), j1, k1);
+					me1.add_s(s2 * s3 * (v1c2 * vms3 - v1s2 * vmc3), j1, k1);
 				}
 			}
 		}
@@ -342,19 +335,31 @@ proc evalMpProdLM(inout me1:mp_terms, inout le2:mp_terms, inout me3: mp_terms,
 }
 
 proc evalMpForce(inout f: vector, inout u: real, inout me: mp_terms, 
-	inout le: mp_terms, maxOrd: int) {
+		inout le: mp_terms, maxOrd: int) {
 	var fc, fs: vector;
 	var a: real;
-	
+
 	f.zero();
 	for j in [1..maxOrd] {
 		for k in [0..j] {
 			if k < j - 1 {
-				fc.x = le.c(j - 1, k + 1); fc.y = le.s(j - 1, k + 1);
-				fs.x = le.s(j - 1, k + 1); fs.y = -le.c(j - 1, k + 1);
-			} else { fc.x = 0.0; fc.y = 0.0; fs.x = 0.0; fs.y = 0.0; }
-			if k < j { fc.z = le.c(j - 1, k); fs.z = le.s(j - 1, k); }
-			else { fc.z = 0.0; fs.z = 0.0; }
+				fc.x = le.c(j - 1, k + 1);
+				fc.y = le.s(j - 1, k + 1);
+				fs.x = le.s(j - 1, k + 1);
+				fs.y = -le.c(j - 1, k + 1);
+			} else { 
+				fc.x = 0.0; 
+				fc.y = 0.0; 
+				fs.x = 0.0; 
+				fs.y = 0.0; 
+			}
+			if k < j { 
+				fc.z = le.c(j - 1, k);
+				fs.z = le.s(j - 1, k);
+			} else { 
+				fc.z = 0.0; 
+				fs.z = 0.0;
+			}
 			if k > 0 {
 				fc.x -= le.c(j - 1, k - 1);
 				fc.y += le.s(j - 1, k - 1);
@@ -381,7 +386,7 @@ proc combineMpCell() {
 	var rShift: vector;
 	var mpCellsN, m1v, m2v: vector_i;
 	var m1, m2: int;
-	
+
 	mpCellsN = 2 * mpCells;
 	for m1z in [0..mpCells.z - 1] {
 		for m1y in [0..mpCells.y - 1] {
@@ -398,21 +403,22 @@ proc combineMpCell() {
 				for iDir in [0..7] {
 					m2v = 2 * m1v;
 					rShift = (-0.25) * cellWid;
-					if isOdd(iDir) { m2v.x += 1; rShift.x *= -1.0; }
-					if isOdd(iDir / 2) { m2v.y += 1; rShift.y *= -1.0; }
-					if (isOdd(iDir / 4)) { m2v.z += 1; rShift.z *= -1.0; }
-					m2 = vlinear(m2v, mpCellsN);
-					if mpCell((curLevel + 1, m2)).occ == 0 then continue;
-					mpCell((curLevel, m1)).occ += 
-						mpCell((curLevel + 1, m2)).occ;
-					evalMpL(le2, rShift, maxOrd);
-					evalMpProdLL(le, mpCell((curLevel+1, m2)).le, le2, maxOrd);
-					for j in [0..maxOrd] {
-						for k in [0..j] {
-							mpCell((curLevel, m1)).le.add_c(le.c(j, k), j, k);
-							mpCell((curLevel, m1)).le.add_s(le.s(j, k), j, k);
+					if isOdd(iDir) { 
+						m2v.x += 1; rShift.x *= -1.0; }
+						if isOdd(iDir / 2) { m2v.y += 1; rShift.y *= -1.0; }
+						if (isOdd(iDir / 4)) { m2v.z += 1; rShift.z *= -1.0; }
+						m2 = vlinear(m2v, mpCellsN);
+						if mpCell((curLevel + 1, m2)).occ == 0 then continue;
+						mpCell((curLevel, m1)).occ += 
+							mpCell((curLevel + 1, m2)).occ;
+						evalMpL(le2, rShift, maxOrd);
+						evalMpProdLL(le, mpCell((curLevel+1, m2)).le, le2, maxOrd);
+						for j in [0..maxOrd] {
+							for k in [0..j] {
+								mpCell((curLevel, m1)).le.add_c(le.c(j, k), j, k);
+								mpCell((curLevel, m1)).le.add_s(le.s(j, k), j, k);
+							}
 						}
-					}
 				}
 			}
 		}
@@ -434,7 +440,7 @@ proc gatherWellSepLo() {
 				if mpCell((curLevel, m1)).occ == 0 then continue;
 				for m2z in [m1v.ll_z(wellSep)..m1v.hl_z(wellSep)] {
 					for m2y in [m1v.ll_y(wellSep)..m1v.hl_y(wellSep)] {
-						for m2x in [m1v.ll_z(wellSep)..m1v.hl_z(wellSep)] {
+						for m2x in [m1v.ll_x(wellSep)..m1v.hl_x(wellSep)] {
 							m2v.set(m2x, m2y, m2z);
 							if m2v.x < 0 || m2v.x >= mpCells.x ||
 							   m2v.y < 0 || m2v.y >= mpCells.y ||
@@ -515,12 +521,12 @@ proc computeFarCellInt() {
 			for m1x in [0..mpCells.x - 1] {
 				m1v.set(m1x, m1y, m1z);
 				m1 = vlinear(m1v, mpCells);
-				if mpCell((maxLevel, m1)).occ == 0 then continue;
+				if mpCell((rMaxLevel, m1)).occ == 0 then continue;
 				cMid = (m1v + 0.5) * cellWid - 0.5 * region;
 				for j in iterMpCellList(m1) {
 					dr = mol(j).r - cMid;
 					evalMpL(le, dr, maxOrd);
-					evalMpForce(f, u, mpCell((maxLevel, m1)).me, le, maxOrd);
+					evalMpForce(f, u, mpCell((rMaxLevel, m1)).me, le, maxOrd);
 					mol(j).ra = mol(j).ra - mol(j).chg * f;
 					uSum += 0.5 * mol(j).chg * u;
 				}
@@ -540,7 +546,7 @@ proc computeNearCellInt() {
 			for m1x in [0..mpCells.x - 1] {
 				m1v.set(m1x, m1y, m1z);
 				m1 = vlinear(m1v, mpCells);
-				if mpCell((maxLevel, m1)).occ == 0 then continue;
+				if mpCell((rMaxLevel, m1)).occ == 0 then continue;
 				for m2z in [m1z..min(m1v.z+wellSep, mpCells.z-1)] {
 					if m2z == m1z then m2yLo = m1y;
 					else m2yLo = max(m1y - wellSep, 0);
@@ -550,7 +556,7 @@ proc computeNearCellInt() {
 						for m2x in [m2xLo..min(m1v.x+wellSep, mpCells.x-1)] {
 							m2v.set(m2x, m2y, m2z);
 							m2 = vlinear(m2v, mpCells);
-							if mpCell((maxLevel, m2)).occ == 0 then continue;
+							if mpCell((rMaxLevel, m2)).occ == 0 then continue;
 							for j1 in iterMpCellList(m1) {
 								for j2 in iterMpCellList(m2) {
 									if m1 != m2 || j2 < j1 {
@@ -582,14 +588,13 @@ proc multipoleCalc() {
 
 	// Assign mpCells
 	invWid = mpCells / region;
-	for n in [nMol+1..nMol + mpCells.prod()] do mpCellList(n) = -1;
+	for n in [nMol + 1..nMol + mpCells.prod()] do mpCellList(n) = -1;
 	for n in mol.domain {
 		cc = (mol(n).r + 0.5 * region) * invWid;
 		c = vlinear(cc, mpCells) + nMol;
 		mpCellList(n) = mpCellList(c);
 		mpCellList(c) = n;
 	}
-
 	cellWid = region / mpCells;
 
 	// Evaluate mpCells
@@ -598,26 +603,24 @@ proc multipoleCalc() {
 			for m1x in [0..mpCells.x - 1] {
 				m1v.set(m1x, m1y, m1z);
 				m1 = vlinear(m1v, mpCells);
-				mpCell((maxLevel, m1)).occ = 0;
+				mpCell((rMaxLevel, m1)).occ = 0;
 				for j in [0..maxOrd] {
 					for k in [0..j] {
-						mpCell((maxLevel, m1)).le.set_c(0.0, j, k);
-						mpCell((maxLevel, m1)).le.set_s(0.0, j, k);
+						mpCell((rMaxLevel, m1)).le.set_c(0.0, j, k);
+						mpCell((rMaxLevel, m1)).le.set_s(0.0, j, k);
 					}
 				}
-				if mpCellList(m1 + nMol) >= 0 {
-					cMid = m1v + 0.5;
-					cMid *= cellWid;
-					cMid += (-0.5) * region;
+				if mpCellList(m1 + nMol) >= 1 {
+					cMid = (m1v + 0.5) * cellWid - 0.5 * region;
 					for j1 in iterMpCellList(m1) {
-						mpCell((maxLevel, m1)).occ += 1;
+						mpCell((rMaxLevel, m1)).occ += 1;
 						dr = mol(j1).r - cMid;
 						evalMpL (le, dr, maxOrd);
 						for j in [0..maxOrd] {
 							for k in [0..j] {
-								mpCell((maxLevel, m1)).le.add_c(
+								mpCell((rMaxLevel, m1)).le.add_c(
 									mol(j1).chg * le.c(j, k), j, k);
-								mpCell((maxLevel, m1)).le.add_s(
+								mpCell((rMaxLevel, m1)).le.add_s(
 									mol(j1).chg * le.s(j, k), j, k);
 							}
 						}
@@ -628,8 +631,8 @@ proc multipoleCalc() {
 	}
 
 	curCellsEdge = maxCellsEdge;
-	curLevel = maxLevel - 1;
-	while curLevel >= 2 {
+	curLevel = rMaxLevel - 1;
+	while curLevel >= 3 {
 		curCellsEdge /= 2;
 		mpCells.set(curCellsEdge);
 		cellWid = region / mpCells;
@@ -640,20 +643,20 @@ proc multipoleCalc() {
 	for m1 in [1..64] {
 		for j in [0..maxOrd] {
 			for k in [0..j] {
-				mpCell((2, m1)).me.set_c(0.0, j, k);
-				mpCell((2, m1)).me.set_s(0.0, j, k);
+				mpCell((3, m1)).me.set_c(0.0, j, k);
+				mpCell((3, m1)).me.set_s(0.0, j, k);
 			}
 		}
 	}
 
 	curCellsEdge = 2;
-	curLevel = 2;
-	while curLevel <= maxLevel {
+	curLevel = 3;
+	while curLevel <= rMaxLevel {
 		curCellsEdge *= 2;
 		mpCells.set(curCellsEdge);
 		cellWid = region / mpCells;
 		gatherWellSepLo();
-		if curLevel < maxLevel then propagateCellLo();
+		if curLevel < rMaxLevel then propagateCellLo();
 		curLevel += 1;
 	}
 	computeFarCellInt();
@@ -664,8 +667,9 @@ proc computeWallForces() {
 	var dr, rri, rri3: real;
 
 	for m in mol {
-		if m.r.x >= 0 then dr = m.r.x;
-		else dr = - m.r.x - 0.5 * (region.x + rCut);
+		if m.r.x >= 0.0 then dr = m.r.x;
+		else dr = - m.r.x;
+		dr -= 0.5 * (region.x + rCut);
 		if dr > -rCut {
 			if m.r.x < 0 then dr = -dr;
 			rri = 1.0 / (dr ** 2);
@@ -675,7 +679,8 @@ proc computeWallForces() {
 		}
 		
 		if m.r.y >= 0 then dr = m.r.y;
-		else dr = - m.r.y - 0.5 * (region.y + rCut);
+		else dr = - m.r.y;
+		dr -= 0.5 * (region.y + rCut);
 		if dr > -rCut {
 			if m.r.y < 0 then dr = -dr;
 			rri = 1.0 / (dr ** 2);
@@ -685,7 +690,8 @@ proc computeWallForces() {
 		}
 		
 		if m.r.z >= 0 then dr = m.r.z;
-		else dr = - m.r.z - 0.5 * (region.z + rCut);
+		else dr = - m.r.z;
+		dr -= 0.5 * (region.z + rCut);
 		if dr > -rCut {
 			if m.r.z < 0 then dr = -dr;
 			rri = 1.0 / (dr ** 2);
@@ -703,8 +709,8 @@ proc evalRdf() {
 
 	if countRdf == 0 {
 		for n in [1..sizeHistRdf] {
-			histRdf(0, n) = 0.0;
 			histRdf(1, n) = 0.0;
+			histRdf(2, n) = 0.0;
 		}
 	}
 
@@ -715,8 +721,8 @@ proc evalRdf() {
 			rr = dr.lensq();
 			if rr < rangeRdf ** 2 {
 				n = (sqrt(rr) / deltaR): int;
-				if mol(j1).chg * mol(j2).chg > 0 then histRdf(1, n) += 1;
-				else histRdf(0, n) += 1;
+				if mol(j1).chg * mol(j2).chg > 0 then histRdf(2, n) += 1;
+				else histRdf(1, n) += 1;
 			}
 		}
 	}
@@ -726,7 +732,7 @@ proc evalRdf() {
 		normFac = region.prod() / (2.0 * PI * (deltaR ** 3) * (nMol ** 2) *
 			countRdf);
 		for k in [1..2] {
-			cumRdf(k, 0) = 0.0;
+			cumRdf(k, 1) = 0.0;
 			for n in [2..sizeHistRdf] do
 				cumRdf(k, n) = cumRdf(k, n - 1) + histRdf(k, n);
 			for n in [1..sizeHistRdf] {
@@ -752,7 +758,7 @@ proc evalRdf() {
 proc step() {
 	stepCount += 1;
 	timeNow = stepCount * deltaT;
-
+	
 	// Leapfrog
 	for m in mol {
 		m.rv += (0.5 * deltaT) * m.ra;
@@ -764,7 +770,7 @@ proc step() {
 		dispHi = 0.0;
 		buildNebrList();
 	}
-	
+
 	computeForces();
 	multipoleCalc();
 	computeWallForces();
@@ -789,11 +795,12 @@ proc step() {
 	// Leapfrog
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
 
+
 	// Evaluate thermodynamics proerties
 	var vv, vvMax: real;
 
 	vSum.zero();
-	vvSum = 0;
+	vvSum = 0.0;
 	vvMax = 0.0;
 	for m in mol {
 		vSum += m.rv;
@@ -827,8 +834,9 @@ proc step() {
 
 		// Print summary
 		writeln("\t", stepCount, "\t", timeNow, "\t", vSum.csum() / nMol,
-			"\t", totEnergy.sum, "\t", totEnergy.sum2, "\t", kinEnergy.sum,
-			"\t", kinEnergy.sum2);
+			"\t", totEnergy.sum, "\t", totEnergy.sum2, 
+			"\t", kinEnergy.sum, "\t", kinEnergy.sum2);
+		stdout.flush();
 		
 		totEnergy.zero();
 		kinEnergy.zero();
