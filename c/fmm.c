@@ -927,11 +927,10 @@ void PrintRdf (FILE *fp)
   real rb;
   int k, n;
 
-  fprintf (fp, "rdf %f %f %d %d\n", histRdf[0][0], histRdf[0][1], rangeRdf,
-  	sizeHistRdf);
+  fprintf (fp, "rdf\n");
   for (n = 0; n < sizeHistRdf; n ++) {
     rb = (n + 0.5) * rangeRdf / sizeHistRdf;
-    fprintf (fp, "%8.4f %d", rb, n);
+    fprintf (fp, "%8.4f", rb);
     for (k = 0; k < 2; k ++)
        fprintf (fp, "%8.4f %8.4f", histRdf[k][n], cumRdf[k][n]);
     fprintf (fp, "\n");

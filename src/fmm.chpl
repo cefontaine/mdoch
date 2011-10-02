@@ -92,7 +92,7 @@ proc init() {
 	 * dangerous, so add up subdomains */
 	mpCellDom = [1..rMaxLevel, 1..1];
 	maxCellsEdge = 2;
-	for n in [3..rMaxLevel] {	/* TO CHECK */
+	for n in [3..rMaxLevel] {
 		maxCellsEdge *= 2;
 		mpCells.set(maxCellsEdge);
 		mpCellDom += [n..n, 1..mpCells.prod()];
@@ -110,14 +110,9 @@ proc init() {
 
 	gap = region / initUcell;
 	n = 1;
-	for nz in [0..initUcell.z-1] {
-		for ny in [0..initUcell.y-1] {
-			for nx in [0..initUcell.x-1] {
-				mol(n).r = (nx + 0.5, ny + 0.5, nz + 0.5) * gap
-					- (0.5 * region);
-				n += 1;
-			}
-		}
+	for (nz, ny, nx) in [0..initUcell.z-1,0..initUcell.y-1,0..initUcell.x-1] {
+		mol(n).r = (nx + 0.5, ny + 0.5, nz + 0.5) * gap - (0.5 * region);
+		n += 1;
 	}
 
 	// Initial velocities, accelerations, and charges
@@ -173,30 +168,24 @@ proc buildNebrList() {
 	}
 	nebrTabLen = 0;
 	
-	for m1z in [0..cells.z - 1] {
-		for m1y in [0..cells.y - 1] {
-			for m1x in [0..cells.x - 1] {
-				m1v.set(m1x, m1y, m1z);
-				m1 = vlinear(m1v, cells) + nMol;
-				for f in [1..N_OFFSET] {
-					m2v = m1v + vOff(f);
-					if m2v.x < 0 || m2v.x >= cells.x || 
-					   m2v.y < 0 || m2v.y >= cells.y || m2v.z >= cells.z 
-					   then continue;
-					m2 = vlinear(m2v, cells) + nMol;
-					for j1 in iterCellList(m1) {
-						for j2 in iterCellList(m2) {
-							if (m1 != m2 || j2 < j1) {
-								dr = mol(j1).r - mol(j2).r;
-								if dr.lensq() < rrNebr {
-									if nebrTabLen >= nebrTabMax then
-										errExit("Too many neighbours");
-									nebrTab(2 * nebrTabLen + 1) = j1;
-									nebrTab(2 * nebrTabLen + 2) = j2;
-									nebrTabLen += 1;
-								}
-							}
-						}
+	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
+		m1v.set(m1x, m1y, m1z);
+		m1 = vlinear(m1v, cells) + nMol;
+		for f in [1..N_OFFSET] {
+			m2v = m1v + vOff(f);
+			if m2v.x < 0 || m2v.x >= cells.x || 
+			   m2v.y < 0 || m2v.y >= cells.y || m2v.z >= cells.z 
+			   then continue;
+			m2 = vlinear(m2v, cells) + nMol;
+			for (j1, j2) in [iterCellList(m1), iterCellList(m2)] {
+				if (m1 != m2 || j2 < j1) {
+					dr = mol(j1).r - mol(j2).r;
+					if dr.lensq() < rrNebr {
+						if nebrTabLen >= nebrTabMax then
+							errExit("Too many neighbours");
+						nebrTab(2 * nebrTabLen + 1) = j1;
+						nebrTab(2 * nebrTabLen + 2) = j2;
+						nebrTabLen += 1;
 					}
 				}
 			}
@@ -388,41 +377,36 @@ proc combineMpCell() {
 	var m1, m2: int;
 
 	mpCellsN = 2 * mpCells;
-	for m1z in [0..mpCells.z - 1] {
-		for m1y in [0..mpCells.y - 1] {
-			for m1x in [0..mpCells.x - 1] {
-				m1v.set(m1x, m1y, m1z);
-				m1 = vlinear(m1v, mpCells);
-				for j in [0..maxOrd] {
-					for k in [0..j] {
-						mpCell((curLevel, m1)).le.set_c(0.0, j, k);
-						mpCell((curLevel, m1)).le.set_s(0.0, j, k);
-					}
-				}
-				mpCell((curLevel, m1)).occ = 0;
-				for iDir in [0..7] {
-					m2v = 2 * m1v;
-					rShift = (-0.25) * cellWid;
-					if isOdd(iDir) { 
-						m2v.x += 1; rShift.x *= -1.0; }
-						if isOdd(iDir / 2) { m2v.y += 1; rShift.y *= -1.0; }
-						if (isOdd(iDir / 4)) { m2v.z += 1; rShift.z *= -1.0; }
-						m2 = vlinear(m2v, mpCellsN);
-						if mpCell((curLevel + 1, m2)).occ == 0 then continue;
-						mpCell((curLevel, m1)).occ += 
-							mpCell((curLevel + 1, m2)).occ;
-						evalMpL(le2, rShift, maxOrd);
-						evalMpProdLL(le, mpCell((curLevel+1, m2)).le, le2, maxOrd);
-						for j in [0..maxOrd] {
-							for k in [0..j] {
-								mpCell((curLevel, m1)).le.add_c(le.c(j, k), j, k);
-								mpCell((curLevel, m1)).le.add_s(le.s(j, k), j, k);
-							}
-						}
+	for (m1x, m1y, m1z) in [0..mpCells.x-1, 0..mpCells.y-1, 0..mpCells.z-1] {
+		m1v.set(m1x, m1y, m1z);
+		m1 = vlinear(m1v, mpCells);
+		for j in [0..maxOrd] {
+			for k in [0..j] {
+				mpCell((curLevel, m1)).le.set_c(0.0, j, k);
+				mpCell((curLevel, m1)).le.set_s(0.0, j, k);
+			}
+		}
+		mpCell((curLevel, m1)).occ = 0;
+		for iDir in [0..7] {
+			m2v = 2 * m1v;
+			rShift = (-0.25) * cellWid;
+			if isOdd(iDir) { m2v.x += 1; rShift.x *= -1.0; }
+			if isOdd(iDir / 2) { m2v.y += 1; rShift.y *= -1.0; }
+			if (isOdd(iDir / 4)) { m2v.z += 1; rShift.z *= -1.0; }
+			m2 = vlinear(m2v, mpCellsN);
+			if mpCell((curLevel + 1, m2)).occ == 0 then continue;
+			mpCell((curLevel, m1)).occ += mpCell((curLevel + 1, m2)).occ;
+			evalMpL(le2, rShift, maxOrd);
+			evalMpProdLL(le, mpCell((curLevel+1, m2)).le, le2, maxOrd);
+			for j in [0..maxOrd] {
+				for k in [0..j] {
+					mpCell((curLevel, m1)).le.add_c(le.c(j, k), j, k);
+					mpCell((curLevel, m1)).le.add_s(le.s(j, k), j, k);
 				}
 			}
 		}
 	}
+	
 }
 
 proc gatherWellSepLo() {
@@ -431,49 +415,37 @@ proc gatherWellSepLo() {
 	var m1v, m2v: vector_i;
 	var m1, m2: int;
 	var s: real;
-
-	for m1z in [0..mpCells.z - 1] {
-		for m1y in [0..mpCells.y - 1] {
-			for m1x in [0..mpCells.x - 1] {
-				m1v.set(m1x, m1y, m1z);
-				m1 = vlinear(m1v, mpCells);
-				if mpCell((curLevel, m1)).occ == 0 then continue;
-				for m2z in [m1v.ll_z(wellSep)..m1v.hl_z(wellSep)] {
-					for m2y in [m1v.ll_y(wellSep)..m1v.hl_y(wellSep)] {
-						for m2x in [m1v.ll_x(wellSep)..m1v.hl_x(wellSep)] {
-							m2v.set(m2x, m2y, m2z);
-							if m2v.x < 0 || m2v.x >= mpCells.x ||
-							   m2v.y < 0 || m2v.y >= mpCells.y ||
-							   m2v.z < 0 || m2v.z >= mpCells.z then continue;
-							if abs(m2v.x - m1v.x) <= wellSep &&
-							   abs(m2v.y - m1v.y) <= wellSep &&
-							   abs(m2v.z - m1v.z) <= wellSep then continue;
-							m2 = vlinear(m2v, mpCells);
-							if mpCell((curLevel, m2)).occ == 0 then continue;
-							for j in [0..maxOrd] {
-								if isOdd(j) then s = -1.0; else s = 1.0;
-								for k in [0..j] {
-									le.set_c(
-										s * mpCell((curLevel, m2)).le.c(j, k),
-										j, k);
-									le.set_s(
-										s * mpCell((curLevel, m2)).le.s(j, k),
-										j, k);
-								}
-							}
-							rShift = (m2v - m1v) * cellWid;
-							evalMpM(me2, rShift, maxOrd);
-							evalMpProdLM(me, le, me2, maxOrd);
-							for j in [0..maxOrd] {
-								for k in [0..j] {
-									mpCell((curLevel, m1)).me.add_c(
-										me.c(j, k), j, k);
-									mpCell((curLevel, m1)).me.add_s(
-										me.s(j, k), j, k);
-								}
-							}
-						}
-					}
+	
+	for (m1x, m1y, m1z) in [0..mpCells.x-1, 0..mpCells.y-1, 0..mpCells.z-1] {
+		m1v.set(m1x, m1y, m1z);
+		m1 = vlinear(m1v, mpCells);
+		if mpCell((curLevel, m1)).occ == 0 then continue;
+		for (m2x, m2y, m2z) in [m1v.ll_x(wellSep)..m1v.hl_x(wellSep),
+								m1v.ll_y(wellSep)..m1v.hl_y(wellSep),
+								m1v.ll_z(wellSep)..m1v.hl_z(wellSep)] {
+			m2v.set(m2x, m2y, m2z);
+			if m2v.x < 0 || m2v.x >= mpCells.x ||
+			   m2v.y < 0 || m2v.y >= mpCells.y ||
+			   m2v.z < 0 || m2v.z >= mpCells.z then continue;
+			if abs(m2v.x - m1v.x) <= wellSep &&
+			   abs(m2v.y - m1v.y) <= wellSep &&
+			   abs(m2v.z - m1v.z) <= wellSep then continue;
+			m2 = vlinear(m2v, mpCells);
+			if mpCell((curLevel, m2)).occ == 0 then continue;
+			for j in [0..maxOrd] {
+				if isOdd(j) then s = -1.0; else s = 1.0;
+				for k in [0..j] {
+					le.set_c(s * mpCell((curLevel, m2)).le.c(j, k), j, k);
+					le.set_s(s * mpCell((curLevel, m2)).le.s(j, k), j, k);
+				}
+			}
+			rShift = (m2v - m1v) * cellWid;
+			evalMpM(me2, rShift, maxOrd);
+			evalMpProdLM(me, le, me2, maxOrd);
+			for j in [0..maxOrd] {
+				for k in [0..j] {
+					mpCell((curLevel, m1)).me.add_c(me.c(j, k), j, k);
+					mpCell((curLevel, m1)).me.add_s(me.s(j, k), j, k);
 				}
 			}
 		}
@@ -487,24 +459,20 @@ proc propagateCellLo() {
 	var m1, m2: int;
 
 	mpCellsN = 2 * mpCells;
-	for m1z in [0..mpCells.z - 1] {
-		for m1y in [0..mpCells.y - 1] {
-			for m1x in [0..mpCells.x - 1] {
-				m1v.set(m1x, m1y, m1z);
-				m1 = vlinear(m1v, mpCells);
-				if mpCell((curLevel, m1)).occ == 0 then continue;
-				for iDir in [0..7] {
-					m2v = 2 * m1v;
-					rShift = (-0.25) * cellWid;
-					if isOdd(iDir) { m2v.x += 1; rShift.x *= -1.0; }
-					if isOdd(iDir / 2) { m2v.y += 1; rShift.y *= -1.0; }
-					if isOdd(iDir / 4) { m2v.z += 1; rShift.z *= -1.0; }
-					m2 = vlinear(m2v, mpCellsN);
-					evalMpL(le, rShift, maxOrd);
-					evalMpProdLM(mpCell((curLevel + 1, m2)).me, le,
-						mpCell((curLevel, m1)).me, maxOrd);
-				}
-			}
+	for (m1x, m1y, m1z) in [0..mpCells.x-1, 0..mpCells.y-1, 0..mpCells.z-1] {
+		m1v.set(m1x, m1y, m1z);
+		m1 = vlinear(m1v, mpCells);
+		if mpCell((curLevel, m1)).occ == 0 then continue;
+		for iDir in [0..7] {
+			m2v = 2 * m1v;
+			rShift = (-0.25) * cellWid;
+			if isOdd(iDir) { m2v.x += 1; rShift.x *= -1.0; }
+			if isOdd(iDir / 2) { m2v.y += 1; rShift.y *= -1.0; }
+			if isOdd(iDir / 4) { m2v.z += 1; rShift.z *= -1.0; }
+			m2 = vlinear(m2v, mpCellsN);
+			evalMpL(le, rShift, maxOrd);
+			evalMpProdLM(mpCell((curLevel + 1, m2)).me, le,
+				mpCell((curLevel, m1)).me, maxOrd);
 		}
 	}
 }
@@ -516,21 +484,17 @@ proc computeFarCellInt() {
 	var u: real;
 	var m1: int;
 
-	for m1z in [0..mpCells.z - 1] {
-		for m1y in [0..mpCells.y - 1] {
-			for m1x in [0..mpCells.x - 1] {
-				m1v.set(m1x, m1y, m1z);
-				m1 = vlinear(m1v, mpCells);
-				if mpCell((rMaxLevel, m1)).occ == 0 then continue;
-				cMid = (m1v + 0.5) * cellWid - 0.5 * region;
-				for j in iterMpCellList(m1) {
-					dr = mol(j).r - cMid;
-					evalMpL(le, dr, maxOrd);
-					evalMpForce(f, u, mpCell((rMaxLevel, m1)).me, le, maxOrd);
-					mol(j).ra = mol(j).ra - mol(j).chg * f;
-					uSum += 0.5 * mol(j).chg * u;
-				}
-			}
+	for (m1x, m1y, m1z) in [0..mpCells.x-1, 0..mpCells.y-1, 0..mpCells.z-1] {
+		m1v.set(m1x, m1y, m1z);
+		m1 = vlinear(m1v, mpCells);
+		if mpCell((rMaxLevel, m1)).occ == 0 then continue;
+		cMid = (m1v + 0.5) * cellWid - 0.5 * region;
+		for j in iterMpCellList(m1) {
+			dr = mol(j).r - cMid;
+			evalMpL(le, dr, maxOrd);
+			evalMpForce(f, u, mpCell((rMaxLevel, m1)).me, le, maxOrd);
+			mol(j).ra = mol(j).ra - mol(j).chg * f;
+			uSum += 0.5 * mol(j).chg * u;
 		}
 	}
 }
@@ -541,34 +505,30 @@ proc computeNearCellInt() {
 	var qq, ri: real;
 	var m1, m2, m2xLo, m2yLo: int;
 
-	for m1z in [0..mpCells.z - 1] {
-		for m1y in [0..mpCells.y - 1] {
-			for m1x in [0..mpCells.x - 1] {
-				m1v.set(m1x, m1y, m1z);
-				m1 = vlinear(m1v, mpCells);
-				if mpCell((rMaxLevel, m1)).occ == 0 then continue;
-				for m2z in [m1z..min(m1v.z+wellSep, mpCells.z-1)] {
-					if m2z == m1z then m2yLo = m1y;
-					else m2yLo = max(m1y - wellSep, 0);
-					for m2y in [m2yLo..min(m1v.y+wellSep, mpCells.y-1)] {
-						if m2z == m1z && m2y == m1y then m2xLo = m1x;
-						else m2xLo = max(m1x - wellSep, 0);
-						for m2x in [m2xLo..min(m1v.x+wellSep, mpCells.x-1)] {
-							m2v.set(m2x, m2y, m2z);
-							m2 = vlinear(m2v, mpCells);
-							if mpCell((rMaxLevel, m2)).occ == 0 then continue;
-							for j1 in iterMpCellList(m1) {
-								for j2 in iterMpCellList(m2) {
-									if m1 != m2 || j2 < j1 {
-										dr = mol(j1).r - mol(j2).r;
-										ri = 1.0 / dr.len();
-										qq = mol(j1).chg * mol(j2).chg;
-										ft = qq * (ri ** 3) * dr;
-										mol(j1).ra += ft;
-										mol(j2).ra += ft;
-										uSum += qq * ri;
-									}
-								}
+	for (m1x, m1y, m1z) in [0..mpCells.x-1, 0..mpCells.y-1, 0..mpCells.z-1] {
+		m1v.set(m1x, m1y, m1z);
+		m1 = vlinear(m1v, mpCells);
+		if mpCell((rMaxLevel, m1)).occ == 0 then continue;
+		for m2z in [m1z..min(m1v.z+wellSep, mpCells.z-1)] {
+			if m2z == m1z then m2yLo = m1y;
+			else m2yLo = max(m1y - wellSep, 0);
+			for m2y in [m2yLo..min(m1v.y+wellSep, mpCells.y-1)] {
+				if m2z == m1z && m2y == m1y then m2xLo = m1x;
+				else m2xLo = max(m1x - wellSep, 0);
+				for m2x in [m2xLo..min(m1v.x+wellSep, mpCells.x-1)] {
+					m2v.set(m2x, m2y, m2z);
+					m2 = vlinear(m2v, mpCells);
+					if mpCell((rMaxLevel, m2)).occ == 0 then continue;
+					for j1 in iterMpCellList(m1) {
+						for j2 in iterMpCellList(m2) {
+							if m1 != m2 || j2 < j1 {
+								dr = mol(j1).r - mol(j2).r;
+								ri = 1.0 / dr.len();
+								qq = mol(j1).chg * mol(j2).chg;
+								ft = qq * (ri ** 3) * dr;
+								mol(j1).ra += ft;
+								mol(j2).ra += ft;
+								uSum += qq * ri;
 							}
 						}
 					}
@@ -598,32 +558,28 @@ proc multipoleCalc() {
 	cellWid = region / mpCells;
 
 	// Evaluate mpCells
-	for m1z in [0..mpCells.z - 1] {
-		for m1y in [0..mpCells.y - 1] {
-			for m1x in [0..mpCells.x - 1] {
-				m1v.set(m1x, m1y, m1z);
-				m1 = vlinear(m1v, mpCells);
-				mpCell((rMaxLevel, m1)).occ = 0;
+	for (m1x, m1y, m1z) in [0..mpCells.x-1, 0..mpCells.y-1, 0..mpCells.z-1] {
+		m1v.set(m1x, m1y, m1z);
+		m1 = vlinear(m1v, mpCells);
+		mpCell((rMaxLevel, m1)).occ = 0;
+		for j in [0..maxOrd] {
+			for k in [0..j] {
+				mpCell((rMaxLevel, m1)).le.set_c(0.0, j, k);
+				mpCell((rMaxLevel, m1)).le.set_s(0.0, j, k);
+			}
+		}
+		if mpCellList(m1 + nMol) >= 1 {
+			cMid = (m1v + 0.5) * cellWid - 0.5 * region;
+			for j1 in iterMpCellList(m1) {
+				mpCell((rMaxLevel, m1)).occ += 1;
+				dr = mol(j1).r - cMid;
+				evalMpL (le, dr, maxOrd);
 				for j in [0..maxOrd] {
 					for k in [0..j] {
-						mpCell((rMaxLevel, m1)).le.set_c(0.0, j, k);
-						mpCell((rMaxLevel, m1)).le.set_s(0.0, j, k);
-					}
-				}
-				if mpCellList(m1 + nMol) >= 1 {
-					cMid = (m1v + 0.5) * cellWid - 0.5 * region;
-					for j1 in iterMpCellList(m1) {
-						mpCell((rMaxLevel, m1)).occ += 1;
-						dr = mol(j1).r - cMid;
-						evalMpL (le, dr, maxOrd);
-						for j in [0..maxOrd] {
-							for k in [0..j] {
-								mpCell((rMaxLevel, m1)).le.add_c(
-									mol(j1).chg * le.c(j, k), j, k);
-								mpCell((rMaxLevel, m1)).le.add_s(
-									mol(j1).chg * le.s(j, k), j, k);
-							}
-						}
+						mpCell((rMaxLevel, m1)).le.add_c(
+							mol(j1).chg * le.c(j, k), j, k);
+						mpCell((rMaxLevel, m1)).le.add_s(
+							mol(j1).chg * le.s(j, k), j, k);
 					}
 				}
 			}
