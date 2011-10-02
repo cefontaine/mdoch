@@ -168,7 +168,7 @@ proc buildNebrList() {
 	}
 	nebrTabLen = 0;
 	
-	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
+	for (m1x, m1y, m1z) in [0..cells.x-1, 0..cells.y-1, 0..cells.z-1] {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, cells) + nMol;
 		for f in [1..N_OFFSET] {
