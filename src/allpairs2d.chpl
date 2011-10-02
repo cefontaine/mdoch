@@ -62,11 +62,9 @@ proc init() {
 	
 	gap = region / initUcell;
 	n = 1;
-	for ny in [0..initUcell.y-1] {
-		for nx in [0..initUcell.x-1] {
-			mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
-			n += 1;
-		}
+	for (ny, nx) in [0..initUcell.y-1, 0..initUcell.x-1] {
+		mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
+		n += 1;
 	}
 
 	// Initial velocities and accelerations
