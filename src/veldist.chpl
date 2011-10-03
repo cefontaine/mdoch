@@ -36,13 +36,8 @@ config const stepAvg: int = 100;
 config const stepEquil: int = 0;
 config const stepLimit: int = 10000;
 config const stepVel: int = 5;
+config const profLevel: int = 0;
 const NDIM: int = 2;
-const OFFSET_VALS: [1..5] vector2d_i;
-OFFSET_VALS(1) = (0, 0);
-OFFSET_VALS(2) = (1, 0);
-OFFSET_VALS(3) = (1, 1);
-OFFSET_VALS(4) = (0, 1);
-OFFSET_VALS(5) = (-1, 1);
 
 var rCut, velMag, timeNow, uSum, virSum, vvSum, dispHi, hFunction: real;
 var region, vSum: vector2d;
@@ -58,6 +53,7 @@ var nebrTabDom: domain(1) = [1..1];
 var nebrTab: [nebrTabDom] int;
 var histVelDom: domain(1) = [1..1];
 var histVel: [histVelDom] real;
+var timer: elapsedTimer;
 
 proc init() {
 	// Setup parameters
@@ -114,17 +110,53 @@ proc init() {
 	countVel = 0;
 }
 
+iter iterCellList(n: int) {
+	var i = cellList(n);
+	while i >= 1 {
+		yield i;
+		i = cellList(i);
+	}
+}
+
 proc buildNebrList() {
 	var dr, invWid, rs, shift: vector2d;
 	var cc, m1v, m2v: vector2d_i;
-	var vOff: [1..OFFSET_VALS.rank] vector2d_i = OFFSET_VALS;
+	var vOff = OFFSET_VALS;
 	var rrNebr: real;
-	var c, j1, j2, m1, m1x, m1y, m2, offset: int;
+	var c, m1, m2, offset: int;
 
 	rrNebr = (rCut + rNebrShell) ** 2;
 	invWid = cells / region;
-	for i in [nMol+1..cellList.rank] do
-		cellList(i) = -1;
+	for i in [nMol + 1..nMol + cells.prod()] do cellList(i) = -1;
+	for n in mol.domain {
+		cc = (mol(n).r + 0.5 * region) * invWid;
+		c = vlinear(cc, cells) + nMol;
+		cellList(n) = cellList(c);
+		cellList(c) = n;
+	}
+	nebrTabLen = 0;
+	for (m1y, m1x) in [0..cells.y - 1, 0..cells.x] {
+		m1v.set(m1x, m1y);
+		m1 = vlinear(m1v, cells) + nMol;
+		for o in [1..N_OFFSET_2D] {
+			m2v = m1v + vOff(o);
+			shift.zero();
+			vcellwrap(m2v, cells, shift, region);
+			for j1 in iterCellList(m1) {
+				for j2 in iterCellList(m2) {
+					if (m1 != m2 || j2 < j1) then
+						dr = mol[j1].r - mol[j2].r - shift;
+					if dr.lensq() < rrNebr {
+						if nebrTabLen >= nebrTabMax then
+							errExit("Too many neighbours");
+						nebrTab(2 * nebrTabLen + 1) = j1;
+						nebrTab(2 * nebrTabLen + 2) = j2;
+						nebrTabLen += 1;
+					}
+				}
+			}
+		}
+	}
 }
 
 proc step() {
@@ -139,7 +171,7 @@ proc step() {
 
 	// Apply boundary condition
 	for m in mol do
-		m.r = vwrap2d(m.r, region);
+		m.r = vwrap(m.r, region);
 	
 	if nebrNow {
 		nebrNow = false;
@@ -148,38 +180,32 @@ proc step() {
 
 	// Compute forces
 	var dr: vector2d;
-	var fcVal, rr, rrCut, rri, rri3: real;
-	var i, j, n: int;
+	var fcVal, rr, rrCut, rri, rri3, uVal: real;
+	var j1, j2: int;
 
 	rrCut = rCut ** 2;
-	for m in mol do
-		m.ra.zero();
-
+	for m in mol do	m.ra.zero();
 	uSum = 0;
-	virSum = 0;
 	
-	for d in mol.domain do {
-		for d2 in mol.domain do {
-			if d2 > d then {
-				dr = mol(d).r - mol(d2).r;
-				dr = vwrap2d(dr, region);
-				rr = dr.lensq();
-				if rr < rrCut then {
-					rri = 1.0 / rr;
-					rri3 = rri ** 3;
-					fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
-					mol(d).ra += (fcVal, fcVal) * dr;
-					mol(d2).ra += (-fcVal, -fcVal) * dr;
-					uSum += 4 * rri3 * (rri3 - 1.0) + 1;
-					virSum += fcVal * rr;
-				}
-			}
+	for n in nebrTab.domain {
+		j1 = nebrTab(2 * n - 1);
+		j2 = nebrTab(2 * n);
+		dr = mol(j1).r - mol(j2).r;
+		dr = vwrap(dr, region);
+		rr = dr.lensq();
+		if rr < rrCut {
+			rri = 1.0 / rr;
+			rri3 = rri ** 3;
+			fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
+			uVal = 4.0 * rri3 * (rri3 -1.0) + 1.0;
+			mol(j1).ra += fcVal * dr;
+			mol(j2).ra -= fcVal * dr;
+			uSum += uVal;
 		}
 	}
 
 	// Leafrog
-	for m in mol do
-		m.rv += (0.5 * deltaT) * m.ra;
+	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
 
 	// Evaluate themodynamics properties
 	var vvMax: real;
@@ -219,10 +245,16 @@ proc step() {
 }
 
 proc main() {
+	if profLevel >= 1 then timer.start();
 	init();
-	while (moreCycles) {
+	if profLevel >= 1 then writeln("Init: ", timer.stop());
+	
+	moreCycles = 1;
+	while moreCycles {
+		if profLevel >= 1 then timer.start();
 		step();
-		if (stepCount >= stepLimit) then
-			moreCycles = 0;
-	};
-};
+		if profLevel >= 1 then 
+			writeln("Step ", stepCount, ": ", timer.stop());
+		if stepCount >= stepLimit then moreCycles = 0;
+	}
+}

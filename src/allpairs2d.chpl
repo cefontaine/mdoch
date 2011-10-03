@@ -95,7 +95,7 @@ proc step() {
 
 	// Apply boundary condition
 	for m in mol do
-		m.r = vwrap2d(m.r, region);
+		m.r = vwrap(m.r, region);
 
 	// Compute forces
 	var dr: vector2d;
@@ -111,7 +111,7 @@ proc step() {
 	for d in [1..nMol-1] {
 		for d2 in [d+1..nMol] {
 			dr = mol(d).r - mol(d2).r;
-			dr = vwrap2d(dr, region);
+			dr = vwrap(dr, region);
 			rr = dr.lensq();
 			if rr < rrCut {
 				rri = 1.0 / rr;

@@ -1,6 +1,6 @@
 CHPL=chpl
 FLAGS=--fast
-TARGETS=allpairs2d fmm
+TARGETS=allpairs2d veldist fmm
 
 all: $(TARGETS)
 

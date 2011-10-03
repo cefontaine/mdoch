@@ -200,7 +200,7 @@ proc vrand2d() {
 	return r;
 }
 
-proc vwrap2d(v: vector2d, region: vector2d) {
+proc vwrap(v: vector2d, region: vector2d) {
 	var r: vector2d = v;
 
 	if r.x >= 0.5 * region.x then r.x -= region.x;
@@ -210,6 +210,18 @@ proc vwrap2d(v: vector2d, region: vector2d) {
 	else if r.y < -0.5 * region.y then r.y += region.y;
 
 	return r;
+}
+
+proc vcellwrap(inout v: vector2d, cells: vector2d_i, inout shift: vector2d, 
+	region: vector2d) {
+	if v.x >= cells.x { v.x = 0; shift.x = region.x; }
+	else if v.x < 0 { v.x = cells.x - 1; shift.x = - region.x; }
+	if v.y >= cells.y { v.y = 0; shift.y = region.y; }
+	else if v.y < 0 { v.y = cells.y - 1; shift.y = - region.y; }
+}
+
+proc vlinear(v1: vector2d, v2: vector2d) {
+	return v1.y * v2.x + v1.x + 1;
 }
 
 //////////////////////////////////////
@@ -487,10 +499,13 @@ proc vwrap(v: vector, region: vector) {
 //////////////////////////////////////
 // Molecular Types
 //////////////////////////////////////
+const OFFSET_VALS_2D = ((0, 0), (1, 0), (1, 1), (0, 1), (-1, 1));
+const N_OFFSET_2D: int = 5;
+
 const OFFSET_VALS = ((0,0,0), (1,0,0), (1,1,0), (0,1,0), (-1,1,0), 
      (0,0,1), (1,0,1), (1,1,1), (0,1,1), (-1,1,1), (-1,0,1), 
      (-1,-1,1), (0,-1,1), (1,-1,1));
-const N_OFFSET = 14;
+const N_OFFSET: int = 14;
 
 record mol2d {
 	var r, rv, ra: vector2d;

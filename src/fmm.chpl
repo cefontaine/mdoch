@@ -51,8 +51,8 @@ var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
 var nMol, moreCycles, stepCount, countRdf,
-	nebrNow, nebrTabMax, nebrTabLen,
-	curCellsEdge, curLevel, rMaxLevel: int;
+	nebrTabMax, nebrTabLen, curCellsEdge, curLevel, rMaxLevel: int;
+var nebrNow: bool;
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
 var cellListDom: domain(1) = [1..1];
@@ -130,7 +130,7 @@ proc init() {
 	
 	totEnergy.zero();
 	kinEnergy.zero();
-	nebrNow = 1;
+	nebrNow = true;
 	kinEnInitSum = 0.0;
 }
 
@@ -721,7 +721,7 @@ proc step() {
 	}
 
 	if nebrNow {
-		nebrNow = 0;
+		nebrNow = false;
 		dispHi = 0.0;
 		buildNebrList();
 	}
@@ -764,7 +764,7 @@ proc step() {
 		vvMax = max(vvMax, vv);
 	}
 	dispHi += sqrt(vvMax) * deltaT;
-	if dispHi > 0.5 * rNebrShell then nebrNow = 1;
+	if dispHi > 0.5 * rNebrShell then nebrNow = true;
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
 
