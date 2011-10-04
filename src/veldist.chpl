@@ -80,16 +80,14 @@ proc init() {
 	initRand(randSeed);
 
 	// Initial coordinates
-	var c, gap: vector2d;
+	var gap: vector2d;
 	var n: int;
 	
 	gap = region / initUcell;
 	n = 1;
-	for ny in [0..initUcell.y-1] {
-		for nx in [0..initUcell.x-1] {
-			mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
-			n += 1;
-		}
+	for (ny, nx) in [0..initUcell.y-1, 0..initUcell.x-1] {
+		mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
+		n += 1;
 	}
 
 	// Initial velocities and accelerations
@@ -99,7 +97,7 @@ proc init() {
 		vSum += m.rv;
 	}
 	for m in mol {
-		m.rv += (-1.0 / nMol) * vSum;
+		m.rv -= (1.0 / nMol) * vSum;
 		m.ra.zero();	// accelerations
 	}
 	
@@ -121,7 +119,7 @@ iter iterCellList(n: int) {
 proc buildNebrList() {
 	var dr, invWid, rs, shift: vector2d;
 	var cc, m1v, m2v: vector2d_i;
-	var vOff = OFFSET_VALS;
+	var vOff = OFFSET_VALS_2D;
 	var rrNebr: real;
 	var c, m1, m2, offset: int;
 
@@ -135,23 +133,25 @@ proc buildNebrList() {
 		cellList(c) = n;
 	}
 	nebrTabLen = 0;
-	for (m1y, m1x) in [0..cells.y - 1, 0..cells.x] {
+	for (m1y, m1x) in [0..cells.y - 1, 0..cells.x - 1] {
 		m1v.set(m1x, m1y);
 		m1 = vlinear(m1v, cells) + nMol;
 		for o in [1..N_OFFSET_2D] {
 			m2v = m1v + vOff(o);
 			shift.zero();
 			vcellwrap(m2v, cells, shift, region);
+			m2 = vlinear(m2v, cells) + nMol;
 			for j1 in iterCellList(m1) {
 				for j2 in iterCellList(m2) {
-					if (m1 != m2 || j2 < j1) then
+					if (m1 != m2 || j2 < j1) {
 						dr = mol[j1].r - mol[j2].r - shift;
-					if dr.lensq() < rrNebr {
-						if nebrTabLen >= nebrTabMax then
-							errExit("Too many neighbours");
-						nebrTab(2 * nebrTabLen + 1) = j1;
-						nebrTab(2 * nebrTabLen + 2) = j2;
-						nebrTabLen += 1;
+						if dr.lensq() < rrNebr {
+							if nebrTabLen >= nebrTabMax then
+								errExit("Too many neighbours");
+							nebrTab(2 * nebrTabLen + 1) = j1;
+							nebrTab(2 * nebrTabLen + 2) = j2;
+							nebrTabLen += 1;
+						}
 					}
 				}
 			}
@@ -176,6 +176,7 @@ proc step() {
 	if nebrNow {
 		nebrNow = false;
 		dispHi = 0;
+		buildNebrList();
 	}
 
 	// Compute forces
@@ -187,34 +188,37 @@ proc step() {
 	for m in mol do	m.ra.zero();
 	uSum = 0;
 	
-	for n in nebrTab.domain {
+	for n in [1..nebrTabLen] {
 		j1 = nebrTab(2 * n - 1);
 		j2 = nebrTab(2 * n);
-		dr = mol(j1).r - mol(j2).r;
-		dr = vwrap(dr, region);
+		dr = vwrap((mol(j1).r - mol(j2).r), region);
 		rr = dr.lensq();
 		if rr < rrCut {
 			rri = 1.0 / rr;
 			rri3 = rri ** 3;
 			fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
-			uVal = 4.0 * rri3 * (rri3 -1.0) + 1.0;
+			uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
 			mol(j1).ra += fcVal * dr;
 			mol(j2).ra -= fcVal * dr;
 			uSum += uVal;
 		}
 	}
+	debugPrintMol2D(mol);
 
 	// Leafrog
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
 
 	// Evaluate themodynamics properties
-	var vvMax: real;
+	var vv, vvMax: real;
 
 	vSum.zero();
-	vvSum = 0;
+	vvSum = 0.0;
+	vvMax = 0.0;
 	for m in mol {
 		vSum += m.rv;
-		vvSum += m.rv.lensq();
+		vv = m.rv.lensq();
+		vvSum += vv;
+		vvMax = max(vvMax, vv);
 	}
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
@@ -224,7 +228,6 @@ proc step() {
 	totEnergy.acc();
 	kinEnergy.acc();
 	pressure.acc();
-		
 	if stepCount % stepAvg == 0 then {
 		totEnergy.avg(stepAvg);
 		kinEnergy.avg(stepAvg);

@@ -99,6 +99,15 @@ record vector2d {
 	proc lensq() { return x ** 2 + y ** 2; }
 }
 
+record vector2d_i {
+	var x, y: int;
+	proc set(a: int, b: int) { x = a; y = b; }
+	proc zero() { x = 0; y = 0; }
+	proc prod() { return x * y; }
+	proc lensq() { return x ** 2 + y ** 2; }
+}
+
+
 proc =(v: vector2d, t: (real, real)) {
 	var r: vector2d;
 	r.x = t(1);
@@ -127,6 +136,13 @@ proc +(a: real, v: vector2d) {
 	return r;
 }
 
+proc +(v: vector2d_i, t: (int, int)) {
+	var r: vector2d_i;
+	r.x = v.x + t(1);
+	r.y = v.y + t(2);
+	return r;
+}
+
 proc -(v1: vector2d, v2: vector2d) {
 	var r: vector2d;
 	r.x = v1.x - v2.x;
@@ -148,6 +164,13 @@ proc *(a: (real, real), v: vector2d) {
 	return r;
 }
 
+proc *(v1: vector2d, v2: vector2d) {
+	var r: vector2d;
+	r.x = v1.x * v2.x;
+	r.y = v1.y * v2.y;
+	return r;
+}
+
 proc /(v1: vector2d, v2: vector2d) {
 	var r: vector2d;
 	r.x = v1.x / v2.x;
@@ -155,10 +178,11 @@ proc /(v1: vector2d, v2: vector2d) {
 	return r;
 }
 
-record vector2d_i {
-	var x, y: int;
-	proc prod() { return x * y; }
-	proc lensq() { return x ** 2 + y ** 2; }
+proc /(v1: vector2d_i, v2: vector2d) {
+	var r: vector2d;
+	r.x = v1.x / v2.x;
+	r.y = v1.y / v2.y;
+	return r;
 }
 
 proc =(v: vector2d_i, t: (int, int)) {
@@ -212,7 +236,7 @@ proc vwrap(v: vector2d, region: vector2d) {
 	return r;
 }
 
-proc vcellwrap(inout v: vector2d, cells: vector2d_i, inout shift: vector2d, 
+proc vcellwrap(inout v: vector2d_i, cells: vector2d_i, inout shift: vector2d, 
 	region: vector2d) {
 	if v.x >= cells.x { v.x = 0; shift.x = region.x; }
 	else if v.x < 0 { v.x = cells.x - 1; shift.x = - region.x; }
@@ -221,6 +245,10 @@ proc vcellwrap(inout v: vector2d, cells: vector2d_i, inout shift: vector2d,
 }
 
 proc vlinear(v1: vector2d, v2: vector2d) {
+	return v1.y * v2.x + v1.x + 1;
+}
+
+proc vlinear(v1: vector2d_i, v2: vector2d_i) {
 	return v1.y * v2.x + v1.x + 1;
 }
 
@@ -547,4 +575,11 @@ record mp_terms {
 record mp_cell {
 	var le, me: mp_terms;
 	var occ: int;
+}
+
+// Debug utilities
+proc debugPrintMol2D(mol: [] mol2d) {
+	for m in mol do
+		writeln("r=(", m.r.x, ", ", m.r.y, "), rv=(", m.rv.x, ", ", m.rv.y,
+			"), ra=(", m.ra.x, ", ", m.ra.y, ")");
 }

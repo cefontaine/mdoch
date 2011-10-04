@@ -29,6 +29,7 @@
 #define NDIM  2
 
 #include "in_mddefs.h"
+#include "in_debug.h"
 
 typedef struct {
   VecR r, rv, ra;
@@ -91,6 +92,7 @@ void SingleStep ()
     BuildNebrList ();
   }
   ComputeForces ();
+  PrintMol();
   LeapfrogStep (2);
   EvalProps ();
   AccumProps (1);
@@ -366,4 +368,4 @@ void PrintVelDist (FILE *fp)
 #include "in_rand.c"
 #include "in_errexit.c"
 #include "in_namelist.c"
-
+#include "in_debug.c"
