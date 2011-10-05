@@ -25,8 +25,10 @@
 
 **********************************************************************/
 
+#define NDIM  3
 
 #include "in_mddefs.h"
+#include "in_debug.h"
 
 typedef struct {
   VecR r, rv, ra;
@@ -77,10 +79,13 @@ NameList nameList[] = {
 
 int main (int argc, char **argv)
 {
+  struct timeval start;
   GetNameList (argc, argv);
   PrintNameList (stdout);
+  TimerStart(&start);
   SetParams ();
   SetupJob ();
+  printf("Init: %f\n", TimerStop(&start));
   moreCycles = 1;
   while (moreCycles) {
     SingleStep ();
@@ -90,22 +95,49 @@ int main (int argc, char **argv)
 
 
 void SingleStep ()
-{
+{ 
+  struct timeval start;
   ++ stepCount;
   timeNow = stepCount * deltaT;
+  TimerStart(&start);
   LeapfrogStep (1);
+  printf("Leapfrog 1st: %f\n", TimerStop(&start));
+
+  TimerStart(&start);
   if (nebrNow) {
     nebrNow = 0;
     dispHi = 0.;
     BuildNebrList ();
   }
+  printf("BuildNebrList: %f\n", TimerStop(&start));
+  
+  TimerStart(&start);
   ComputeForces ();
+  printf("ComputeForces: %f\n", TimerStop(&start));
+  
+  TimerStart(&start);
   MultipoleCalc ();
+  printf("MultipolCalc: %f\n", TimerStop(&start));
+  
+  TimerStart(&start);
   ComputeWallForces ();
+  printf("ComputeWallForces: %f\n", TimerStop(&start));
+  
+  TimerStart(&start);
   ApplyThermostat ();
+  printf("ApplyThermoStat: %f\n", TimerStop(&start));
+  
+  TimerStart(&start);
   LeapfrogStep (2);
+  printf("Leapfrog 2nd: %f\n", TimerStop(&start));
+  
+  TimerStart(&start);
   EvalProps ();
+  printf("EvalProps: %f\n", TimerStop(&start));
+  
+  TimerStart(&start);
   if (stepCount < stepEquil) AdjustInitTemp ();
+  printf("AdjustInitTemp: %f\n", TimerStop(&start));
   AccumProps (1);
   if (stepCount % stepAvg == 0) {
     AccumProps (2);
@@ -118,7 +150,10 @@ void SingleStep ()
 
 void SetupJob ()
 {
+  struct timeval start;
+  TimerStart(&start);
   AllocArrays ();
+  printf("AllocArrays: %f\n", TimerStop(&start));
   stepCount = 0;
   InitCoords ();
   InitVels ();
@@ -240,11 +275,17 @@ void ComputeForces ()
 void MultipoleCalc ()
 {
   int j, k, m1;
+  struct timeval start;
 
   VSetAll (mpCells, maxCellsEdge);
+  TimerStart(&start);
   AssignMpCells ();
+  printf("AssignMpCells: %f\n", TimerStop(&start));
   VDiv (cellWid, region, mpCells);
+  TimerStart(&start);
   EvalMpCell ();
+  printf("EvalMpCell: %f\n", TimerStop(&start));
+  TimerStart(&start);
   curCellsEdge = maxCellsEdge;
   for (curLevel = maxLevel - 1; curLevel >= 2; curLevel --) {
     curCellsEdge /= 2;
@@ -252,6 +293,8 @@ void MultipoleCalc ()
     VDiv (cellWid, region, mpCells);
     CombineMpCell ();
   }
+  printf("CombineMpCell: %f\n", TimerStop(&start));
+  TimerStart(&start);
   for (m1 = 0; m1 < 64; m1 ++) {
     for (j = 0; j <= maxOrd; j ++) {
       for (k = 0; k <= j; k ++) {
@@ -260,6 +303,8 @@ void MultipoleCalc ()
       }
     }
   }
+  printf("mpCellSet0: %f\n", TimerStop(&start));
+  TimerStart(&start);
   curCellsEdge = 2;
   for (curLevel = 2; curLevel <= maxLevel; curLevel ++) {
     curCellsEdge *= 2;
@@ -268,8 +313,13 @@ void MultipoleCalc ()
     GatherWellSepLo ();
     if (curLevel < maxLevel) PropagateCellLo ();
   }
+  printf("GatherWellSepLo: %f\n", TimerStop(&start));
+  TimerStart(&start);
   ComputeFarCellInt ();
+  printf("ComputeFarCellInt: %f\n", TimerStop(&start));
+  TimerStart(&start);
   ComputeNearCellInt ();
+  printf("ComputeNearCellInt: %f\n", TimerStop(&start));
 }
 
 
@@ -941,4 +991,4 @@ void PrintRdf (FILE *fp)
 #include "in_rand.c"
 #include "in_errexit.c"
 #include "in_namelist.c"
-
+#include "in_debug.c"

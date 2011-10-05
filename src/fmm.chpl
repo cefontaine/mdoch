@@ -83,6 +83,7 @@ proc init() {
 	rMaxLevel = maxLevel + 1;
 	
 	// Allocate storage
+	if profLevel == 3 then timer.start();
 	molDom = [1..nMol];
 	cellListDom = [1..(cells.prod() + nMol)];
 	nebrTabDom = [1..2 * nebrTabMax];
@@ -97,10 +98,10 @@ proc init() {
 		mpCells.set(maxCellsEdge);
 		mpCellDom += [n..n, 1..mpCells.prod()];
 	}
-
 	mpCellListDom = [1..(nMol + mpCells.prod())];
 	histRdfDom = [1..2, 1..sizeHistRdf];
 	cumRdfDom = [1..2, 1..sizeHistRdf];
+	if profLevel == 3 then writeln("AllocArrays: ", timer.stop());
 
 	stepCount = 0;
 	
@@ -547,6 +548,7 @@ proc multipoleCalc() {
 	mpCells.set(maxCellsEdge);
 
 	// Assign mpCells
+	if profLevel == 3 then timer.start();
 	invWid = mpCells / region;
 	for n in [nMol + 1..nMol + mpCells.prod()] do mpCellList(n) = -1;
 	for n in mol.domain {
@@ -555,9 +557,11 @@ proc multipoleCalc() {
 		mpCellList(n) = mpCellList(c);
 		mpCellList(c) = n;
 	}
+	if profLevel == 3 then writeln("AssignMpCells: ", timer.stop());
 	cellWid = region / mpCells;
 
 	// Evaluate mpCells
+	if profLevel == 3 then timer.start();
 	for (m1x, m1y, m1z) in [0..mpCells.x-1, 0..mpCells.y-1, 0..mpCells.z-1] {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
@@ -585,7 +589,9 @@ proc multipoleCalc() {
 			}
 		}
 	}
+	if profLevel == 3 then writeln("EvalMpCell: ", timer.stop());
 
+	if profLevel == 3 then timer.start();
 	curCellsEdge = maxCellsEdge;
 	curLevel = rMaxLevel - 1;
 	while curLevel >= 3 {
@@ -595,7 +601,9 @@ proc multipoleCalc() {
 		combineMpCell();
 		curLevel -= 1;
 	}
+	if profLevel == 3 then writeln("CombineMpCell: ", timer.stop());
 
+	if profLevel == 3 then timer.start();
 	for m1 in [1..64] {
 		for j in [0..maxOrd] {
 			for k in [0..j] {
@@ -604,7 +612,9 @@ proc multipoleCalc() {
 			}
 		}
 	}
+	if profLevel == 3 then writeln("mpCellSet0: ", timer.stop());
 
+	if profLevel == 3 then timer.start();
 	curCellsEdge = 2;
 	curLevel = 3;
 	while curLevel <= rMaxLevel {
@@ -615,8 +625,15 @@ proc multipoleCalc() {
 		if curLevel < rMaxLevel then propagateCellLo();
 		curLevel += 1;
 	}
+	if profLevel == 3 then writeln("GatherWellSepLo: ", timer.stop());
+	
+	if profLevel == 3 then timer.start();
 	computeFarCellInt();
+	if profLevel == 3 then writeln("ComputeFarCellInt: ", timer.stop());
+
+	if profLevel == 3 then timer.start();
 	computeNearCellInt();
+	if profLevel == 3 then writeln("ComputeNearCellInt: ", timer.stop());
 }
 
 proc computeWallForces() {
@@ -714,23 +731,36 @@ proc step() {
 	stepCount += 1;
 	timeNow = stepCount * deltaT;
 	
+	if profLevel == 2 then timer.start();
 	// Leapfrog
 	for m in mol {
 		m.rv += (0.5 * deltaT) * m.ra;
 		m.r += deltaT * m.rv;
 	}
+	if profLevel == 2 then writeln("Leapfrog 1st: ", timer.stop());
 
+	if profLevel == 2 then timer.start();
 	if nebrNow {
 		nebrNow = false;
 		dispHi = 0.0;
 		buildNebrList();
 	}
+	if profLevel == 2 then writeln("BuildNebrList: ", timer.stop());
 
+	if profLevel == 2 then timer.start();
 	computeForces();
+	if profLevel == 2 then writeln("ComputeForces: ", timer.stop());
+	
+	if profLevel == 2 then timer.start();
 	multipoleCalc();
+	if profLevel == 2 then writeln("MultipleCalc: ", timer.stop());
+	
+	if profLevel == 2 then timer.start();
 	computeWallForces();
+	if profLevel == 2 then writeln("ComputeWallForces: ", timer.stop());
 
 	// Apply thermo statistics
+	if profLevel == 2 then timer.start();
 	var s1, s2, vFac: real;
 	var vt: vector;
 	s1 = 0;
@@ -746,12 +776,15 @@ proc step() {
 		vt = m.rv + 0.5 * deltaT * m.ra;
 		m.ra += vFac * vt;
 	}
+	if profLevel == 2 then writeln("ApplyThermoStat: ", timer.stop());
 
 	// Leapfrog
+	if profLevel == 2 then timer.start();
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
-
+	if profLevel == 2 then writeln("Leapfrog 2nd: ", timer.stop());
 
 	// Evaluate thermodynamics proerties
+	if profLevel == 2 then timer.start();
 	var vv, vvMax: real;
 
 	vSum.zero();
@@ -767,8 +800,10 @@ proc step() {
 	if dispHi > 0.5 * rNebrShell then nebrNow = true;
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
+	if profLevel == 2 then writeln("EvalProps: ", timer.stop());
 
 	// Adjust initial temp
+	if profLevel == 2 then timer.start();
 	if stepCount < stepEquil {
 		kinEnInitSum += kinEnergy.v;
 		if stepCount % stepInitlzTemp == 0 {
@@ -778,6 +813,7 @@ proc step() {
 			kinEnInitSum = 0.0;
 		}
 	}
+	if profLevel == 2 then writeln("AdjustInitTemp: ", timer.stop());
 
 	// Accumulate thermodynamics properties
 	totEnergy.acc();
@@ -802,15 +838,15 @@ proc step() {
 }
 
 proc main() {
-	if profLevel >= 1 then timer.start();
+	if profLevel == 1 then timer.start();
 	init();
-	if profLevel >= 1 then writeln("Init: ", timer.stop());
+	if profLevel == 1 then writeln("Init: ", timer.stop());
 	
 	moreCycles = 1;
 	while (moreCycles) {
-		if profLevel >= 1 then timer.start();
+		if profLevel == 1 then timer.start();
 		step();
-		if profLevel >= 1 then 
+		if profLevel == 1 then 
 			writeln("Step ", stepCount, ": ", timer.stop());
 		if stepCount >= stepLimit then moreCycles = 0;
 	};
