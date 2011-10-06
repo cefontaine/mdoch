@@ -44,12 +44,11 @@ var t: myTimer;
 var i, j, k, I, J, K: int;
 var e, res: real;
 
-writeln("# of loops: ", count, ", ", I, "x", J,  "x", K,
-	", time unit: usec");
+writeln("# of loops: ", count, ", time unit: usec");
 
 // 1D loop
 I = count;
-writeln("1D Loop");
+writeln("1D Loop: ", I, "x1");
 t.start();
 for i in [1..I] do res += 1;
 e = t.stop();
@@ -66,7 +65,7 @@ writeln("while: ", e);
 res = 0;
 I = sqrt(count): int;
 J = I;
-writeln("\n2D Loop");
+writeln("\n2D Loop: ", I, "x", J);
 t.start();
 for i in [1..I] {
 	for j in [1..J] {
@@ -117,7 +116,7 @@ writeln("while-for: ", e);
 I = cbrt(count): int;
 J = I;
 K = I;
-writeln("\n3D Loop");
+writeln("\n3D Loop: ", I, "x", J, "x", K);
 res = 0;
 t.start();
 for i in [1..I] {
