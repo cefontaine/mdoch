@@ -82,6 +82,7 @@ proc init() {
 	maxOrd = MAX_MPEX_ORD;
 	
 	// Allocate storage
+	timer.start();
 	molDom = [1..nMol];
 	cellListDom = [1..(cells.prod() + nMol)];
 	nebrTabDom = [1..2 * nebrTabMax];
@@ -92,6 +93,7 @@ proc init() {
 	mpCellListDom = [1..(nMol + mpCells.prod())];
 	histRdfDom = [1..2, 1..sizeHistRdf];
 	cumRdfDom = [1..2, 1..sizeHistRdf];
+	writeln("AllocArrays: ", timer.stop());
 
 	stepCount = 0;
 	
@@ -534,11 +536,12 @@ proc multipoleCalc() {
 	var le: mp_terms;
 	var invWid, cMid, dr: vector;
 	var cc, m1v: vector_i;
-	var c, m1: int;
+	var c, j, k, m1: int;
 
 	mpCells.set(maxCellsEdge);
 
 	// Assign mpCells
+	timer.start();
 	invWid = mpCells / region;
 	for n in [nMol + 1..nMol + mpCells.prod()] do mpCellList(n) = -1;
 	for n in mol.domain {
@@ -548,17 +551,23 @@ proc multipoleCalc() {
 		mpCellList(c) = n;
 	}
 	cellWid = region / mpCells;
+	writeln("AssignMpCell: ", timer.stop());
 
 	// Evaluate mpCells
+	timer.start();
 	for (m1z, m1y, m1x) in [0..mpCells.z-1, 0..mpCells.y-1, 0..mpCells.x-1] {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		mpCell(maxLevel, m1).occ = 0;
-		for j in [0..maxOrd] {
-			for k in [0..j] {
+		j = 0;
+		while j <= maxOrd {
+			k = 0;
+			while k <= j {
 				mpCell(maxLevel, m1).le.set_c(0.0, j, k);
 				mpCell(maxLevel, m1).le.set_s(0.0, j, k);
+				k += 1;
 			}
+			j += 1;
 		}
 		if mpCellList(m1 + nMol) >= 1 {
 			cMid = (m1v + 0.5) * cellWid - 0.5 * region;
@@ -566,17 +575,22 @@ proc multipoleCalc() {
 				mpCell(maxLevel, m1).occ += 1;
 				dr = mol(j1).r - cMid;
 				evalMpL (le, dr, maxOrd);
-				for j in [0..maxOrd] {
-					for k in [0..j] {
+				j = 0;
+				while j <= maxOrd {
+					k = 0;
+					while k <= j {
 						mpCell(maxLevel, m1).le.add_c(
 							mol(j1).chg * le.c(j, k), j, k);
 						mpCell(maxLevel, m1).le.add_s(
 							mol(j1).chg * le.s(j, k), j, k);
+						k += 1;
 					}
+					j += 1;
 				}
 			}
 		}
 	}
+	writeln("EvalMpCell: ", timer.stop());
 
 	curCellsEdge = maxCellsEdge;
 	curLevel = maxLevel - 1;

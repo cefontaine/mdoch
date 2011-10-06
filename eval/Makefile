@@ -2,7 +2,7 @@ CC=gcc
 CHPL=chpl
 CFLAGS=-O3 -lm
 CHFLAGS=--fast
-TARGETS=array allpairs2d
+TARGETS=array loop allpairs2d
 
 all: $(TARGETS) basic_c basic_chpl
 
