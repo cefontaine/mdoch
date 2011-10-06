@@ -824,7 +824,8 @@ proc step() {
 		kinEnergy.avg(stepAvg);
 
 		// Print summary
-		writeln("\t", stepCount, "\t", timeNow, "\t", vSum.csum() / nMol,
+		writeln("\t", stepCount, "\t", timeNow, 
+			"\t", vSum.csum() / nMol,
 			"\t", totEnergy.sum, "\t", totEnergy.sum2, 
 			"\t", kinEnergy.sum, "\t", kinEnergy.sum2);
 		stdout.flush();
@@ -833,8 +834,8 @@ proc step() {
 		kinEnergy.zero();
 	}
 
-	if stepCount >= stepEquil && (stepCount - stepEquil) % stepRdf == 0 then
-		evalRdf();
+	if stepCount >= stepEquil && 
+	   (stepCount - stepEquil) % stepRdf == 0 then evalRdf();
 }
 
 proc main() {
