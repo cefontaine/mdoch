@@ -68,19 +68,16 @@ writeln("\n2D Loop: ", I, "x", J);
 res = 0;
 t.start();
 for i in [1..I] {
-	for j in [1..J] {
-		res += 1;
-	}
+	for j in [1..J] do res += 1;
 }
 e = t.stop();
 writeln("for-for: ", e);
 
 res = 0;
 t.start();
-for (i, j) in [1..I, 1..J] do
-		res += 1;
+for (i, j) in [1..I, 1..J] do res += 1;
 e = t.stop();
-writeln("for,for : ", e);
+writeln("for,for: ", e);
 
 res = 0;
 t.start();
@@ -127,8 +124,7 @@ res = 0;
 t.start();
 for i in [1..I] {
 	for j in [1..J] {
-		for k in [1..K] do
-			res += 1;
+		for k in [1..K] do res += 1;
 	}
 }
 e = t.stop();
@@ -136,8 +132,7 @@ writeln("for-for-for: ", e);
 
 res = 0;
 t.start();
-for (i, j, k) in [1..I, 1..J, 1..K] do
-			res += 1;
+for (i, j, k) in [1..I, 1..J, 1..K] do res += 1;
 e = t.stop();
 writeln("for,for,for: ", e);
 
@@ -172,8 +167,7 @@ t.start();
 for i in [1..I] {
 	j = 1;
 	while j <= J {
-		for k in [1..K] do
-			res += 1;
+		for k in [1..K] do res += 1;
 		j += 1;
 	}
 }
@@ -201,8 +195,7 @@ t.start();
 i = 1;
 while i <= I {
 	for j in [1..J] {
-		for k in [1..K] do
-			res += 1;
+		for k in [1..K] do res += 1;
 	}
 	i += 1; 
 }
@@ -213,8 +206,7 @@ res = 0;
 t.start();
 i = 1;
 while i <= I {
-	for (j, k) in [1..J, 1..K] do
-			res += 1;
+	for (j, k) in [1..J, 1..K] do res += 1;
 	i += 1; 
 }
 e = t.stop();
@@ -242,8 +234,7 @@ i = 1;
 while i <= I {
 	j = 1;
 	while j <= J {
-		for k in [1..K] do
-			res += 1;
+		for k in [1..K] do res += 1;
 		j += 1;
 	}
 	i += 1; 

@@ -82,7 +82,6 @@ proc init() {
 	maxOrd = MAX_MPEX_ORD;
 	
 	// Allocate storage
-	timer.start();
 	molDom = [1..nMol];
 	cellListDom = [1..(cells.prod() + nMol)];
 	nebrTabDom = [1..2 * nebrTabMax];
@@ -93,7 +92,6 @@ proc init() {
 	mpCellListDom = [1..(nMol + mpCells.prod())];
 	histRdfDom = [1..2, 1..sizeHistRdf];
 	cumRdfDom = [1..2, 1..sizeHistRdf];
-	writeln("AllocArrays: ", timer.stop());
 
 	stepCount = 0;
 	
@@ -140,6 +138,53 @@ iter iterMpCellList(n: int) {
 	while i >= 1 {
 		yield i;
 		i = mpCellList(i);
+	}
+}
+
+iter iterMaxOrd(ord: int, init: int = 0) {
+	var i, j: int = init;
+	while i <= ord {
+		j = 0;
+		while j <= i {
+			yield (i, j);
+			j += 1;
+		}
+		i += 1;
+	}
+}
+
+// To reduce domain construction/destruction overhead
+iter iterDescend(max: int, min: int, step: int = -1) {
+	var i: int = max;
+	while i >= min {
+		yield i;
+		i += step;
+	}
+}
+
+iter iterAscend(min: int, max: int, step: int = 1) {
+	var i: int = min;
+	while i <= max {
+		yield i;
+		i += step;
+	}
+}
+
+iter iterAscend(min1: int, max1: int, min2:int, max2:int, min3:int,
+	max3:int, step1: int = 1, step2: int = 1, step3: int = 1) {
+	var i, j, k: int;
+	i = min1;
+	j = min2;
+	k = min3;
+	while i <= max1 {
+		while j <= max2 {
+			while k <= max3 {
+				yield (i, j, k);
+				k += step3;
+			}
+			j += step2;
+		}
+		i += step1;
 	}
 }
 
@@ -213,8 +258,7 @@ proc computeForces() {
 
 proc evalMpL (inout le: mp_terms, v: vector, maxOrd: int) {
 	var rr, a, a1, a2: real;
-	var k: int;
-
+	
 	rr = v.lensq();
 	le.set_c(1.0, 0, 0);
 	le.set_s(0.0, 0, 0);
@@ -222,7 +266,7 @@ proc evalMpL (inout le: mp_terms, v: vector, maxOrd: int) {
 		a = - 1.0 / (2 * j);
 		le.set_c(a*(v.x*le.c(j-1, j-1) - v.y * le.s(j-1, j-1)), j, j);
 		le.set_s(a*(v.y*le.c(j-1, j-1) + v.x * le.s(j-1, j-1)), j, j);
-		for k in [0..j-1 by -1] {
+		for k in iterDescend(j - 1, 0) {
 			a = 1.0 / ((j + k) * (j - k));
 			a1 = (2 * j - 1) * v.z * a;
 			a2 = rr * a;
@@ -240,26 +284,24 @@ proc evalMpProdLL(inout le1: mp_terms, le2: mp_terms, le3: mp_terms,
 	maxOrd: int) {
   	var s2, s3, v1c2, v1c3, v1s2, v1s3: real;
 	var j3, k3: int;
-
-	for j1 in [0..maxOrd] {
-		for k1 in [0..j1] {
-			le1.set_c(0.0, j1, k1);
-			le1.set_s(0.0, j1, k1);
-			for j2 in [0..j1] {
-				j3 = j1 - j2;
-				for k2 in [max(-j2, k1-j3)..min(j2, k1+j3)] {
-					k3 = k1 - k2;
-					v1c2 = le2.c(j2, abs(k2));
-					v1s2 = le2.s(j2, abs(k2));
-					if k2 < 0 then v1s2 = -v1s2;
-					v1c3 = le3.c(j3, abs(k3));
-					v1s3 = le3.s(j3, abs(k3));
-					if k3 < 0 then v1s3 = -v1s3;
-					if k2 < 0 && isOdd(k2) then s2 = -1.0; else s2 = 1.0;
-					if k3 < 0 && isOdd(k3) then s3 = -1.0; else s3 = 1.0;
-					le1.add_c(s2 * s3 * (v1c2 * v1c3 - v1s2 * v1s3), j1, k1);
-					le1.add_s(s2 * s3 * (v1s2 * v1c3 + v1c2 * v1s3), j1, k1);
-				}
+	
+	for (j1, k1) in iterMaxOrd(maxOrd) {
+		le1.set_c(0.0, j1, k1);
+		le1.set_s(0.0, j1, k1);
+		for j2 in iterAscend(0, j1) {
+			j3 = j1 - j2;
+			for k2 in iterAscend(max(-j2, k1-j3), min(j2, k1+j3)) {
+				k3 = k1 - k2;
+				v1c2 = le2.c(j2, abs(k2));
+				v1s2 = le2.s(j2, abs(k2));
+				if k2 < 0 then v1s2 = -v1s2;
+				v1c3 = le3.c(j3, abs(k3));
+				v1s3 = le3.s(j3, abs(k3));
+				if k3 < 0 then v1s3 = -v1s3;
+				if k2 < 0 && isOdd(k2) then s2 = -1.0; else s2 = 1.0;
+				if k3 < 0 && isOdd(k3) then s3 = -1.0; else s3 = 1.0;
+				le1.add_c(s2 * s3 * (v1c2 * v1c3 - v1s2 * v1s3), j1, k1);
+				le1.add_s(s2 * s3 * (v1s2 * v1c3 + v1c2 * v1s3), j1, k1);
 			}
 		}
 	}
@@ -275,7 +317,7 @@ proc evalMpM(inout me: mp_terms, inout v: vector, maxOrd: int) {
 		a = - (2 * j - 1) * rri;
 		me.set_c(a * (v.x * me.c(j-1, j-1) - v.y * me.s(j-1, j-1)), j, j);
 		me.set_s(a * (v.y * me.c(j-1, j-1) + v.x * me.s(j-1, j-1)), j, j);
-		for k in [0..j-1 by -1] {
+		for k in iterDescend(j - 1, 0) {
 			a1 = (2 * j - 1) * v.z * rri;
 			a2 = (j - 1 + k) * (j - 1 - k) * rri;
 			me.set_c(a1 * me.c(j - 1, k), j, k);
@@ -288,30 +330,28 @@ proc evalMpM(inout me: mp_terms, inout v: vector, maxOrd: int) {
 	}
 }
 
-proc evalMpProdLM(inout me1:mp_terms, inout le2:mp_terms, inout me3: mp_terms, 
-	maxOrd: int) {
+proc evalMpProdLM(inout me1:mp_terms, inout le2:mp_terms, 
+	inout me3: mp_terms, maxOrd: int) {
 	var s2, s3, v1c2, v1s2, vmc3, vms3: real;
 	var j3, k3: int;
 	
-	for j1 in [0..maxOrd] {
-		for k1 in [0..j1] {
-			me1.set_c(0.0, j1, k1);
-			me1.set_s(0.0, j1, k1);
-			for j2 in [0..maxOrd-j1] {
-				j3 = j1 + j2;
-				for k2 in [max(-j2, -k1-j3)..min(j2, -k1+j3)] {
-					k3 = k1 + k2;
-					v1c2 = le2.c(j2, abs(k2));
-					v1s2 = le2.s(j2, abs(k2));
-					if k2 < 0 then v1s2 = -v1s2;
-					vmc3 = me3.c(j3, abs(k3));
-					vms3 = me3.s(j3, abs(k3));
-					if k3 < 0 then vms3 = -vms3;
-					if k2 < 0 && isOdd(k2) then s2 = -1.0; else s2 = 1.0;
-					if k3 < 0 && isOdd(k3) then s3 = -1.0; else s3 = 1.0;
-					me1.add_c(s2 * s3 * (v1c2 * vmc3 + v1s2 * vms3), j1, k1);
-					me1.add_s(s2 * s3 * (v1c2 * vms3 - v1s2 * vmc3), j1, k1);
-				}
+	for (j1, k1) in iterMaxOrd(maxOrd) {
+		me1.set_c(0.0, j1, k1);
+		me1.set_s(0.0, j1, k1);
+		for j2 in iterAscend(0, maxOrd-j1) {
+			j3 = j1 + j2;
+			for k2 in iterAscend(max(-j2, -k1-j3), min(j2, -k1+j3)) {
+				k3 = k1 + k2;
+				v1c2 = le2.c(j2, abs(k2));
+				v1s2 = le2.s(j2, abs(k2));
+				if k2 < 0 then v1s2 = -v1s2;
+				vmc3 = me3.c(j3, abs(k3));
+				vms3 = me3.s(j3, abs(k3));
+				if k3 < 0 then vms3 = -vms3;
+				if k2 < 0 && isOdd(k2) then s2 = -1.0; else s2 = 1.0;
+				if k3 < 0 && isOdd(k3) then s3 = -1.0; else s3 = 1.0;
+				me1.add_c(s2 * s3 * (v1c2 * vmc3 + v1s2 * vms3), j1, k1);
+				me1.add_s(s2 * s3 * (v1c2 * vms3 - v1s2 * vmc3), j1, k1);
 			}
 		}
 	}
@@ -323,44 +363,40 @@ proc evalMpForce(inout f: vector, inout u: real, inout me: mp_terms,
 	var a: real;
 
 	f.zero();
-	for j in [1..maxOrd] {
-		for k in [0..j] {
-			if k < j - 1 {
-				fc.x = le.c(j - 1, k + 1);
-				fc.y = le.s(j - 1, k + 1);
-				fs.x = le.s(j - 1, k + 1);
-				fs.y = -le.c(j - 1, k + 1);
-			} else { 
-				fc.x = 0.0; 
-				fc.y = 0.0; 
-				fs.x = 0.0; 
-				fs.y = 0.0; 
-			}
-			if k < j { 
-				fc.z = le.c(j - 1, k);
-				fs.z = le.s(j - 1, k);
-			} else { 
-				fc.z = 0.0; 
-				fs.z = 0.0;
-			}
-			if k > 0 {
-				fc.x -= le.c(j - 1, k - 1);
-				fc.y += le.s(j - 1, k - 1);
-				fc.z *= 2.0;
-				fs.x -= le.s(j - 1, k - 1);
-				fs.y -= le.c(j - 1, k - 1);
-				fs.z *= 2.0;
-			}
-			f = f + me.c(j, k) * fc + me.s(j, k) * fs;
+	for (j, k) in iterMaxOrd(maxOrd, 1) {
+		if k < j - 1 {
+			fc.x = le.c(j - 1, k + 1);
+			fc.y = le.s(j - 1, k + 1);
+			fs.x = le.s(j - 1, k + 1);
+			fs.y = -le.c(j - 1, k + 1);
+		} else { 
+			fc.x = 0.0; 
+			fc.y = 0.0; 
+			fs.x = 0.0; 
+			fs.y = 0.0; 
 		}
+		if k < j { 
+			fc.z = le.c(j - 1, k);
+			fs.z = le.s(j - 1, k);
+		} else { 
+			fc.z = 0.0; 
+			fs.z = 0.0;
+		}
+		if k > 0 {
+			fc.x -= le.c(j - 1, k - 1);
+			fc.y += le.s(j - 1, k - 1);
+			fc.z *= 2.0;
+			fs.x -= le.s(j - 1, k - 1);
+			fs.y -= le.c(j - 1, k - 1);
+			fs.z *= 2.0;
+		}
+		f = f + me.c(j, k) * fc + me.s(j, k) * fs;
 	}
 	u = 0.0;
-	for j in [0..maxOrd] {
-		for k in [0..j] {
-			a = me.c(j, k) * le.c(j, k) + me.s(j, k) * le.s(j, k);
-			if k > 0 then a *= 2.0;
-			u += a;
-		}
+	for (j, k) in iterMaxOrd(maxOrd) {
+		a = me.c(j, k) * le.c(j, k) + me.s(j, k) * le.s(j, k);
+		if k > 0 then a *= 2.0;
+		u += a;
 	}
 }
 
@@ -374,14 +410,12 @@ proc combineMpCell() {
 	for (m1z, m1y, m1x) in [0..mpCells.z-1, 0..mpCells.y-1, 0..mpCells.x-1] {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
-		for j in [0..maxOrd] {
-			for k in [0..j] {
-				mpCell(curLevel, m1).le.set_c(0.0, j, k);
-				mpCell(curLevel, m1).le.set_s(0.0, j, k);
-			}
+		for (j, k) in iterMaxOrd(maxOrd) {
+			mpCell(curLevel, m1).le.set_c(0.0, j, k);
+			mpCell(curLevel, m1).le.set_s(0.0, j, k);
 		}
 		mpCell(curLevel, m1).occ = 0;
-		for iDir in [0..7] {
+		for iDir in iterAscend(0, 7) {
 			m2v = 2 * m1v;
 			rShift = (-0.25) * cellWid;
 			if isOdd(iDir) { m2v.x += 1; rShift.x *= -1.0; }
@@ -392,11 +426,9 @@ proc combineMpCell() {
 			mpCell(curLevel, m1).occ += mpCell(curLevel + 1, m2).occ;
 			evalMpL(le2, rShift, maxOrd);
 			evalMpProdLL(le, mpCell(curLevel+1, m2).le, le2, maxOrd);
-			for j in [0..maxOrd] {
-				for k in [0..j] {
-					mpCell(curLevel, m1).le.add_c(le.c(j, k), j, k);
-					mpCell(curLevel, m1).le.add_s(le.s(j, k), j, k);
-				}
+			for (j, k) in iterMaxOrd(maxOrd) {
+				mpCell(curLevel, m1).le.add_c(le.c(j, k), j, k);
+				mpCell(curLevel, m1).le.add_s(le.s(j, k), j, k);
 			}
 		}
 	}
@@ -414,9 +446,10 @@ proc gatherWellSepLo() {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		if mpCell(curLevel, m1).occ == 0 then continue;
-		for (m2x, m2y, m2z) in [m1v.ll_x(wellSep)..m1v.hl_x(wellSep),
-								m1v.ll_y(wellSep)..m1v.hl_y(wellSep),
-								m1v.ll_z(wellSep)..m1v.hl_z(wellSep)] {
+		for (m2x, m2y, m2z) in iterAscend(
+			m1v.ll_x(wellSep), m1v.hl_x(wellSep),
+			m1v.ll_y(wellSep), m1v.hl_y(wellSep),
+			m1v.ll_z(wellSep), m1v.hl_z(wellSep)) {
 			m2v.set(m2x, m2y, m2z);
 			if m2v.x < 0 || m2v.x >= mpCells.x ||
 			   m2v.y < 0 || m2v.y >= mpCells.y ||
@@ -426,21 +459,21 @@ proc gatherWellSepLo() {
 			   abs(m2v.z - m1v.z) <= wellSep then continue;
 			m2 = vlinear(m2v, mpCells);
 			if mpCell(curLevel, m2).occ == 0 then continue;
-			for j in [0..maxOrd] {
-				if isOdd(j) then s = -1.0; else s = 1.0;
-				for k in [0..j] {
-					le.set_c(s * mpCell(curLevel, m2).le.c(j, k), j, k);
-					le.set_s(s * mpCell(curLevel, m2).le.s(j, k), j, k);
+			for (j, k) in iterMaxOrd(maxOrd) {
+				if isOdd(j) {
+					le.set_c(-1 * mpCell(curLevel, m2).le.c(j, k), j, k);
+					le.set_s(-1 * mpCell(curLevel, m2).le.s(j, k), j, k);
+				} else {
+					le.set_c(mpCell(curLevel, m2).le.c(j, k), j, k);
+					le.set_s(mpCell(curLevel, m2).le.s(j, k), j, k);
 				}
 			}
 			rShift = (m2v - m1v) * cellWid;
 			evalMpM(me2, rShift, maxOrd);
 			evalMpProdLM(me, le, me2, maxOrd);
-			for j in [0..maxOrd] {
-				for k in [0..j] {
-					mpCell(curLevel, m1).me.add_c(me.c(j, k), j, k);
-					mpCell(curLevel, m1).me.add_s(me.s(j, k), j, k);
-				}
+			for (j, k) in iterMaxOrd(maxOrd) {
+				mpCell(curLevel, m1).me.add_c(me.c(j, k), j, k);
+				mpCell(curLevel, m1).me.add_s(me.s(j, k), j, k);
 			}
 		}
 	}
@@ -457,7 +490,7 @@ proc propagateCellLo() {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		if mpCell(curLevel, m1).occ == 0 then continue;
-		for iDir in [0..7] {
+		for iDir in iterAscend(0, 7) {
 			m2v = 2 * m1v;
 			rShift = (-0.25) * cellWid;
 			if isOdd(iDir) { m2v.x += 1; rShift.x *= -1.0; }
@@ -503,13 +536,13 @@ proc computeNearCellInt() {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		if mpCell(maxLevel, m1).occ == 0 then continue;
-		for m2z in [m1z..min(m1v.z+wellSep, mpCells.z-1)] {
+		for m2z in iterAscend(m1z, min(m1v.z+wellSep, mpCells.z-1)) {
 			if m2z == m1z then m2yLo = m1y;
 			else m2yLo = max(m1y - wellSep, 0);
-			for m2y in [m2yLo..min(m1v.y+wellSep, mpCells.y-1)] {
+			for m2y in iterAscend(m2yLo, min(m1v.y+wellSep, mpCells.y-1)) {
 				if m2z == m1z && m2y == m1y then m2xLo = m1x;
 				else m2xLo = max(m1x - wellSep, 0);
-				for m2x in [m2xLo..min(m1v.x+wellSep, mpCells.x-1)] {
+				for m2x in iterAscend(m2xLo, min(m1v.x+wellSep,mpCells.x-1)) {
 					m2v.set(m2x, m2y, m2z);
 					m2 = vlinear(m2v, mpCells);
 					if mpCell(maxLevel, m2).occ == 0 then continue;
@@ -536,12 +569,11 @@ proc multipoleCalc() {
 	var le: mp_terms;
 	var invWid, cMid, dr: vector;
 	var cc, m1v: vector_i;
-	var c, j, k, m1: int;
+	var c, m1: int;
 
 	mpCells.set(maxCellsEdge);
 
 	// Assign mpCells
-	timer.start();
 	invWid = mpCells / region;
 	for n in [nMol + 1..nMol + mpCells.prod()] do mpCellList(n) = -1;
 	for n in mol.domain {
@@ -551,23 +583,15 @@ proc multipoleCalc() {
 		mpCellList(c) = n;
 	}
 	cellWid = region / mpCells;
-	writeln("AssignMpCell: ", timer.stop());
 
 	// Evaluate mpCells
-	timer.start();
 	for (m1z, m1y, m1x) in [0..mpCells.z-1, 0..mpCells.y-1, 0..mpCells.x-1] {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		mpCell(maxLevel, m1).occ = 0;
-		j = 0;
-		while j <= maxOrd {
-			k = 0;
-			while k <= j {
-				mpCell(maxLevel, m1).le.set_c(0.0, j, k);
-				mpCell(maxLevel, m1).le.set_s(0.0, j, k);
-				k += 1;
-			}
-			j += 1;
+		for (j, k) in iterMaxOrd(maxOrd) {
+			mpCell(maxLevel, m1).le.set_c(0.0, j, k);
+			mpCell(maxLevel, m1).le.set_s(0.0, j, k);
 		}
 		if mpCellList(m1 + nMol) >= 1 {
 			cMid = (m1v + 0.5) * cellWid - 0.5 * region;
@@ -575,22 +599,15 @@ proc multipoleCalc() {
 				mpCell(maxLevel, m1).occ += 1;
 				dr = mol(j1).r - cMid;
 				evalMpL (le, dr, maxOrd);
-				j = 0;
-				while j <= maxOrd {
-					k = 0;
-					while k <= j {
-						mpCell(maxLevel, m1).le.add_c(
-							mol(j1).chg * le.c(j, k), j, k);
-						mpCell(maxLevel, m1).le.add_s(
-							mol(j1).chg * le.s(j, k), j, k);
-						k += 1;
-					}
-					j += 1;
+				for (j, k) in iterMaxOrd(maxOrd) {
+					mpCell(maxLevel, m1).le.add_c(
+						mol(j1).chg * le.c(j, k), j, k);
+					mpCell(maxLevel, m1).le.add_s(
+						mol(j1).chg * le.s(j, k), j, k);
 				}
 			}
 		}
 	}
-	writeln("EvalMpCell: ", timer.stop());
 
 	curCellsEdge = maxCellsEdge;
 	curLevel = maxLevel - 1;
@@ -603,11 +620,9 @@ proc multipoleCalc() {
 	}
 
 	for m1 in [1..64] {
-		for j in [0..maxOrd] {
-			for k in [0..j] {
-				mpCell(2, m1).me.set_c(0.0, j, k);
-				mpCell(2, m1).me.set_s(0.0, j, k);
-			}
+		for (j, k) in iterMaxOrd(maxOrd) {
+			mpCell(2, m1).me.set_c(0.0, j, k);
+			mpCell(2, m1).me.set_s(0.0, j, k);
 		}
 	}
 
@@ -679,7 +694,7 @@ proc evalRdf() {
 
 	deltaR = rangeRdf / sizeHistRdf;
 	for j1 in [1..nMol - 1] {
-		for j2 in [j1 + 1..nMol] {
+		for j2 in iterAscend(j1 + 1, nMol) {
 			dr = mol(j1).r - mol(j2).r;
 			rr = dr.lensq();
 			if rr < rangeRdf ** 2 {
@@ -696,9 +711,9 @@ proc evalRdf() {
 			(nMol ** 2) * countRdf);
 		for k in [1..2] {
 			cumRdf(k, 1) = 0.0;
-			for n in [2..sizeHistRdf] do
+			for n in iterAscend(2, sizeHistRdf) do
 				cumRdf(k, n) = cumRdf(k, n - 1) + histRdf(k, n);
-			for n in [1..sizeHistRdf] {
+			for n in iterAscend(1, sizeHistRdf) {
 				histRdf(k, n) *= normFac / ((n - 0.5) ** 2);
 				cumRdf(k, n) /= 0.5 * nMol * countRdf;
 			}
@@ -706,7 +721,7 @@ proc evalRdf() {
 	
 		var rb: real;
 		writeln("rdf");
-		for n in [1..sizeHistRdf] {
+		for n in iterAscend(1, sizeHistRdf) {
 			rb = (n - 0.5) * rangeRdf / sizeHistRdf;
 			write(rb, " ", n, " ");
 			for k in [1..2] do 	write(histRdf(k, n), " ", cumRdf(k, n), " ");

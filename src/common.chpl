@@ -557,123 +557,19 @@ record prop {
 proc mpidx (i: int, j: int) { return i * (i + 1) / 2 + j; }
 
 record mp_terms {
-	// size = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD;
-	var _c0, _c1, _c2, _c3, _c4, _c5: real;
-	var _s0, _s1, _s2, _s3, _s4, _s5: real;
-	proc c(i: int) {
-		select i {
-			when 0 do return _c0;
-			when 1 do return _c1;
-			when 2 do return _c2;
-			when 3 do return _c3;
-			when 4 do return _c4;
-			when 5 do return _c5;
-			otherwise errExit("Out of bound");
-		}
-		return -1;
-	}
-	proc s(i: int) {
-		select i {
-			when 0 do return _s0;
-			when 1 do return _s1;
-			when 2 do return _s2;
-			when 3 do return _s3;
-			when 4 do return _s4;
-			when 5 do return _s5;
-			otherwise errExit("Out of bound");
-		}
-		return -1;
-	}
-	proc c(i: int, j: int) { 
-		select i * (i + 1) / 2 + j {
-			when 0 do return _c0;
-			when 1 do return _c1;
-			when 2 do return _c2;
-			when 3 do return _c3;
-			when 4 do return _c4;
-			when 5 do return _c5;
-			otherwise errExit("Out of bound");
-		}
-		return -1;
-	}
-	proc s(i: int, j: int) { 
-		select i * (i + 1) / 2 + j {
-			when 0 do return _s0;
-			when 1 do return _s1;
-			when 2 do return _s2;
-			when 3 do return _s3;
-			when 4 do return _s4;
-			when 5 do return _s5;
-			otherwise errExit("Out of bound");
-		}
-		return -1;
-	}
-	proc set_c (v: real, i: int, j: int) {
-		select i * (i + 1) / 2 + j {
-			when 0 do _c0 = v;
-			when 1 do _c1 = v;
-			when 2 do _c2 = v;
-			when 3 do _c3 = v;
-			when 4 do _c4 = v;
-			when 5 do _c5 = v;
-			otherwise errExit("Out of bound");
-		}
-	}
-	proc set_s (v: real, i: int, j: int) {
-		select i * (i + 1) / 2 + j {
-			when 0 do _s0 = v;
-			when 1 do _s1 = v;
-			when 2 do _s2 = v;
-			when 3 do _s3 = v;
-			when 4 do _s4 = v;
-			when 5 do _s5 = v;
-			otherwise errExit("Out of bound");
-		}
-	}
-	proc add_c (v: real, i: int, j: int) { 
-		select i * (i + 1) / 2 + j {
-			when 0 do _c0 += v;
-			when 1 do _c1 += v;
-			when 2 do _c2 += v;
-			when 3 do _c3 += v;
-			when 4 do _c4 += v;
-			when 5 do _c5 += v;
-			otherwise errExit("Out of bound");
-		}
-	}
-	proc add_s (v: real, i: int, j: int) {
-		select i * (i + 1) / 2 + j {
-			when 0 do _s0 += v;
-			when 1 do _s1 += v;
-			when 2 do _s2 += v;
-			when 3 do _s3 += v;
-			when 4 do _s4 += v;
-			when 5 do _s5 += v;
-			otherwise errExit("Out of bound");
-		}
-	}
-	proc sub_c (v: real, i: int, j: int) {
-		select i * (i + 1) / 2 + j {
-			when 0 do _c0 -= v;
-			when 1 do _c1 -= v;
-			when 2 do _c2 -= v;
-			when 3 do _c3 -= v;
-			when 4 do _c4 -= v;
-			when 5 do _c5 -= v;
-			otherwise errExit("Out of bound");
-		}
-	}
-	proc sub_s (v: real, i: int, j: int) {
-		select i * (i + 1) / 2 + j {
-			when 0 do _s0 -= v;
-			when 1 do _s1 -= v;
-			when 2 do _s2 -= v;
-			when 3 do _s3 -= v;
-			when 4 do _s4 -= v;
-			when 5 do _s5 -= v;
-			otherwise errExit("Out of bound");
-		}
-	}
+	// size = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD + 1;
+	var _c: 6*real;
+	var _s: 6*real;
+	proc c(i: int) { return _c(i); }
+	proc s(i: int) { return _s(i); }
+	proc c(i: int, j: int) { return _c(i * (i + 1) / 2 + j + 1); }
+	proc s(i: int, j: int) { return _s(i * (i + 1) / 2 + j + 1); }
+	proc set_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) = v; }
+	proc set_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j + 1) = v; }
+	proc add_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) += v; }
+	proc add_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j + 1) += v; }
+	proc sub_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) -= v; }
+	proc sub_s (v: real, i:	int, j: int) { _s(i * (i + 1) / 2 + j + 1) -= v; }
 }
 
 record mp_cell {
