@@ -62,10 +62,10 @@ e = t.stop();
 writeln("while: ", e);
 
 // 2D loop
-res = 0;
 I = sqrt(count): int;
 J = I;
 writeln("\n2D Loop: ", I, "x", J);
+res = 0;
 t.start();
 for i in [1..I] {
 	for j in [1..J] {
@@ -74,6 +74,13 @@ for i in [1..I] {
 }
 e = t.stop();
 writeln("for-for: ", e);
+
+res = 0;
+t.start();
+for (i, j) in [1..I, 1..J] do
+		res += 1;
+e = t.stop();
+writeln("for,for : ", e);
 
 res = 0;
 t.start();
@@ -87,6 +94,15 @@ for i in [1..I] {
 e = t.stop();
 writeln("for-while: ", e);
 
+res = 0;
+t.start();
+i = 1;
+while i <= I {
+	for j in [1..J] do res += 1; 
+	i += 1; 
+}
+e = t.stop();
+writeln("while-for: ", e);
 
 res = 0;
 t.start();
@@ -101,16 +117,6 @@ while i <= I {
 }
 e = t.stop();
 writeln("while-while: ", e);
-
-res = 0;
-t.start();
-i = 1;
-while i <= I {
-	for j in [1..J] do res += 1; 
-	i += 1; 
-}
-e = t.stop();
-writeln("while-for: ", e);
 
 // 3D loop
 I = cbrt(count): int;
@@ -130,6 +136,13 @@ writeln("for-for-for: ", e);
 
 res = 0;
 t.start();
+for (i, j, k) in [1..I, 1..J, 1..K] do
+			res += 1;
+e = t.stop();
+writeln("for,for,for: ", e);
+
+res = 0;
+t.start();
 for i in [1..I] {
 	for j in [1..J] {
 		k = 1;
@@ -141,6 +154,18 @@ for i in [1..I] {
 }
 e = t.stop();
 writeln("for-for-while: ", e);
+
+res = 0;
+t.start();
+for (i, j) in [1..I, 1..J] {
+	k = 1;
+	while k <= K {
+		res += 1;
+		k += 1;
+	}
+}
+e = t.stop();
+writeln("for,for-while: ", e);
 
 res = 0;
 t.start();
@@ -183,6 +208,17 @@ while i <= I {
 }
 e = t.stop();
 writeln("while-for-for: ", e);
+
+res = 0;
+t.start();
+i = 1;
+while i <= I {
+	for (j, k) in [1..J, 1..K] do
+			res += 1;
+	i += 1; 
+}
+e = t.stop();
+writeln("while-for,for: ", e);
 
 res = 0;
 t.start();
