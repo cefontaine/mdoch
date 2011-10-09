@@ -87,29 +87,27 @@ proc step() {
 	stepCount += 1;
 	timeNow = stepCount * deltaT;
 	
-	// Leapfrog
 	for m in mol {
+		// Leapfrog
 		m.rv += (0.5 * deltaT) * m.ra;
 		m.r += deltaT * m.rv;
-	}
-
-	// Apply boundary condition
-	for m in mol do
+		// Apply boundary condition
 		m.r = vwrap(m.r, region);
+		// Re-initial acceleration
+		m.ra.zero();
+	}
 
 	// Compute forces
 	var dr: vector2d;
 	var fcVal, rr, rrCut, rri, rri3: real;
 
 	rrCut = rCut ** 2;
-	for m in mol do
-		m.ra.zero();
 
 	uSum = 0;
 	virSum = 0;
 
 	for d in [1..nMol-1] {
-		for d2 in [d+1..nMol] {
+		for d2 in iterAscend(d + 1, nMol) {
 			dr = mol(d).r - mol(d2).r;
 			dr = vwrap(dr, region);
 			rr = dr.lensq();
@@ -126,8 +124,7 @@ proc step() {
 	}
 	
 	// Leafrog
-	for m in mol do
-		m.rv += (0.5 * deltaT) * m.ra;
+	for m in mol do	m.rv += (0.5 * deltaT) * m.ra;
 
 	// Evaluate thermodynamics properties
 	vSum.zero();
@@ -165,16 +162,10 @@ proc step() {
 }
 
 proc main() {
-	if profLevel >= 1 then timer.start();
 	init();
-	if profLevel >= 1 then writeln("Init: ", timer.stop());
-
 	moreCycles = 1;
 	while (moreCycles) {
-		if profLevel >= 1 then timer.start();
 		step();
-		if profLevel >= 1 then
-			writeln("Step ", stepCount, ": ", timer.stop());
 		if (stepCount >= stepLimit) then moreCycles = 0;
 	};
 }

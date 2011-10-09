@@ -91,6 +91,55 @@ record elapsedTimer {
 	}
 }
 
+// Iterators
+iter iterDescend(max: int, min: int, step: int = -1) {
+	var i: int = max;
+	while i >= min {
+		yield i;
+		i += step;
+	}
+}
+
+iter iterAscend(min: int, max: int, step: int = 1) {
+	var i: int = min;
+	while i <= max {
+		yield i;
+		i += step;
+	}
+}
+
+iter iterAscend2(min1: int, max1: int, min2:int, max2:int,
+	step1: int = 1, step2: int = 1) {
+	var i, j: int;
+	i = min1;
+	while i <= max1 {
+		j = min2;
+		while j <= max2 {
+			yield (i, j);
+			j += step2;
+		}
+		i += step1;
+	}
+}
+
+iter iterAscend3(min1: int, max1: int, min2:int, max2:int, min3:int,
+	max3:int, step1: int = 1, step2: int = 1, step3: int = 1) {
+	var i, j, k: int;
+	i = min1;
+	while i <= max1 {
+		j = min2;
+		while j <= max2 {
+			k = min3;
+			while k <= max3 {
+				yield (i, j, k);
+				k += step3;
+			}
+			j += step2;
+		}
+		i += step1;
+	}
+}
+
 // 2D-Vector
 record vector2d {
 	var x, y: real;
@@ -587,6 +636,6 @@ proc debugPrintMol2D(mol: [] mol2d) {
 proc debugPrintMol(mol: [] mol3d) {
 	for m in mol do
 		writeln("r=(", m.r.x, ", ", m.r.y, ", ", m.r.z, ")",
-				"rv=(", m.rv.x, ", ", m.rv.y, ", ", m.rv.z, ")", 
-				"ra=(", m.ra.x, ", ", m.ra.y, ", ", m.ra.z, ")");
+				", rv=(", m.rv.x, ", ", m.rv.y, ", ", m.rv.z, ")", 
+				", ra=(", m.ra.x, ", ", m.ra.y, ", ", m.ra.z, ")");
 }

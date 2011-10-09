@@ -152,42 +152,6 @@ iter iterMaxOrd(ord: int, init: int = 0) {
 		i += 1;
 	}
 }
-
-// To reduce domain construction/destruction overhead
-iter iterDescend(max: int, min: int, step: int = -1) {
-	var i: int = max;
-	while i >= min {
-		yield i;
-		i += step;
-	}
-}
-
-iter iterAscend(min: int, max: int, step: int = 1) {
-	var i: int = min;
-	while i <= max {
-		yield i;
-		i += step;
-	}
-}
-
-iter iterAscend(min1: int, max1: int, min2:int, max2:int, min3:int,
-	max3:int, step1: int = 1, step2: int = 1, step3: int = 1) {
-	var i, j, k: int;
-	i = min1;
-	j = min2;
-	k = min3;
-	while i <= max1 {
-		while j <= max2 {
-			while k <= max3 {
-				yield (i, j, k);
-				k += step3;
-			}
-			j += step2;
-		}
-		i += step1;
-	}
-}
-
 proc buildNebrList() {
 	var dr, invWid: vector;
 	var cc, m1v, m2v: vector_i;
@@ -258,7 +222,7 @@ proc computeForces() {
 
 proc evalMpL (inout le: mp_terms, v: vector, maxOrd: int) {
 	var rr, a, a1, a2: real;
-	
+
 	rr = v.lensq();
 	le.set_c(1.0, 0, 0);
 	le.set_s(0.0, 0, 0);
@@ -284,7 +248,7 @@ proc evalMpProdLL(inout le1: mp_terms, le2: mp_terms, le3: mp_terms,
 	maxOrd: int) {
   	var s2, s3, v1c2, v1c3, v1s2, v1s3: real;
 	var j3, k3: int;
-	
+
 	for (j1, k1) in iterMaxOrd(maxOrd) {
 		le1.set_c(0.0, j1, k1);
 		le1.set_s(0.0, j1, k1);
@@ -446,7 +410,7 @@ proc gatherWellSepLo() {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		if mpCell(curLevel, m1).occ == 0 then continue;
-		for (m2x, m2y, m2z) in iterAscend(
+		for (m2x, m2y, m2z) in iterAscend3(
 			m1v.ll_x(wellSep), m1v.hl_x(wellSep),
 			m1v.ll_y(wellSep), m1v.hl_y(wellSep),
 			m1v.ll_z(wellSep), m1v.hl_z(wellSep)) {
