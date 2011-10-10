@@ -43,7 +43,7 @@ var rCut, velMag, timeNow, uSum, virSum, vvSum, dispHi, hFunction: real;
 var region, vSum: vector2d;
 var initUcell, cells: vector2d_i;
 var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax, countVel: int; 
-var kinEnergy, totEnergy, pressure: prop;
+var kinEnergy, totEnergy: prop;
 var nebrNow: bool;
 var molDom: domain(1) = [1..1];	// use domain to reallocate array
 var mol: [molDom] mol2d;
@@ -75,7 +75,6 @@ proc init() {
 	
 	kinEnergy = new prop();
 	totEnergy = new prop();
-	pressure = new prop();
 	
 	initRand(randSeed);
 
@@ -103,7 +102,6 @@ proc init() {
 	
 	totEnergy.zero();
 	kinEnergy.zero();
-	pressure.zero();
 	nebrNow = true;
 	countVel = 0;
 }
@@ -220,44 +218,62 @@ proc step() {
 		vvSum += vv;
 		vvMax = max(vvMax, vv);
 	}
+	dispHi += sqrt(vvMax) * deltaT;
+	if dispHi > 0.5 * rNebrShell then nebrNow = true;
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
-	pressure.v = density * (vvSum + virSum) / (nMol * NDIM);
 		
 	// Accumulate themodynamics properties
 	totEnergy.acc();
 	kinEnergy.acc();
-	pressure.acc();
+	
+	if stepCount >= stepEquil && (stepCount - stepEquil) % stepVel == 0 {
+		var deltaV, histSum: real;
+		if countVel == 0 {
+			for j in [1..sizeHistVel] do histVel(j) = 0.0;
+		}
+		deltaV = rangeVel / sizeHistVel;
+		for m in mol do
+			histVel(min((m.rv.len() / deltaV): int, sizeHistVel)) += 1;
+		countVel += 1;
+		if countVel == limitVel {
+			histSum = 0;
+			for j in [1..sizeHistVel] do histSum += histVel(j);
+			for j in [1..sizeHistVel] do histVel(j) /= histSum;
+			hFunction = 0;
+			for j in [1..sizeHistVel] {
+				if histVel(j) > 0.0 then
+					hFunction += histVel(j) * log(histVel(j));
+			writeln("vdist ", timeNow);
+			for n in [1..sizeHistVel] do
+				writeln((n - 0.5) * rangeVel / sizeHistVel, " ", histVel(n));
+			writeln("hfun: ", timeNow, " ", hFunction);
+			stdout.flush();
+			countVel = 0;
+			}
+		}
+	}
 	if stepCount % stepAvg == 0 then {
 		totEnergy.avg(stepAvg);
 		kinEnergy.avg(stepAvg);
-		pressure.avg(stepAvg);
 
 		// Print summary
 		writeln("\t", stepCount, "\t", timeNow, 
 			"\t", (vSum.x + vSum.y) / nMol,
 			"\t", totEnergy.sum, "\t", totEnergy.sum2,
-			"\t", kinEnergy.sum, "\t", kinEnergy.sum2,
-			"\t", pressure.sum, "\t", pressure.sum2);
+			"\t", kinEnergy.sum, "\t", kinEnergy.sum2);
 		stdout.flush();
 		
 		totEnergy.zero();
 		kinEnergy.zero();
-		pressure.zero();
 	}
 }
 
 proc main() {
-	if profLevel >= 1 then timer.start();
 	init();
-	if profLevel >= 1 then writeln("Init: ", timer.stop());
-	
 	moreCycles = 1;
 	while moreCycles {
-		if profLevel >= 1 then timer.start();
 		step();
-		if profLevel >= 1 then 
-			writeln("Step ", stepCount, ": ", timer.stop());
 		if stepCount >= stepLimit then moreCycles = 0;
 	}
 }

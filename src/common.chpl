@@ -146,6 +146,7 @@ record vector2d {
 	proc zero() { x = 0; y = 0; }
 	proc prod() { return x * y; }
 	proc lensq() { return x ** 2 + y ** 2; }
+	proc len() { return sqrt(x ** 2 + y ** 2); }
 }
 
 record vector2d_i {
