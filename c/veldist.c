@@ -92,7 +92,6 @@ void SingleStep ()
     BuildNebrList ();
   }
   ComputeForces ();
-  PrintMol();
   LeapfrogStep (2);
   EvalProps ();
   AccumProps (1);

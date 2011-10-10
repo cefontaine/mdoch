@@ -166,7 +166,6 @@ proc step() {
 		m.rv += (0.5 * deltaT) * m.ra;
 		m.r += deltaT * m.rv;
 	}
-
 	// Apply boundary condition
 	for m in mol do
 		m.r = vwrap(m.r, region);
@@ -176,7 +175,6 @@ proc step() {
 		dispHi = 0;
 		buildNebrList();
 	}
-
 	// Compute forces
 	var dr: vector2d;
 	var fcVal, rr, rrCut, rri, rri3, uVal: real;
@@ -201,11 +199,8 @@ proc step() {
 			uSum += uVal;
 		}
 	}
-	debugPrintMol2D(mol);
-
 	// Leafrog
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
-
 	// Evaluate themodynamics properties
 	var vv, vvMax: real;
 
@@ -222,19 +217,17 @@ proc step() {
 	if dispHi > 0.5 * rNebrShell then nebrNow = true;
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
-		
 	// Accumulate themodynamics properties
 	totEnergy.acc();
 	kinEnergy.acc();
 	
 	if stepCount >= stepEquil && (stepCount - stepEquil) % stepVel == 0 {
 		var deltaV, histSum: real;
-		if countVel == 0 {
+		if countVel == 0 then
 			for j in [1..sizeHistVel] do histVel(j) = 0.0;
-		}
 		deltaV = rangeVel / sizeHistVel;
 		for m in mol do
-			histVel(min((m.rv.len() / deltaV): int, sizeHistVel)) += 1;
+			histVel(min((m.rv.len() / deltaV + 1): int, sizeHistVel)) += 1;
 		countVel += 1;
 		if countVel == limitVel {
 			histSum = 0;
@@ -243,17 +236,18 @@ proc step() {
 			hFunction = 0;
 			for j in [1..sizeHistVel] {
 				if histVel(j) > 0.0 then
-					hFunction += histVel(j) * log(histVel(j));
+					hFunction += histVel(j) * log(histVel(j) / ((j - 0.5) *
+					deltaV));
+			}
 			writeln("vdist ", timeNow);
 			for n in [1..sizeHistVel] do
 				writeln((n - 0.5) * rangeVel / sizeHistVel, " ", histVel(n));
 			writeln("hfun: ", timeNow, " ", hFunction);
 			stdout.flush();
 			countVel = 0;
-			}
 		}
 	}
-	if stepCount % stepAvg == 0 then {
+	if stepCount % stepAvg == 0 {
 		totEnergy.avg(stepAvg);
 		kinEnergy.avg(stepAvg);
 
