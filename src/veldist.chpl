@@ -53,7 +53,6 @@ var nebrTabDom: domain(1) = [1..1];
 var nebrTab: [nebrTabDom] int;
 var histVelDom: domain(1) = [1..1];
 var histVel: [histVelDom] real;
-var timer: elapsedTimer;
 
 proc init() {
 	// Setup parameters
@@ -79,11 +78,8 @@ proc init() {
 	initRand(randSeed);
 
 	// Initial coordinates
-	var gap: vector2d;
-	var n: int;
-	
-	gap = region / initUcell;
-	n = 1;
+	var gap: vector2d = region / initUcell;
+	var n: int = 1;
 	for (ny, nx) in [0..initUcell.y-1, 0..initUcell.x-1] {
 		mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
 		n += 1;
@@ -167,8 +163,7 @@ proc step() {
 		m.r += deltaT * m.rv;
 	}
 	// Apply boundary condition
-	for m in mol do
-		m.r = vwrap(m.r, region);
+	for m in mol do m.r = vwrap(m.r, region);
 	
 	if nebrNow {
 		nebrNow = false;

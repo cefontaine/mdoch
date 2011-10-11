@@ -125,14 +125,6 @@ proc init() {
 	kinEnInitSum = 0.0;
 }
 
-iter iterCellList(n: int) {
-	var i = cellList(n);
-	while i >= 1 {
-		yield i;
-		i = cellList(i);
-	}
-}
-
 iter iterMpCellList(n: int) {
 	var i = mpCellList(n + nMol);
 	while i >= 1 {
@@ -173,21 +165,23 @@ proc buildNebrList() {
 	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, cells) + nMol;
-		for f in [1..N_OFFSET] {
+		for f in iterAscend(1, N_OFFSET) {
 			m2v = m1v + vOff(f);
 			if m2v.x < 0 || m2v.x >= cells.x || 
 			   m2v.y < 0 || m2v.y >= cells.y || m2v.z >= cells.z 
 			   then continue;
 			m2 = vlinear(m2v, cells) + nMol;
-			for (j1, j2) in [iterCellList(m1), iterCellList(m2)] {
-				if (m1 != m2 || j2 < j1) {
-					dr = mol(j1).r - mol(j2).r;
-					if dr.lensq() < rrNebr {
-						if nebrTabLen >= nebrTabMax then
-							errExit("Too many neighbours");
-						nebrTab(2 * nebrTabLen + 1) = j1;
-						nebrTab(2 * nebrTabLen + 2) = j2;
-						nebrTabLen += 1;
+			for j1 in iterCellList(m1, cellList) {
+				for j2 in iterCellList(m2, cellList) {
+					if (m1 != m2 || j2 < j1) {
+						dr = mol(j1).r - mol(j2).r;
+						if dr.lensq() < rrNebr {
+							if nebrTabLen >= nebrTabMax then
+								errExit("Too many neighbours");
+							nebrTab(2 * nebrTabLen + 1) = j1;
+							nebrTab(2 * nebrTabLen + 2) = j2;
+							nebrTabLen += 1;
+						}
 					}
 				}
 			}
@@ -214,7 +208,7 @@ proc computeForces() {
 			fcVal = 48.0 * rri3 * (rri3 - 0.5) * rri;
 			uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
 			mol(j1).ra += fcVal * dr;
-			mol(j2).ra += (-fcVal) * dr;
+			mol(j2).ra -= fcVal * dr;
 			uSum += uVal;
 		}
 	}

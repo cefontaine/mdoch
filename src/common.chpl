@@ -147,6 +147,7 @@ record vector2d {
 	proc prod() { return x * y; }
 	proc lensq() { return x ** 2 + y ** 2; }
 	proc len() { return sqrt(x ** 2 + y ** 2); }
+	proc csum() { return x + y; }
 }
 
 record vector2d_i {
@@ -292,6 +293,16 @@ proc vcellwrap(inout v: vector2d_i, cells: vector2d_i, inout shift: vector2d,
 	else if v.x < 0 { v.x = cells.x - 1; shift.x = - region.x; }
 	if v.y >= cells.y { v.y = 0; shift.y = region.y; }
 	else if v.y < 0 { v.y = cells.y - 1; shift.y = - region.y; }
+}
+
+proc vcellwrap(inout v: vector_i, cells: vector_i, inout shift: vector, 
+	region: vector) {
+	if v.x >= cells.x { v.x = 0; shift.x = region.x; }
+	else if v.x < 0 { v.x = cells.x - 1; shift.x = - region.x; }
+	if v.y >= cells.y { v.y = 0; shift.y = region.y; }
+	else if v.y < 0 { v.y = cells.y - 1; shift.y = - region.y; }
+	if v.z >= cells.z { v.z = 0; shift.z = region.z; }
+	else if v.z < 0 { v.z = cells.z - 1; shift.z = - region.z; }
 }
 
 proc vlinear(v1: vector2d, v2: vector2d) {
@@ -555,7 +566,6 @@ proc vrand() {
 	s = 2.0 * sqrt(1.0 - s);
 	r.x = s * x;
 	r.y = s * y;
-
 	return r;
 }
 
@@ -625,6 +635,14 @@ record mp_terms {
 record mp_cell {
 	var le, me: mp_terms;
 	var occ: int;
+}
+
+iter iterCellList(n: int, cellList) {
+	var i = cellList(n);
+	while i >= 1 {
+		yield i;
+		i = cellList(i);
+	}
 }
 
 // Debug utilities
