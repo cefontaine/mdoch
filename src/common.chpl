@@ -637,7 +637,7 @@ record mp_cell {
 	var occ: int;
 }
 
-iter iterCellList(n: int, cellList) {
+iter iterCellList(n: int, cellList: [] int) {
 	var i = cellList(n);
 	while i >= 1 {
 		yield i;

@@ -38,15 +38,10 @@ var region, vSum: vector;
 var initUcell, cells: vector_i;
 var nMol, stepCount, moreCycles: int; 
 var kinEnergy, totEnergy, pressure: prop;
-var nebrNow: bool;
 var molDom: domain(1) = [1..1];	// use domain to reallocate array
 var mol: [molDom] mol3d;
 var cellListDom: domain(1) = [1..1];
 var cellList: [cellListDom] int;
-var nebrTabDom: domain(1) = [1..1];
-var nebrTab: [nebrTabDom] int;
-var histVelDom: domain(1) = [1..1];
-var histVel: [histVelDom] real;
 
 proc printConfig() {
 	writeln(
@@ -66,7 +61,7 @@ proc init() {
 	// Setup parameters
 	initUcell = (initUcellX, initUcellY, initUcellZ);
 	rCut = 2.0 ** (1.0 / 6.0);
-	region = 1.0 / sqrt(density) * initUcell;
+	region = 1.0 / cbrt(density)  * initUcell;
 	nMol = initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol) * temperature);
 	cells = 1.0 / rCut * region;
@@ -138,6 +133,7 @@ proc step() {
 			m2v = m1v + vOff(o);
 			shift.zero();
 			vcellwrap(m2v, cells, shift, region);
+			m2 = vlinear(m2v, cells) + nMol;
 			for j1 in iterCellList(m1, cellList) {
 				for j2 in iterCellList(m2, cellList) {
 					if m1 != m2 || j2 < j1 {
