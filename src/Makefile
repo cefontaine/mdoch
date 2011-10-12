@@ -1,6 +1,6 @@
 CHPL=chpl
 FLAGS=--fast
-TARGETS=allpairs2d veldist cellsub fmm
+TARGETS=allpairs2d veldist cellsub nebrlist fmm
 
 all: $(TARGETS)
 
