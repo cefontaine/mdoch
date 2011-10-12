@@ -1,0 +1,15 @@
+deltaT            0.005
+density           0.8
+initUcellX        8
+initUcellY        8
+initUcellZ        8
+nebrTabFac        8
+limitTrajDev      100
+pertTrajDev       0.000001
+stepTrajDev       20
+rNebrShell        0.4
+stepAvg           1000
+stepEquil         3000
+stepInitlzTemp    999999
+stepLimit         5000
+temperature       1.
