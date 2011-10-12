@@ -17,18 +17,19 @@
  * See the file COPYING.
  ***************************************************************************/
 
-/* nebrlist.c */
+/* cellspc.chpl */
 
 use common;
+
+record mol3d {
+	var r, rv, ra, ra1, ra2, ro, rvo: vector;
+}
 
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
 config const initUcellX: int = 5;
 config const initUcellY: int = 5;
 config const initUcellZ: int = 5;
-config const nebrTabFac: int = 8;
-config const randSeed: int = 17;
-config const rNebrShell: real = 0.4;
 config const stepAvg: int = 2000;
 config const stepEquil: int = 0;
 config const stepInitlzTemp: int = 999999;
@@ -39,24 +40,18 @@ const NDIM = 3;
 var rCut, velMag, timeNow, uSum, virSum, vvSum, dispHi, kinEnInitSum: real;
 var region, vSum: vector;
 var initUcell, cells: vector_i;
-var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax: int; 
+var nMol, stepCount, moreCycles: int; 
 var kinEnergy, totEnergy, pressure: prop;
-var nebrNow: bool;
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
 var cellListDom: domain(1) = [1..1];
 var cellList: [cellListDom] int;
-var nebrTabDom: domain(1) = [1..1];
-var nebrTab: [nebrTabDom] int;
 
 proc printConfig() {
 	writeln(
 		"deltaT          ", deltaT, "\n",
 		"density         ", density, "\n",
 		"initUcell       ", initUcellX, " ",initUcellY," ",initUcellZ,"\n",
-		"nebrTabFac      ", nebrTabFac, "\n",
-		"randSeed        ", randSeed, "\n",
-		"rNebrShell      ", rNebrShell, "\n",
 		"stepAvg         ", stepAvg, "\n",
 		"stepEquil       ", stepEquil, "\n",
 		"stepInitlzTemp  ", stepInitlzTemp, "\n",
@@ -73,18 +68,15 @@ proc init() {
 	region = 1.0 / cbrt(density)  * initUcell;
 	nMol = initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol) * temperature);
-	cells = 1.0 / (rCut + rNebrShell) * region;
-	nebrTabMax = nebrTabFac * nMol;
+	cells = 1.0 / rCut * region;
 	
 	// Allocate storage
 	molDom = [1..nMol];
 	cellListDom = [1..cells.prod() + nMol];
-	nebrTabDom = [1..2 * nebrTabMax];
 	kinEnergy = new prop();
 	totEnergy = new prop();
 	pressure = new prop();
 
-	initRand(randSeed);
 	stepCount = 0;
 	var gap: vector = region / initUcell;
 	var n: int = 1;
@@ -92,8 +84,6 @@ proc init() {
 		mol(n).r = (nx + 0.5, ny + 0.5, nz + 0.5) * gap - (0.5 * region);
 		n += 1;
 	}
-	
-	// Initial velocities and accelerations
 	vSum.zero();
 	for m in mol {
 		m.rv = velMag * vrand();
@@ -102,51 +92,58 @@ proc init() {
 	for m in mol {
 		m.rv -= (1.0 / nMol) * vSum;
 		m.ra.zero();
+		m.ra1.zero();
+		m.ra2.zero();
 	}
 	
 	totEnergy.zero();
 	kinEnergy.zero();
 	pressure.zero();
 	kinEnInitSum = 0.0;
-	nebrNow = true;
 }
 
-proc buildNebrList() {
+proc computeForces() {
 	var dr, invWid, shift: vector;
 	var cc, m1v, m2v: vector_i;
-	var rrNebr: real;
+	var rr, rri, rri3, rrCut, fcVal, uVal: real;
 	var c, m1, m2: int;
 	var vOff = OFFSET_VALS;
-
-	rrNebr = (rCut + rNebrShell) ** 2;
+	
+	rrCut = rCut ** 2;
 	invWid = cells / region;
-	for n in [nMol + 1..nMol + cells.prod()] do cellList(n) = -1; 
+	for n in [nMol + 1..nMol + cells.prod()] do cellList(n) = -1;
 	for n in mol.domain {
 		cc = (mol(n).r + 0.5 * region) * invWid;
 		c = vlinear(cc, cells) + nMol;
 		cellList(n) = cellList(c);
 		cellList(c) = n;
+		mol(n).ra.zero();
 	}
-	nebrTabLen = 0;
 	
-	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
+	uSum = 0;
+	virSum = 0.0;
+	for (m1x, m1y, m1z) in [0..cells.x-1, 0..cells.y-1, 0..cells.z-1] {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, cells) + nMol;
-		for f in iterAscend(1, N_OFFSET) {
-			m2v = m1v + vOff(f);
+		for o in iterAscend(1, N_OFFSET) {
+			m2v = m1v + vOff(o);
 			shift.zero();
 			vcellwrap(m2v, cells, shift, region);
 			m2 = vlinear(m2v, cells) + nMol;
 			for j1 in iterCellList(m1, cellList) {
 				for j2 in iterCellList(m2, cellList) {
-					if (m1 != m2 || j2 < j1) {
+					if m1 != m2 || j2 < j1 {
 						dr = mol(j1).r - mol(j2).r - shift;
-						if dr.lensq() < rrNebr {
-							if nebrTabLen >= nebrTabMax then
-								errExit("Too many neighbours");
-							nebrTab(2 * nebrTabLen + 1) = j1;
-							nebrTab(2 * nebrTabLen + 2) = j2;
-							nebrTabLen += 1;
+						rr = dr.lensq();
+						if (rr < rrCut) {
+							rri = 1.0 / rr;
+							rri3 = rri ** 3;
+							fcVal = 48.0 * rri3 * (rri3 - 0.5) * rri;
+							uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
+							mol(j1).ra += fcVal * dr;
+							mol(j2).ra -= fcVal * dr;
+							uSum += uVal;
+							virSum += fcVal * rr;
 						}
 					}
 				}
@@ -155,66 +152,78 @@ proc buildNebrList() {
 	}
 }
 
-proc computeForces() {
-	var dr: vector;
-	var fcVal, rr, rrCut, rri, rri3, uVal: real;
-	var j1, j2: int;
-
-	rrCut = rCut ** 2;
-	for m in mol do	m.ra.zero();
-	uSum = 0;
-	virSum = 0.0;
+proc predictorStep() {
+	var cr: 3*real = (19.0, -10.0, 3.0);
+	var cv: 3*real = (27.0, -22.0, 7.0);
+	var div: real = 24.0;
+	var wr, wv: real;
 	
-	for n in [1..nebrTabLen] {
-		j1 = nebrTab(2 * n - 1);
-		j2 = nebrTab(2 * n);
-		dr = vwrap((mol(j1).r - mol(j2).r), region);
-		rr = dr.lensq();
-		if rr < rrCut {
-			rri = 1.0 / rr;
-			rri3 = rri ** 3;
-			fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
-			uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
-			mol(j1).ra += fcVal * dr;
-			mol(j2).ra -= fcVal * dr;
-			uSum += uVal;
-			virSum += fcVal * rr;
-		}
+	wr = deltaT ** 2 / div;
+	wv = deltaT / div;
+	for m in mol {
+		m.ro = m.r;
+		m.rvo = m.rv;
+		m.r.x = m.r.x + deltaT * m.rv.x + wr * (cr(1) * m.ra.x +
+			cr(2) * m.ra1.x + cr(3) * m.ra2.x);
+		m.rv.x = (m.r.x - m.ro.x) / deltaT + wv * (cv(1) * m.ra.x +
+			cv(2) * m.ra1.x + cv(3) * m.ra2.x);
+		m.r.y = m.r.y + deltaT * m.rv.y + wr * (cr(1) * m.ra.y +
+			cr(2) * m.ra1.y + cr(3) * m.ra2.y);
+		m.rv.y = (m.r.y - m.ro.y) / deltaT + wv * (cv(1) * m.ra.y +
+			cv(2) * m.ra1.y + cv(3) * m.ra2.y);
+		m.r.z = m.r.z + deltaT * m.rv.z + wr * (cr(1) * m.ra.z +
+			cr(2) * m.ra1.z + cr(3) * m.ra2.z);
+		m.rv.z = (m.r.z - m.ro.z) / deltaT + wv * (cv(1) * m.ra.z +
+			cv(2) * m.ra1.z + cv(3) * m.ra2.z);
+		m.ra2 = m.ra1;
+		m.ra1 = m.ra;
+	}
+}
+
+proc correctorStep() {
+	var cr: 3*real = (3.0, 10.0, -1.0);
+	var cv: 3*real = (7.0, 6.0, -1.0);
+	var div: real = 24.0;
+	var wr, wv: real;
+	wr = deltaT ** 2 / div;
+	wv = deltaT / div;
+	for m in mol {
+		m.r.x = m.ro.x + deltaT * m.rvo.x + wr * (cr(1) * m.ra.x +
+			cr(2) * m.ra1.x + cr(3) * m.ra2.x);
+		m.rv.x = (m.r.x - m.ro.x) / deltaT + wv * (cv(1) * m.ra.x +
+			cv(2) * m.ra1.x + cv(3) * m.ra2.x);
+		m.r.y = m.ro.y + deltaT * m.rvo.y + wr * (cr(1) * m.ra.y +
+			cr(2) * m.ra1.y + cr(3) * m.ra2.y);
+		m.rv.y = (m.r.y - m.ro.y) / deltaT + wv * (cv(1) * m.ra.y +
+			cv(2) * m.ra1.y + cv(3) * m.ra2.y);
+		m.r.z = m.ro.z + deltaT * m.rvo.z + wr * (cr(1) * m.ra.z +
+			cr(2) * m.ra1.z + cr(3) * m.ra2.z);
+		m.rv.z = (m.r.z - m.ro.z) / deltaT + wv * (cv(1) * m.ra.z +
+			cv(2) * m.ra1.z + cv(3) * m.ra2.z);
 	}
 }
 
 proc step() {
 	stepCount += 1;
 	timeNow = stepCount * deltaT;
-	for m in mol {
-		m.rv += (0.5 * deltaT) * m.ra;
-		m.r += deltaT * m.rv;
-	}
+	
+	predictorStep();
 	for m in mol do m.r = vwrap(m.r, region);
-	if nebrNow {
-		nebrNow = false;
-		dispHi = 0.0;
-		buildNebrList();
-	}
 	computeForces();
-	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
-
-	var vv, vvMax: real;
+	correctorStep();
+	for m in mol do m.r = vwrap(m.r, region);
+	
 	vSum.zero();
 	vvSum = 0.0;
-	vvMax = 0.0;
 	for m in mol {
 		vSum += m.rv;
-		vv = m.rv.lensq();
-		vvSum += vv;
-		vvMax = max(vvMax, vv);
+		vvSum += m.rv.lensq();
 	}
-	dispHi += sqrt(vvMax) * deltaT;
-	if dispHi > 0.5 * rNebrShell then nebrNow = true;
+
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
 	pressure.v = density * (vvSum + virSum) / (nMol * NDIM);
-
+	
 	var vFac: real;
 	if stepCount < stepEquil {
 		kinEnInitSum += kinEnergy.v;
@@ -225,11 +234,11 @@ proc step() {
 			kinEnInitSum = 0.0;
 		}
 	}
-	
+
 	totEnergy.acc();
 	kinEnergy.acc();
 	pressure.acc();
-	
+
 	if stepCount % stepAvg == 0 {
 		totEnergy.avg(stepAvg);
 		kinEnergy.avg(stepAvg);

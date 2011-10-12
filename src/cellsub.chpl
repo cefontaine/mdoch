@@ -145,7 +145,6 @@ proc computeForces () {
 			}
 		}
 	}
-	
 }
 
 proc step() {
