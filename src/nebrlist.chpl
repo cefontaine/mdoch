@@ -155,6 +155,34 @@ proc buildNebrList() {
 	}
 }
 
+proc computeForces() {
+	var dr: vector;
+	var fcVal, rr, rrCut, rri, rri3, uVal: real;
+	var j1, j2: int;
+
+	rrCut = rCut ** 2;
+	for m in mol do	m.ra.zero();
+	uSum = 0;
+	virSum = 0.0;
+	
+	for n in [1..nebrTabLen] {
+		j1 = nebrTab(2 * n - 1);
+		j2 = nebrTab(2 * n);
+		dr = vwrap((mol(j1).r - mol(j2).r), region);
+		rr = dr.lensq();
+		if rr < rrCut {
+			rri = 1.0 / rr;
+			rri3 = rri ** 3;
+			fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
+			uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
+			mol(j1).ra += fcVal * dr;
+			mol(j2).ra -= fcVal * dr;
+			uSum += uVal;
+			virSum += fcVal * rr;
+		}
+	}
+}
+
 proc step() {
 	stepCount += 1;
 	timeNow = stepCount * deltaT;
@@ -163,11 +191,58 @@ proc step() {
 		m.r += deltaT * m.rv;
 	}
 	for m in mol do m.r = vwrap(m.r, region);
-
 	if nebrNow {
 		nebrNow = false;
 		dispHi = 0.0;
 		buildNebrList();
+	}
+	computeForces();
+	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
+
+	var vv, vvMax: real;
+	vSum.zero();
+	vvSum = 0.0;
+	vvMax = 0.0;
+	for m in mol {
+		vSum += m.rv;
+		vv = m.rv.lensq();
+		vvSum += vv;
+		vvMax = max(vvMax, vv);
+	}
+	dispHi += sqrt(vvMax) * deltaT;
+	if dispHi > 0.5 * rNebrShell then nebrNow = true;
+	kinEnergy.v = 0.5 * vvSum / nMol;
+	totEnergy.v = kinEnergy.v + uSum / nMol;
+	pressure.v = density * (vvSum + virSum) / (nMol * NDIM);
+
+	var vFac: real;
+	if stepCount < stepEquil {
+		kinEnInitSum += kinEnergy.v;
+		if stepCount % stepInitlzTemp == 0 {
+			kinEnInitSum /= stepInitlzTemp;
+			vFac = velMag / sqrt(2.0 * kinEnInitSum);
+			for m in mol do m.rv *= vFac;
+			kinEnInitSum = 0.0;
+		}
+	}
+	
+	totEnergy.acc();
+	kinEnergy.acc();
+	pressure.acc();
+	
+	if stepCount % stepAvg == 0 {
+		totEnergy.avg(stepAvg);
+		kinEnergy.avg(stepAvg);
+		pressure.avg(stepAvg);
+
+		writeln("\t", stepCount, "\t", timeNow, "\t", vSum.csum() / nMol,
+			"\t", totEnergy.sum, "\t", totEnergy.sum2, "\t", kinEnergy.sum,
+			"\t", kinEnergy.sum2, "\t", pressure.sum, "\t", pressure.sum2);
+		stdout.flush();
+
+		totEnergy.zero();
+		kinEnergy.zero();
+		pressure.zero();
 	}
 }
 

@@ -99,16 +99,7 @@ proc init() {
 	kinEnInitSum = 0.0;
 }
 
-proc step() {
-	stepCount += 1;
-	timeNow = stepCount * deltaT;
-	for m in mol {
-		m.rv += (0.5 * deltaT) * m.ra;
-		m.r += deltaT * m.rv;
-	}
-	for m in mol do m.r = vwrap(m.r, region);
-
-	// Compute forces
+proc computeForces () {
 	var dr, invWid, shift: vector;
 	var cc, m1v, m2v: vector_i;
 	var rr, rri, rri3, rrCut, fcVal, uVal: real;
@@ -155,9 +146,19 @@ proc step() {
 		}
 	}
 	
+}
+
+proc step() {
+	stepCount += 1;
+	timeNow = stepCount * deltaT;
+	for m in mol {
+		m.rv += (0.5 * deltaT) * m.ra;
+		m.r += deltaT * m.rv;
+	}
+	for m in mol do m.r = vwrap(m.r, region);
+	computeForces();
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
 	
-	var vv, vvMax: real;
 	vSum.zero();
 	vvSum = 0.0;
 	for m in mol {
@@ -198,7 +199,6 @@ proc step() {
 		kinEnergy.zero();
 		pressure.zero();
 	}
-
 }
 
 proc main() {
