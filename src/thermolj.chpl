@@ -39,7 +39,7 @@ const NDIM = 3;
 var velMag, timeNow, uSum, virSum, vvSum, dispHi, kinEnInitSum: real;
 var region, vSum: vector;
 var initUcell, cells: vector_i;
-var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax, countTrajDev: int; 
+var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax: int; 
 var kinEnergy, totEnergy, pressure: prop;
 var nebrNow: bool;
 var molDom: domain(1) = [1..1];

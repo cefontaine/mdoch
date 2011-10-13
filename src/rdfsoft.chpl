@@ -17,29 +17,33 @@
  * See the file COPYING.
  ***************************************************************************/
 
-/* thermosoft.chpl */
+/* rdfsoft.chpl */
 
 use common;
 
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
-config const initUcellX: int = 5;
-config const initUcellY: int = 5;
-config const initUcellZ: int = 5;
-config const nebrTabFac: int = 8;
+config const initUcellX: int = 8;
+config const initUcellY: int = 8;
+config const initUcellZ: int = 8;
+config const nebrTabFac: int = 40;
 config const rNebrShell: real = 0.4;
-config const stepAvg: int = 2000;
-config const stepEquil: int = 4000;
+config const limitRdf: int = 100;
+config const rangeRdf: real = 4.0;
+config const sizeHistRdf: int = 200;
+config const stepRdf: int = 50;
+config const stepAvg: int = 1000;
+config const stepEquil: int = 2000;
 config const stepInitlzTemp: int = 200;
-config const stepLimit: int = 8000;
+config const stepLimit: int = 17000;
 config const temperature: real = 1.0;
 const NDIM = 3;
 
-var rCut, velMag, timeNow, uSum, virSum, vvSum, dispHi, kinEnInitSum: real;
+var rCut, velMag, timeNow, uSum, vvSum, dispHi, kinEnInitSum: real;
 var region, vSum: vector;
 var initUcell, cells: vector_i;
-var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax: int; 
-var kinEnergy, totEnergy, pressure: prop;
+var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax, countRdf: int; 
+var kinEnergy, totEnergy: prop;
 var nebrNow: bool;
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
@@ -47,6 +51,8 @@ var cellListDom: domain(1) = [1..1];
 var cellList: [cellListDom] int;
 var nebrTabDom: domain(1) = [1..1];
 var nebrTab: [nebrTabDom] int;
+var histRdfDom: domain(1) = [1..1];
+var histRdf: [histRdfDom] real;
 
 proc printConfig() {
 	writeln(
@@ -55,6 +61,10 @@ proc printConfig() {
 		"initUcell       ", initUcellX, " ",initUcellY," ",initUcellZ,"\n",
 		"nebrTabFac      ", nebrTabFac, "\n",
 		"rNebrShell      ", rNebrShell, "\n",
+		"limitRdf        ", limitRdf, "\n",
+		"rangeRdf        ", rangeRdf, "\n",
+		"stepRdf         ", stepRdf, "\n",
+		"sizeHistRdf     ", sizeHistRdf, "\n",
 		"stepAvg         ", stepAvg, "\n",
 		"stepEquil       ", stepEquil, "\n",
 		"stepInitlzTemp  ", stepInitlzTemp, "\n",
@@ -78,9 +88,9 @@ proc init() {
 	molDom = [1..nMol];
 	cellListDom = [1..cells.prod() + nMol];
 	nebrTabDom = [1..2 * nebrTabMax];
+	histRdfDom = [1..sizeHistRdf];
 	kinEnergy = new prop();
 	totEnergy = new prop();
-	pressure = new prop();
 
 	stepCount = 0;
 	var c: vector;
@@ -112,9 +122,9 @@ proc init() {
 	
 	totEnergy.zero();
 	kinEnergy.zero();
-	pressure.zero();
 	kinEnInitSum = 0.0;
 	nebrNow = true;
+	countRdf = 0;
 }
 
 proc buildNebrList() {
@@ -168,7 +178,6 @@ proc computeForces() {
 	rrCut = rCut ** 2;
 	for m in mol do	m.ra.zero();
 	uSum = 0;
-	virSum = 0;
 	
 	for n in [1..nebrTabLen] {
 		j1 = nebrTab(2 * n - 1);
@@ -183,10 +192,43 @@ proc computeForces() {
 			mol(j1).ra += fcVal * dr;
 			mol(j2).ra -= fcVal * dr;
 			uSum += uVal;
-			virSum += fcVal * rr;
 		}
 	}
 }
+
+proc evalRdf() {
+	var dr: vector;
+	var deltaR, rr, normFac: real;
+	var n: int;
+
+	if countRdf == 0 then
+		for n in [1..sizeHistRdf] do histRdf(n) = 0.0;
+
+	deltaR = rangeRdf / sizeHistRdf;
+	for j1 in [1..nMol - 1] {
+		for j2 in iterAscend(j1 + 1, nMol) {
+			dr = vwrap((mol(j1).r - mol(j2).r), region);
+			rr = dr.lensq();
+			if rr < rangeRdf ** 2 {
+				n = (sqrt(rr) / deltaR): int + 1;
+				histRdf(n) += 1;
+			}
+		}
+	}
+	countRdf += 1;
+	if countRdf == limitRdf {
+		normFac = region.prod() / (2.0 * PI * (deltaR ** 3) * 
+			(nMol ** 2) * countRdf);
+		for n in [1..sizeHistRdf] do histRdf(n) *= normFac / ((n - 1.5) ** 2);
+		
+		writeln("rdf");
+		for n in iterAscend(1, sizeHistRdf) do
+			writeln((n - 0.5) * rangeRdf / sizeHistRdf, " ", histRdf(n));
+		stdout.flush();
+		countRdf = 0;
+	}
+}
+
 
 proc step() {
 	stepCount += 1;
@@ -218,7 +260,6 @@ proc step() {
 	if dispHi > 0.5 * rNebrShell then nebrNow = true;
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
-	pressure.v = density * (vvSum + virSum) / (nMol * NDIM);
 
 	var vFac: real;
 	if stepCount < stepEquil {
@@ -233,23 +274,22 @@ proc step() {
 	
 	totEnergy.acc();
 	kinEnergy.acc();
-	pressure.acc();
 
 	if stepCount % stepAvg == 0 {
 		totEnergy.avg(stepAvg);
 		kinEnergy.avg(stepAvg);
-		pressure.avg(stepAvg);
 
 		writeln("\t", stepCount, "\t", timeNow, "\t", vSum.csum() / nMol,
 			"\t", totEnergy.sum, "\t", totEnergy.sum2, "\t", kinEnergy.sum,
-			"\t", kinEnergy.sum2, "\t", pressure.sum, "\t", pressure.sum2);
+			"\t", kinEnergy.sum2);
 		stdout.flush();
 
 		totEnergy.zero();
 		kinEnergy.zero();
-		pressure.zero();
 	}
 
+	if stepCount >= stepEquil && 
+		(stepCount - stepEquil) % stepRdf == 0  then evalRdf();
 }
 
 proc main() {

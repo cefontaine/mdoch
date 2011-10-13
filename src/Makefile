@@ -1,7 +1,7 @@
 CHPL=chpl
 FLAGS=--fast
 TARGETS=allpairs2d veldist cellsub nebrlist cellspc nebrlistpc trajsep \
-	thermosoft thermolj fmm
+	thermosoft thermolj rdfsoft fmm
 
 all: $(TARGETS)
 
