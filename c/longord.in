@@ -5,6 +5,5 @@ nebrTabFac        8
 rNebrShell        0.4
 stepAvg           20
 stepEquil         0
-stepInitlzTemp    0
 stepLimit         1000
 temperature       1.
