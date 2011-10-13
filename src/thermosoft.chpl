@@ -17,32 +17,29 @@
  * See the file COPYING.
  ***************************************************************************/
 
-/* trajsep.chpl */
+/* thermosoft.chpl */
 
 use common;
 
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
-config const initUcellX: int = 8;
-config const initUcellY: int = 8;
-config const initUcellZ: int = 8;
+config const initUcellX: int = 5;
+config const initUcellY: int = 5;
+config const initUcellZ: int = 5;
 config const nebrTabFac: int = 8;
 config const rNebrShell: real = 0.4;
-config const stepAvg: int = 1000;
-config const stepEquil: int = 3000;
-config const stepInitlzTemp: int = 999999;
-config const stepLimit: int = 5000;
+config const stepAvg: int = 2000;
+config const stepEquil: int = 4000;
+config const stepInitlzTemp: int = 200;
+config const stepLimit: int = 8000;
 config const temperature: real = 1.0;
-config const limitTrajDev: int = 100;
-config const stepTrajDev: int = 20;
-config const pertTrajDev: real = 0.000001;
 const NDIM = 3;
 
 var rCut, velMag, timeNow, uSum, virSum, vvSum, dispHi, kinEnInitSum: real;
 var region, vSum: vector;
 var initUcell, cells: vector_i;
 var nMol, stepCount, moreCycles, nebrTabLen, nebrTabMax, countTrajDev: int; 
-var kinEnergy, totEnergy: prop;
+var kinEnergy, totEnergy, pressure: prop;
 var nebrNow: bool;
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
@@ -50,8 +47,6 @@ var cellListDom: domain(1) = [1..1];
 var cellList: [cellListDom] int;
 var nebrTabDom: domain(1) = [1..1];
 var nebrTab: [nebrTabDom] int;
-var valTrajDevDom: domain(1) = [1..1];
-var valTrajDev: [valTrajDevDom] real;
 
 proc printConfig() {
 	writeln(
@@ -65,9 +60,6 @@ proc printConfig() {
 		"stepInitlzTemp  ", stepInitlzTemp, "\n",
 		"stepLimit       ", stepLimit, "\n",
 		"temperature     ", temperature, "\n",
-		"limitTrajDev    ", limitTrajDev, "\n",
-		"stepTrajDev     ", stepTrajDev, "\n",
-		"pertTrajDev     ", pertTrajDev, "\n",
 		"----");
 	stdout.flush();
 }
@@ -77,7 +69,7 @@ proc init() {
 	initUcell = (initUcellX, initUcellY, initUcellZ);
 	rCut = 2.0 ** (1.0 / 6.0);
 	region = 1.0 / cbrt(density / 4.0)  * initUcell;
-	nMol = 8 * initUcell.prod();
+	nMol = 4 * initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol) * temperature);
 	cells = 1.0 / (rCut + rNebrShell) * region;
 	nebrTabMax = nebrTabFac * nMol;
@@ -86,9 +78,9 @@ proc init() {
 	molDom = [1..nMol];
 	cellListDom = [1..cells.prod() + nMol];
 	nebrTabDom = [1..2 * nebrTabMax];
-	valTrajDevDom = [1..limitTrajDev];
 	kinEnergy = new prop();
 	totEnergy = new prop();
+	pressure = new prop();
 
 	stepCount = 0;
 	var c: vector;
@@ -103,17 +95,15 @@ proc init() {
 				if j != 1 then mol(n).r.y += 0.5 * gap.y;
 				if j != 2 then mol(n).r.z += 0.5 * gap.z;
 			}
-			mol(n + 1).r = mol(n).r;
-			n += 2;
+			n += 1;
 		}
 	}
 	
 	// Initial velocities and accelerations
 	vSum.zero();
-	for n in iterAscend(1, nMol, 2) {
-		mol(n).rv = velMag * vrand();
-		mol(n + 1).rv = mol(n).rv;
-		vSum += 2 * mol(n).rv;
+	for m in mol {
+		m.rv = velMag * vrand();
+		vSum += m.rv;
 	}
 	for m in mol {
 		m.rv -= (1.0 / nMol) * vSum;
@@ -122,6 +112,7 @@ proc init() {
 	
 	totEnergy.zero();
 	kinEnergy.zero();
+	pressure.zero();
 	kinEnInitSum = 0.0;
 	nebrNow = true;
 }
@@ -153,7 +144,7 @@ proc buildNebrList() {
 			m2 = vlinear(m2v, cells) + nMol;
 			for j1 in iterCellList(m1, cellList) {
 				for j2 in iterCellList(m2, cellList) {
-              		if (j1 - j2) % 2 == 0 && (m1 != m2 || j2 < j1) {
+              		if m1 != m2 || j2 < j1 {
 						dr = mol(j1).r - mol(j2).r - shift;
 						if dr.lensq() < rrNebr {
 							if nebrTabLen >= nebrTabMax then
@@ -177,6 +168,7 @@ proc computeForces() {
 	rrCut = rCut ** 2;
 	for m in mol do	m.ra.zero();
 	uSum = 0;
+	virSum = 0;
 	
 	for n in [1..nebrTabLen] {
 		j1 = nebrTab(2 * n - 1);
@@ -191,6 +183,7 @@ proc computeForces() {
 			mol(j1).ra += fcVal * dr;
 			mol(j2).ra -= fcVal * dr;
 			uSum += uVal;
+			virSum += fcVal * rr;
 		}
 	}
 }
@@ -210,7 +203,7 @@ proc step() {
 	}
 	computeForces();
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
-
+	
 	var vv, vvMax: real;
 	vSum.zero();
 	vvSum = 0.0;
@@ -225,6 +218,7 @@ proc step() {
 	if dispHi > 0.5 * rNebrShell then nebrNow = true;
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
+	pressure.v = density * (vvSum + virSum) / (nMol * NDIM);
 
 	var vFac: real;
 	if stepCount < stepEquil {
@@ -239,49 +233,23 @@ proc step() {
 	
 	totEnergy.acc();
 	kinEnergy.acc();
-	
+	pressure.acc();
+
 	if stepCount % stepAvg == 0 {
 		totEnergy.avg(stepAvg);
 		kinEnergy.avg(stepAvg);
+		pressure.avg(stepAvg);
 
 		writeln("\t", stepCount, "\t", timeNow, "\t", vSum.csum() / nMol,
 			"\t", totEnergy.sum, "\t", totEnergy.sum2, "\t", kinEnergy.sum,
-			"\t", kinEnergy.sum2);
+			"\t", kinEnergy.sum2, "\t", pressure.sum, "\t", pressure.sum2);
 		stdout.flush();
 
 		totEnergy.zero();
 		kinEnergy.zero();
+		pressure.zero();
 	}
-	
-	if stepCount == stepEquil {
-		for n in iterAscend(1, nMol, 2) {
-			mol(n + 1).r = mol(n).r;
-			mol(n + 1).rv = mol(n).rv + pertTrajDev * mol(n).rv * vrand();
-		}
-		countTrajDev = 0;
-	}
-	
-	var dr: vector;
-	var dSum: real;
-	if stepCount > stepEquil && (stepCount - stepEquil) % stepTrajDev == 0 {
-		dSum = 0;
-		for n in iterAscend(1, nMol, 2) {
-			dr = vwrap((mol(n + 1).r - mol(n).r), region);
-			dSum += dr.lensq();
-		}
-		countTrajDev += 1;
-		valTrajDev(countTrajDev) = sqrt(dSum / (0.5 * nMol));
-		if countTrajDev == limitTrajDev {
-			for n in iterAscend(1, limitTrajDev) do
-				writeln(n * stepTrajDev * deltaT, " ", valTrajDev(n));
-			for n in iterAscend(1, nMol, 2) {
-				mol(n + 1).r = mol(n).r;
-				mol(n + 1).rv = mol(n).rv + pertTrajDev * mol(n).rv * vrand();
-			}
-			countTrajDev = 0;
-			buildNebrList();
-		}
-	}
+
 }
 
 proc main() {
