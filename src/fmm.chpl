@@ -135,7 +135,7 @@ proc init() {
 		m.rv = velMag * vrand();
 		vSum += m.rv;
 	}
-	forall m in mol {
+	for m in mol {
 		m.rv += (-1.0 / nMol) * vSum;
 		m.ra.zero();	// accelerations
 		if randR() > 0.5 then m.chg = chargeMag;	// charges
@@ -214,7 +214,7 @@ proc buildNebrList() {
 
 proc computeForces() {
 	var rrCut = rCut ** 2;
-	forall m in mol do m.ra.zero();
+	for m in mol do m.ra.zero();
 	uSum = 0.0;
 	for i in [1..nebrTabLen] {	// nebrTab.domain excced the nebrTabLen
 		var dr: vector;
@@ -381,7 +381,7 @@ proc evalMpForce(inout f: vector, inout u: real, inout me: mp_terms,
 proc combineMpCell() {
 	var mpCellsN: vector_i;
 	mpCellsN = 2 * mpCells;
-	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le, le2: mp_terms;
 		var rShift: vector;
 		var m1v, m2v: vector_i;
@@ -414,7 +414,7 @@ proc combineMpCell() {
 }
 
 proc gatherWellSepLo() {
-	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le, me, me2: mp_terms;
 		var rShift: vector;
 		var m1v, m2v: vector_i;
@@ -422,7 +422,7 @@ proc gatherWellSepLo() {
 		var s: real;
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
-		if mpCell(curLevel, m1).occ == 0 {
+		if mpCell(curLevel, m1).occ != 0 {
 			for (m2x, m2y, m2z) in iterAscend3(
 				m1v.ll_x(wellSep), m1v.hl_x(wellSep),
 				m1v.ll_y(wellSep), m1v.hl_y(wellSep),
@@ -461,7 +461,7 @@ proc propagateCellLo() {
 	var mpCellsN: vector_i;
 
 	mpCellsN = 2 * mpCells;
-	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le: mp_terms;
 		var rShift: vector;
 		var m1v, m2v: vector_i;
@@ -485,7 +485,7 @@ proc propagateCellLo() {
 }
 
 proc computeFarCellInt() {
-	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le: mp_terms;
 		var cMid, dr, f: vector;
 		var m1v: vector_i;
@@ -507,7 +507,7 @@ proc computeFarCellInt() {
 }
 
 proc computeNearCellInt() {
-	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var dr, ft: vector;
 		var m1v, m2v: vector_i;
 		var qq, ri: real;
@@ -515,14 +515,16 @@ proc computeNearCellInt() {
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		if mpCell(maxLevel, m1).occ != 0 {
-			for m2z in iterAscend(m1z, min(m1v.z+wellSep, mpCells.z-1)) {
+			for m2z in iterAscend(m1z, 
+				min(m1v.z + wellSep, mpCells.z - 1)) {
 				if m2z == m1z then m2yLo = m1y;
 				else m2yLo = max(m1y - wellSep, 0);
-				for m2y in iterAscend(m2yLo, min(m1v.y+wellSep, mpCells.y-1)) {
+				for m2y in iterAscend(m2yLo, 
+					min(m1v.y + wellSep, mpCells.y - 1)) {
 					if m2z == m1z && m2y == m1y then m2xLo = m1x;
 					else m2xLo = max(m1x - wellSep, 0);
 					for m2x in iterAscend(m2xLo, 
-						min(m1v.x+wellSep,mpCells.x-1)) {
+						min(m1v.x + wellSep, mpCells.x - 1)) {
 						m2v.set(m2x, m2y, m2z);
 						m2 = vlinear(m2v, mpCells);
 						if mpCell(maxLevel, m2).occ != 0 {
@@ -534,7 +536,7 @@ proc computeNearCellInt() {
 										qq = mol(j1).chg * mol(j2).chg;
 										ft = qq * (ri ** 3) * dr;
 										mol(j1).ra += ft;
-										mol(j2).ra += ft;
+										mol(j2).ra -= ft;
 										uSum += qq * ri;
 									}
 								}
@@ -554,8 +556,8 @@ proc multipoleCalc() {
 
 	// Assign mpCells
 	invWid = mpCells / region;
-	forall n in [nMol + 1..nMol + mpCells.prod()] do mpCellList(n) = -1;
-	forall n in mol.domain {
+	for n in [nMol + 1..nMol + mpCells.prod()] do mpCellList(n) = -1;
+	for n in mol.domain {
 		var cc: vector_i;
 		var c: int;
 		cc = (mol(n).r + 0.5 * region) * invWid;
@@ -566,7 +568,7 @@ proc multipoleCalc() {
 	cellWid = region / mpCells;
 
 	// Evaluate mpCells
-	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le: mp_terms;
 		var cMid, dr: vector;
 		var m1v: vector_i;
@@ -604,7 +606,7 @@ proc multipoleCalc() {
 		curLevel -= 1;
 	}
 
-	forall m1 in [1..64] {
+	for m1 in [1..64] {
 		for (j, k) in iterMaxOrd(maxOrd) {
 			mpCell(2, m1).me.set_c(0.0, j, k);
 			mpCell(2, m1).me.set_s(0.0, j, k);
@@ -627,7 +629,7 @@ proc multipoleCalc() {
 }
 
 proc computeWallForces() {
-	forall m in mol {
+	for m in mol {
 		var dr, rri, rri3: real;
 		if m.r.x >= 0.0 then dr = m.r.x;
 		else dr = - m.r.x;
@@ -719,13 +721,13 @@ proc evalRdf() {
 proc step() {
 	stepCount += 1;
 	timeNow = stepCount * deltaT;
-	
+
 	// Leapfrog
-	forall m in mol {
+	for m in mol {
 		m.rv += (0.5 * deltaT) * m.ra;
 		m.r += deltaT * m.rv;
 	}
-
+	
 	if nebrNow {
 		nebrNow = false;
 		dispHi = 0.0;
@@ -748,13 +750,13 @@ proc step() {
 		s2 += vt.lensq();
 	}
 	vFac = - s1 / s2;
-	forall m in mol {
+	for m in mol {
 		vt = m.rv + 0.5 * deltaT * m.ra;
 		m.ra += vFac * vt;
 	}
 
 	// Leapfrog
-	forall m in mol do m.rv += (0.5 * deltaT) * m.ra;
+	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
 
 	// Evaluate thermodynamics proerties
 	var vv, vvMax: real;
