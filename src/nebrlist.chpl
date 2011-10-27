@@ -99,7 +99,7 @@ proc init() {
 		m.rv = velMag * vrand();
 		vSum += m.rv;
 	}
-	for m in mol {
+	forall m in mol {
 		m.rv -= (1.0 / nMol) * vSum;
 		m.ra.zero();
 	}
