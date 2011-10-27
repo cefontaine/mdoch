@@ -130,7 +130,8 @@ proc init() {
 
 	gap = region / initUcell;
 	n = 1;
-	for (nz, ny, nx) in [0..initUcell.z-1,0..initUcell.y-1,0..initUcell.x-1] {
+	for (nz, ny, nx) in 
+		iterAscend3(0, initUcell.z-1, 0, initUcell.y-1, 0, initUcell.x-1) {
 		mol(n).r = (nx + 0.5, ny + 0.5, nz + 0.5) * gap - (0.5 * region);
 		n += 1;
 	}
@@ -193,8 +194,8 @@ proc buildNebrList() {
 	rrNebr = (rCut + rNebrShell) ** 2;
 	invWid = cells / region;
 	if profLevel == 2 then timer.start();
-	for n in [nMol + 1..nMol + cells.prod()] do cellList(n) = -1; 
-	for n in mol.domain {
+	for n in iterAscend(nMol + 1, nMol + cells.prod()) do cellList(n) = -1; 
+	for n in iterAscend(1, nMol) {
 		var cc: vector_i;
 		var c: int;
 		cc = (mol(n).r + 0.5 * region) * invWid;
@@ -242,9 +243,6 @@ proc computeForces() {
 	var rrCut = rCut ** 2;
 	for m in mol do m.ra.zero();
 	uSum = 0.0;
-	//uSumLock$.reset();
-	//uSumLock$ = true;
-	//for i in [1..nebrTabLen] {	// nebrTab.domain excceeds the nebrTabLen
 	for i in iterAscend(1, nebrTabLen) {
 		var dr: vector;
 		var rr, rri, rri3, fcVal, uVal: real;
@@ -260,9 +258,7 @@ proc computeForces() {
 			uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
 			mol(j1).ra += fcVal * dr;
 			mol(j2).ra -= fcVal * dr;
-			//uSumLock$;
 			uSum += uVal;
-			//uSumLock$ = true;
 		}
 	}
 }
@@ -571,18 +567,15 @@ proc computeNearCellInt() {
 						m2v.set(m2x, m2y, m2z);
 						m2 = vlinear(m2v, mpCells);
 						if mpCell(maxLevel, m2).occ != 0 {
-							// iterator is not thread-safe???
 							for (j1, j2) in iterMpCellList2(m1, m2) {
 								if m1 != m2 || j2 < j1 {
-								//	uSumLock$;
 									dr = mol(j1).r - mol(j2).r;
 									ri = 1.0 / dr.len();
 									qq = mol(j1).chg * mol(j2).chg;
 									ft = qq * (ri ** 3) * dr;
-									mol(j1).ra += ft;
+									mol(j1).ra += ft; 
 									mol(j2).ra -= ft;
-									uSum += qq * ri;
-								//	uSumLock$ = true;
+									uSumLocal += qq * ri;
 								}
 							}
 						}
@@ -590,11 +583,9 @@ proc computeNearCellInt() {
 				}
 			}
 		}
-		/*
 		uSumLock$;
 		uSum += uSumLocal;
 		uSumLock$ = true;
-		*/
 	}
 }
 
