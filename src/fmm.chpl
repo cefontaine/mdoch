@@ -162,6 +162,19 @@ iter iterMpCellList(n: int) {
 	}
 }
 
+iter iterMpCellList2(n: int, n2: int) {
+	var i = mpCellList(n + nMol);
+	var j: int;
+	while i >= 1 {
+		j = mpCellList(n2 + nMol);
+		while j >= 1{
+			yield (i, j);
+			j = mpCellList(j);
+		}
+		i = mpCellList(i);
+	}
+}
+
 iter iterMaxOrd(ord: int, init: int = 0) {
 	var i, j: int = init;
 	while i <= ord {
@@ -512,23 +525,23 @@ proc computeFarCellInt() {
 		var u: real;
 		var m1: int;
 		var uSumLocal: real;	// To reduce lock times in loop
-		uSumLocal = 0.0;
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		if mpCell(maxLevel, m1).occ != 0 {
 			cMid = (m1v + 0.5) * cellWid - 0.5 * region;
+			uSumLocal = 0.0;
 			for j in iterMpCellList(m1) {
 				dr = mol(j).r - cMid;
 				evalMpL(le, dr, maxOrd);
 				evalMpForce(f, u, mpCell(maxLevel, m1).me, le, maxOrd);
-				mol(j).ra = mol(j).ra - mol(j).chg * f;
+				mol(j).ra -= mol(j).chg * f;
 				uSumLocal += 0.5 * mol(j).chg * u;
 			}
+			// Put sync after final computation
+			uSumLock$;
+			uSum += uSumLocal;
+			uSumLock$ = true;
 		}
-		// Put sync after final computation
-		uSumLock$;
-		uSum += uSumLocal;
-		uSumLock$ = true;
 	}
 }
 
@@ -539,10 +552,11 @@ proc computeNearCellInt() {
 		var dr, ft: vector;
 		var m1v, m2v: vector_i;
 		var qq, ri: real;
-		var m1, m2, m2xLo, m2yLo: int;
+		var m1, m2, m2xLo, m2yLo, j1, j2: int;
 		var uSumLocal: real;
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
+		uSumLocal = 0.0;
 		if mpCell(maxLevel, m1).occ != 0 {
 			for m2z in iterAscend(m1z, 
 				min(m1v.z + wellSep, mpCells.z - 1)) {
@@ -557,28 +571,30 @@ proc computeNearCellInt() {
 						m2v.set(m2x, m2y, m2z);
 						m2 = vlinear(m2v, mpCells);
 						if mpCell(maxLevel, m2).occ != 0 {
-							uSumLocal = 0.0;
-							for j1 in iterMpCellList(m1) {
-								for j2 in iterMpCellList(m2) {
-									if m1 != m2 || j2 < j1 {
-										dr = mol(j1).r - mol(j2).r;
-										ri = 1.0 / dr.len();
-										qq = mol(j1).chg * mol(j2).chg;
-										ft = qq * (ri ** 3) * dr;
-										mol(j1).ra += ft;
-										mol(j2).ra -= ft;
-										uSumLocal += qq * ri;
-									}
+							// iterator is not thread-safe???
+							for (j1, j2) in iterMpCellList2(m1, m2) {
+								if m1 != m2 || j2 < j1 {
+								//	uSumLock$;
+									dr = mol(j1).r - mol(j2).r;
+									ri = 1.0 / dr.len();
+									qq = mol(j1).chg * mol(j2).chg;
+									ft = qq * (ri ** 3) * dr;
+									mol(j1).ra += ft;
+									mol(j2).ra -= ft;
+									uSum += qq * ri;
+								//	uSumLock$ = true;
 								}
 							}
-							uSumLock$;
-							uSum += uSumLocal;
-							uSumLock$ = true;
 						}
 					}
 				}
 			}
 		}
+		/*
+		uSumLock$;
+		uSum += uSumLocal;
+		uSumLock$ = true;
+		*/
 	}
 }
 
@@ -779,7 +795,7 @@ proc step() {
 		m.rv += (0.5 * deltaT) * m.ra;
 		m.r += deltaT * m.rv;
 	}
-	if profLevel == 1 then writeln("leapfrog(1): ", timer.stop());
+	if profLevel == 1 then writeln("leapFrog(1): ", timer.stop());
 	
 	if profLevel == 1 then timer.start();
 	if nebrNow {
@@ -807,6 +823,7 @@ proc step() {
 	s1 = 0;
 	s2 = 0;
 
+	if profLevel == 1 then timer.start();
 	for m in mol {
 		vt = m.rv + 0.5 * deltaT * m.ra;
 		s1 += vdot(vt, m.ra);
@@ -817,12 +834,13 @@ proc step() {
 		vt = m.rv + 0.5 * deltaT * m.ra;
 		m.ra += vFac * vt;
 	}
+	if profLevel == 1 then writeln("applyThermo: ", timer.stop());
 
 	// Leapfrog
 	if profLevel == 1 then timer.start();
 	//forall m in mol do m.rv += (0.5 * deltaT) * m.ra; // s:p=50:200
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
-	if profLevel == 1 then writeln("leapfrog(2): ", timer.stop());
+	if profLevel == 1 then writeln("leapFrog(2): ", timer.stop());
 
 	// Evaluate thermodynamics proerties
 	var vv, vvMax: real;
