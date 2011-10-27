@@ -47,12 +47,18 @@ config const wellSep: int = 1;
 config const profLevel: int = 0;
 const NDIM: int = 3;
 
+record mol3d {
+	var r, rv, ra: vector;
+	var chg: real;
+}
+
 var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
 var nMol, moreCycles, stepCount, countRdf,
 	nebrTabMax, nebrTabLen, curCellsEdge, curLevel: int;
 var nebrNow: bool;
+var uSumLock$: sync bool; // atomic statement is not ready yet
 var molDom: domain(1) = [1..1];
 var mol: [molDom] mol3d;
 var cellListDom: domain(1) = [1..1];
@@ -132,7 +138,7 @@ proc init() {
 	// Initial velocities, accelerations, and charges
 	vSum.zero();
 	for m in mol {
-		m.rv = velMag * vrand();
+		m.rv = velMag * vrand(); // vrand() cannot be parallelized
 		vSum += m.rv;
 	}
 	for m in mol {
@@ -168,24 +174,30 @@ iter iterMaxOrd(ord: int, init: int = 0) {
 	}
 }
 proc buildNebrList() {
-	var dr, invWid: vector;
-	var cc, m1v, m2v: vector_i;
+	var invWid: vector;
 	var rrNebr: real;
-	var c, m1, m2: int;
-	var vOff = OFFSET_VALS;
 
 	rrNebr = (rCut + rNebrShell) ** 2;
 	invWid = cells / region;
+	if profLevel == 2 then timer.start();
 	for n in [nMol + 1..nMol + cells.prod()] do cellList(n) = -1; 
 	for n in mol.domain {
+		var cc: vector_i;
+		var c: int;
 		cc = (mol(n).r + 0.5 * region) * invWid;
 		c = vlinear(cc, cells) + nMol;
 		cellList(n) = cellList(c);
 		cellList(c) = n;
 	}
-	nebrTabLen = 0;
+	if profLevel == 2 then writeln("buildNebrList:cellList: ", timer.stop());
 	
+	if profLevel == 2 then timer.start();
+	nebrTabLen = 0;
 	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
+		var dr: vector;
+		var m1v, m2v: vector_i;
+		var m1, m2: int;
+		var vOff = OFFSET_VALS;
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, cells) + nMol;
 		for f in iterAscend(1, N_OFFSET) {
@@ -210,13 +222,17 @@ proc buildNebrList() {
 			}
 		}
 	}
+	if profLevel == 2 then writeln("buildNebrList:nebrTab: ", timer.stop());
 }
 
 proc computeForces() {
 	var rrCut = rCut ** 2;
 	for m in mol do m.ra.zero();
 	uSum = 0.0;
-	for i in [1..nebrTabLen] {	// nebrTab.domain excced the nebrTabLen
+	//uSumLock$.reset();
+	//uSumLock$ = true;
+	//for i in [1..nebrTabLen] {	// nebrTab.domain excceeds the nebrTabLen
+	for i in iterAscend(1, nebrTabLen) {
 		var dr: vector;
 		var rr, rri, rri3, fcVal, uVal: real;
 		var j1, j2: int;
@@ -231,7 +247,9 @@ proc computeForces() {
 			uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
 			mol(j1).ra += fcVal * dr;
 			mol(j2).ra -= fcVal * dr;
+			//uSumLock$;
 			uSum += uVal;
+			//uSumLock$ = true;
 		}
 	}
 }
@@ -291,7 +309,7 @@ proc evalMpM(inout me: mp_terms, inout v: vector, maxOrd: int) {
 	var rri = 1.0 / v.lensq();
 	me.set_c(sqrt(rri), 0, 0);
 	me.set_s(0.0, 0, 0);
-	for j in [1..maxOrd] {
+	for j in iterAscend(1, maxOrd) {
 		var a, a1, a2: real;
 		a = - (2 * j - 1) * rri;
 		me.set_c(a * (v.x * me.c(j-1, j-1) - v.y * me.s(j-1, j-1)), j, j);
@@ -414,7 +432,7 @@ proc combineMpCell() {
 }
 
 proc gatherWellSepLo() {
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le, me, me2: mp_terms;
 		var rShift: vector;
 		var m1v, m2v: vector_i;
@@ -485,12 +503,16 @@ proc propagateCellLo() {
 }
 
 proc computeFarCellInt() {
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	uSumLock$.reset();
+	uSumLock$ = true;
+	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le: mp_terms;
 		var cMid, dr, f: vector;
 		var m1v: vector_i;
 		var u: real;
 		var m1: int;
+		var uSumLocal: real;	// To reduce lock times in loop
+		uSumLocal = 0.0;
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		if mpCell(maxLevel, m1).occ != 0 {
@@ -500,18 +522,25 @@ proc computeFarCellInt() {
 				evalMpL(le, dr, maxOrd);
 				evalMpForce(f, u, mpCell(maxLevel, m1).me, le, maxOrd);
 				mol(j).ra = mol(j).ra - mol(j).chg * f;
-				uSum += 0.5 * mol(j).chg * u;
+				uSumLocal += 0.5 * mol(j).chg * u;
 			}
 		}
+		// Put sync after final computation
+		uSumLock$;
+		uSum += uSumLocal;
+		uSumLock$ = true;
 	}
 }
 
 proc computeNearCellInt() {
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	uSumLock$.reset();
+	uSumLock$ = true;
+	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var dr, ft: vector;
 		var m1v, m2v: vector_i;
 		var qq, ri: real;
 		var m1, m2, m2xLo, m2yLo: int;
+		var uSumLocal: real;
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
 		if mpCell(maxLevel, m1).occ != 0 {
@@ -528,6 +557,7 @@ proc computeNearCellInt() {
 						m2v.set(m2x, m2y, m2z);
 						m2 = vlinear(m2v, mpCells);
 						if mpCell(maxLevel, m2).occ != 0 {
+							uSumLocal = 0.0;
 							for j1 in iterMpCellList(m1) {
 								for j2 in iterMpCellList(m2) {
 									if m1 != m2 || j2 < j1 {
@@ -537,10 +567,13 @@ proc computeNearCellInt() {
 										ft = qq * (ri ** 3) * dr;
 										mol(j1).ra += ft;
 										mol(j2).ra -= ft;
-										uSum += qq * ri;
+										uSumLocal += qq * ri;
 									}
 								}
 							}
+							uSumLock$;
+							uSum += uSumLocal;
+							uSumLock$ = true;
 						}
 					}
 				}
@@ -556,6 +589,7 @@ proc multipoleCalc() {
 
 	// Assign mpCells
 	invWid = mpCells / region;
+	if profLevel == 2 then timer.start();
 	for n in [nMol + 1..nMol + mpCells.prod()] do mpCellList(n) = -1;
 	for n in mol.domain {
 		var cc: vector_i;
@@ -565,10 +599,12 @@ proc multipoleCalc() {
 		mpCellList(n) = mpCellList(c);
 		mpCellList(c) = n;
 	}
-	cellWid = region / mpCells;
+	if profLevel == 2 then writeln("multipoleCalc:mpCells: ", timer.stop());
 
 	// Evaluate mpCells
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	if profLevel == 2 then timer.start();
+	cellWid = region / mpCells;
+	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le: mp_terms;
 		var cMid, dr: vector;
 		var m1v: vector_i;
@@ -595,7 +631,9 @@ proc multipoleCalc() {
 			}
 		}
 	}
+	if profLevel == 2 then writeln("multipoleCalc:evalMpL: ", timer.stop());
 
+	if profLevel == 2 then timer.start();
 	curCellsEdge = maxCellsEdge;
 	curLevel = maxLevel - 1;
 	while curLevel >= 2 {
@@ -605,14 +643,18 @@ proc multipoleCalc() {
 		combineMpCell();
 		curLevel -= 1;
 	}
+	if profLevel == 2 then writeln("multipoleCalc:combineMpCell: ", timer.stop());
 
-	for m1 in [1..64] {
+	if profLevel == 2 then timer.start();
+	for m1 in iterAscend(1, 64) {
 		for (j, k) in iterMaxOrd(maxOrd) {
 			mpCell(2, m1).me.set_c(0.0, j, k);
 			mpCell(2, m1).me.set_s(0.0, j, k);
 		}
 	}
+	if profLevel == 2 then writeln("multipoleCalc:mpCellSet: ", timer.stop());
 
+	if profLevel == 2 then timer.start();
 	curCellsEdge = 2;
 	curLevel = 2;
 	while curLevel <= maxLevel {
@@ -623,9 +665,17 @@ proc multipoleCalc() {
 		if curLevel < maxLevel then propagateCellLo();
 		curLevel += 1;
 	}
+	if profLevel == 2 then writeln("multipoleCalc:gatherWellSepLo: ", timer.stop());
 	
+	if profLevel == 2 then timer.start();
 	computeFarCellInt();
+	if profLevel == 2 then 
+		writeln("multipoleCalc:computeFarCellInt: ", timer.stop());
+	
+	if profLevel == 2 then timer.start();
 	computeNearCellInt();
+	if profLevel == 2 then
+		writeln("multipoleCalc:computeNearCellInt: ", timer.stop());
 }
 
 proc computeWallForces() {
@@ -723,20 +773,33 @@ proc step() {
 	timeNow = stepCount * deltaT;
 
 	// Leapfrog
+	if profLevel == 1 then timer.start();
+	//forall m in mol {  // s:p=80:19351
 	for m in mol {
 		m.rv += (0.5 * deltaT) * m.ra;
 		m.r += deltaT * m.rv;
 	}
+	if profLevel == 1 then writeln("leapfrog(1): ", timer.stop());
 	
+	if profLevel == 1 then timer.start();
 	if nebrNow {
 		nebrNow = false;
 		dispHi = 0.0;
 		buildNebrList();
 	}
+	if profLevel == 1 then writeln("buildNebrList: ", timer.stop());
 
+	if profLevel == 1 then timer.start();
 	computeForces();
+	if profLevel == 1 then writeln("computeForces: ", timer.stop());
+	
+	if profLevel == 1 then timer.start();
 	multipoleCalc();
+	if profLevel == 1 then writeln("multipoleCalc: ", timer.stop());
+	
+	if profLevel == 1 then timer.start();
 	computeWallForces();
+	if profLevel == 1 then writeln("computeWallForces: ", timer.stop());
 
 	// Apply thermo statistics
 	var s1, s2, vFac: real;
@@ -756,7 +819,10 @@ proc step() {
 	}
 
 	// Leapfrog
+	if profLevel == 1 then timer.start();
+	//forall m in mol do m.rv += (0.5 * deltaT) * m.ra; // s:p=50:200
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
+	if profLevel == 1 then writeln("leapfrog(2): ", timer.stop());
 
 	// Evaluate thermodynamics proerties
 	var vv, vvMax: real;
@@ -811,7 +877,9 @@ proc step() {
 
 proc main() {
 	printConfig();
+	if profLevel == 1 then timer.start();
 	init();
+	if profLevel == 1 then writeln("init: ", timer.stop());
 	moreCycles = 1;
 	while (moreCycles) {
 		step();

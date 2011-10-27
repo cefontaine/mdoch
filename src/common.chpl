@@ -601,7 +601,6 @@ record mol2d {
 
 record mol3d {
 	var r, rv, ra: vector;
-	var chg: real;
 }
 
 record prop {
