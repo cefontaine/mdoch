@@ -50,6 +50,7 @@ const NDIM: int = 3;
 record mol3d {
 	var r, rv, ra: vector;
 	var chg: real;
+	var lock$: sync bool;
 }
 
 var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
@@ -59,18 +60,18 @@ var nMol, moreCycles, stepCount, countRdf,
 	nebrTabMax, nebrTabLen, curCellsEdge, curLevel: int;
 var nebrNow: bool;
 var uSumLock$: sync bool; // atomic statement is not ready yet
-var molDom: domain(1) = [1..1];
+var molDom: domain(1);
 var mol: [molDom] mol3d;
-var cellListDom: domain(1) = [1..1];
+var cellListDom: domain(1);
 var cellList: [cellListDom] int;
-var nebrTabDom: domain(1) = [1..1];
+var nebrTabDom: domain(1);
 var nebrTab: [nebrTabDom] int;
 var mpCellDom: domain(2);
 var mpCell: [mpCellDom] mp_cell;
 var maxCellsEdge, maxOrd: int;
-var mpCellListDom: domain(1) = [1..1];
+var mpCellListDom: domain(1);
 var mpCellList: [mpCellListDom] int;
-var histRdfDom, cumRdfDom: domain(2) = [1..1, 1..1];
+var histRdfDom, cumRdfDom: domain(2);
 var histRdf: [histRdfDom] real;
 var cumRdf: [cumRdfDom] real;
 var kinEnergy, totEnergy: prop;
@@ -109,7 +110,6 @@ proc init() {
 	cells = 1.0 / (rCut + rNebrShell) * region;
 	nebrTabMax = nebrTabFac * nMol;
 	maxOrd = MAX_MPEX_ORD;
-	
 	// Allocate storage
 	molDom = [1..nMol];
 	cellListDom = [1..(cells.prod() + nMol)];
@@ -147,6 +147,7 @@ proc init() {
 		m.ra.zero();	// accelerations
 		if randR() > 0.5 then m.chg = chargeMag;	// charges
 		else m.chg = -chargeMag;
+		m.lock$ = true;
 	}
 	
 	totEnergy.zero();
@@ -548,7 +549,7 @@ proc computeNearCellInt() {
 		var dr, ft: vector;
 		var m1v, m2v: vector_i;
 		var qq, ri: real;
-		var m1, m2, m2xLo, m2yLo, j1, j2: int;
+		var m1, m2, m2xLo, m2yLo: int;
 		var uSumLocal: real;
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
@@ -573,8 +574,15 @@ proc computeNearCellInt() {
 									ri = 1.0 / dr.len();
 									qq = mol(j1).chg * mol(j2).chg;
 									ft = qq * (ri ** 3) * dr;
+
+									mol(j1).lock$;
 									mol(j1).ra += ft; 
+									mol(j1).lock$ = true;
+									
+									mol(j2).lock$;
 									mol(j2).ra -= ft;
+									mol(j2).lock$ = true;
+
 									uSumLocal += qq * ri;
 								}
 							}
