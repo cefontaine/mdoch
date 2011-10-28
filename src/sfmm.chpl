@@ -58,7 +58,6 @@ var region, vSum, cellWid: vector;
 var nMol, moreCycles, stepCount, countRdf,
 	nebrTabMax, nebrTabLen, curCellsEdge, curLevel: int;
 var nebrNow: bool;
-var uSumLock$: sync bool; // atomic statement is not ready yet
 var molDom: domain(1);
 var mol: [molDom] mol3d;
 var cellListDom: domain(1);
