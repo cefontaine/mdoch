@@ -28,7 +28,7 @@ identical runs and their standard deviations are considerable small.
 \subsection{Language Primitives}
 \subsubsection{Arithmetic and Array Indexing}
 We first investigate the baseline performance of float point arithmetics for
-both one single variable and an array.  Figure~\ref{fig:arith} shows the
+both one single variable and an array. \autoref{fig:arith} shows the
 performance of conducting $10^6$ operations, with the comparison of a direct C
 implementation. While the plain float point arithmetics perform the same as
 direct C implementation, the array reference introduce an average of 15\%
@@ -58,9 +58,9 @@ type, {\ic record} type, and their nested constructions.
         var x, y: Rec; }               struct rec x, y; }
 \end{lstlisting}
 
-As described in section~\ref{sec:md_datastruct}, both {\ic tuple} and {\ic
-record} can be used to implement vector. Figure~\ref{fig:1d_vector} and
-\ref{fig:2d_vector} show the manipulation performance of 1D and 2D vectors,
+As described in \autoref{sec:md_datastruct}, both {\ic tuple} and {\ic
+record} can be used to implement vector. \autoref{fig:1d_vector} and
+\autoref{fig:2d_vector} show the manipulation performance of 1D and 2D vectors,
 respectively. 2D vector is implemented by nested types. The number of vectors is
 $10^6$ and we also compare them with a {\em direct C implementation} using array
 and {\ic struct}. Results show that using {\ic tuple} has a potential indexing
@@ -90,7 +90,7 @@ dictionary-style array which can use arbitrary type as index.
 To study the performance of domain reference, we compare the throughput of
 manipulation on arrays that are defined by rectangular domain and associate
 domain. The size of all arrays is set to $10^6$, and the length of a
-$n$-dimensional array is $10^{6/n}$. Figure~\ref{fig:array} presents the
+$n$-dimensional array is $10^{6/n}$. \autoref{fig:array} presents the
 experimental results. Generally, using regular domain is much more efficient
 (hundreds times faster) than using associate domain because regular domain
 typically requires $O(1)$ space~\cite{chapelspec}.
@@ -117,7 +117,7 @@ example below).
     for (i, j) in [1..I, 1..I-1] do { ... }  // NG
 \end{lstlisting}
 
-Figure~\ref{fig:loop} shows the elapsed time of conducing $10^6$ times of
+\autoref{fig:loop} shows the elapsed time of conducing $10^6$ times of
 accumulation by using different {\ic for}/{\ic while} constructions. Here,
 ``{\ic for-for}'' stands for a nested iteration and ``{\ic for2}'' stands for a
 zipper iteration. For a $n$-level nested loops, each level is iterated for
@@ -156,7 +156,7 @@ inserting the domain construction procedures.
 \subsection{Molecular Dynamics Applications}
 
 \subsubsection{Serial Execution Performance}
-Figure~\ref{fig:fmm_serial} shows the performance of the serial version of
+\autoref{fig:fmm_serial} shows the performance of the serial version of
 \ac{FMM}. Similar as evaluation results in previous sections, a Chapel program
 generally achieves about 50\% of the performance of an identical C program.
 Though not shown here, other simpler \ac{MD} programs with fewer array reference

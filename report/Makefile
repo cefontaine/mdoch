@@ -6,6 +6,7 @@ DVI2PDF=dvipdf
 PS2PDF=ps2pdf
 
 PROJ=mdoch
+SECTIONS=$(wildcard sections/*.tex)
 TABLES=$(wildcard tables/*.tex)
 FIGURES=$(wildcard figures/*.tex figures/*.pdf)
 MISCS=acronyms.tex
@@ -27,7 +28,7 @@ $(PROJ).ps: $(PROJ).dvi
 
 .PHONY: pdf
 pdf: $(PROJ).pdf
-$(PROJ).pdf: $(PROJ).tex $(TABLES) $(FIGURES) $(BIB) $(MISCS)
+$(PROJ).pdf: $(PROJ).tex $(SECTIONS) $(TABLES) $(FIGURES) $(BIB) $(MISCS)
 	$(TEX) $(PROJ).tex
 	$(BIBTEX) $(PROJ)
 	$(TEX) $(PROJ).tex
