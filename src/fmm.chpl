@@ -52,27 +52,6 @@ record mol3d {
 	var chg: real;
 }
 
-record mp_terms {
-	// size = MAX_MPEX_ORD * (MAX_MPEX_ORD + 1) / 2 + MAX_MPEX_ORD + 1;
-	var _c: 6*real;
-	var _s: 6*real;
-	proc c(i: int) { return _c(i); }
-	proc s(i: int) { return _s(i); }
-	proc c(i: int, j: int) { return _c(i * (i + 1) / 2 + j + 1); }
-	proc s(i: int, j: int) { return _s(i * (i + 1) / 2 + j + 1); }
-	proc set_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) = v; }
-	proc set_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j + 1) = v; }
-	proc add_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) += v; }
-	proc add_s (v: real, i: int, j: int) { _s(i * (i + 1) / 2 + j + 1) += v; }
-	proc sub_c (v: real, i: int, j: int) { _c(i * (i + 1) / 2 + j + 1) -= v; }
-	proc sub_s (v: real, i:	int, j: int) { _s(i * (i + 1) / 2 + j + 1) -= v; }
-}
-
-record mp_cell {
-	var le, me: mp_terms;
-	var occ: int;
-}
-
 var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
@@ -175,27 +154,6 @@ proc init() {
 	kinEnInitSum = 0.0;
 }
 
-iter iterCellList(n: int) {
-	var i = cellList(n);
-	while i >= 1 {
-		yield i;
-		i = cellList(i);
-	}
-}
-
-iter iterCellList2(n: int, n2: int) {
-	var i = cellList(n);
-	var j: int;
-	while i >= 1 {
-		j = cellList(n2);
-		while j >= 1 {
-			yield (i, j);
-			j = cellList(j);
-		}
-		i = cellList(i);
-	}
-}
-
 iter iterMpCellList(n: int) {
 	var i = mpCellList(n + nMol);
 	while i >= 1 {
@@ -261,17 +219,15 @@ proc buildNebrList() {
 			   m2v.y < 0 || m2v.y >= cells.y || m2v.z >= cells.z 
 			   then continue;
 			m2 = vlinear(m2v, cells) + nMol;
-			for j1 in iterCellList(m1, cellList) {
-				for j2 in iterCellList(m2, cellList) {
-					if (m1 != m2 || j2 < j1) {
-						dr = mol(j1).r - mol(j2).r;
-						if dr.lensq() < rrNebr {
-							if nebrTabLen >= nebrTabMax then
-								errExit("Too many neighbours");
-							nebrTab(2 * nebrTabLen + 1) = j1;
-							nebrTab(2 * nebrTabLen + 2) = j2;
-							nebrTabLen += 1;
-						}
+			for (j1, j2) in iterCellList2(m1, m2, cellList) {
+				if (m1 != m2 || j2 < j1) {
+					dr = mol(j1).r - mol(j2).r;
+					if dr.lensq() < rrNebr {
+						if nebrTabLen >= nebrTabMax then
+							errExit("Too many neighbours");
+						nebrTab(2 * nebrTabLen + 1) = j1;
+						nebrTab(2 * nebrTabLen + 2) = j2;
+						nebrTabLen += 1;
 					}
 				}
 			}

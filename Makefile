@@ -1,4 +1,4 @@
-all: src c eval report
+all: src c eval
 
 src: FORCE
 	cd $@ && $(MAKE)
