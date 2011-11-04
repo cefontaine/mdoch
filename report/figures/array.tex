@@ -1,0 +1,33 @@
+\begin{tikzpicture}
+\begin{axis}[
+  ymode=log,
+  ylabel=Elapsed Time ($\mu$sec),
+  symbolic x coords={alloc, asg, add, sub, mul, div},
+  legend style={at={(0.5, 1.05)}, anchor=south, legend columns=6}]]
+% 1D-Rec
+\addplot[mark=x, color=red] coordinates
+  {(alloc, 4878.8) (asg, 6555.2) (add, 8872.4) (sub, 8819.2) (mul, 8912.8) 
+   (div,14743.4)};
+% 1D-Irr
+\addplot[mark=x, color=red, style=densely dashed] coordinates
+  {(alloc, 1130004.8) (asg, 56809) (add, 162065.2) (sub, 159844) (mul, 109623)
+   (div, 121578.4)};
+% 2D-Rec
+\addplot[mark=o, color=blue] coordinates
+  {(alloc, 4873.8) (asg, 6490.8) (add, 10068) (sub, 17344.4) (mul, 10250.8)
+   (div, 18036.8)};
+% 2D-Irr
+\addplot[mark=o, color=blue, style=densely dashed] coordinates
+  {(alloc, 1377234.2) (asg, 781581.4) (add, 1238850.4) (sub, 1238424.4)
+   (mul, 1319992) (div, 1324668)};
+% 3D-Rec
+\addplot[mark=triangle, color=teal] coordinates
+  {(alloc, 5708.4) (asg, 6549.8) (add, 16246.4) (sub, 10368.6) (mul, 18559)
+   (div, 18087.8)};
+% 3D-Irr
+\addplot[mark=triangle, color=teal, style=densely dashed] coordinates
+  {(alloc, 6544416) (asg, 4218638) (add, 6025574) (sub, 5937296) (mul, 5747632)
+   (div, 6049830)};
+\legend{1D-Reg, 1D-Irr, 2D-Reg, 2D-Irr, 3D-Reg, 3D-Irr}
+\end{axis}
+\end{tikzpicture}

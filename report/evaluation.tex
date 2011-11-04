@@ -1,0 +1,225 @@
+\subsection{Experimental Environments}
+The experimental environments consist of one cluster of 20 machines. Each
+machine is equipped with Xeon E5530 2.4GHz 8 cores CPU, 24GB MEM, and an
+uniform installation of Linux 2.6.26, GCC 4.3.2, and Chapel 1.3.0.
+
+Our Chapel implementation consists of several basic language benchmarks and
+\ac{MD} simulation programs, where \ac{MD} programs is based on an open-source
+C implementation\footnote{ Online available at
+\url{http://www.ph.biu.ac.il/~rapaport/mdbook/index.html}.} with detailed
+illustrations~\cite{rapaport04md}. Therefore, there is no algorithmic but only
+language descriptive differences between these two implementations.
+
+The used compilation options are shown below. Note that {\ic -O3} option is
+specified because the same level of optimization is used (which can be shown by
+{\ic --print-commands} option) during the Chapel compilation from intermediate
+C code to executable.
+\begin{lstlisting}
+    $ chpl prog.chpl -o prog --fast // Chapel compilation
+    $ gcc prog.c -o prog -O3 -lm    // C compilation
+\end{lstlisting}
+To investigate performance bottlenecks, we extensively uses source-to-source
+compilation feature (\ie {\ic --codegen} and {\ic --savec} options) by exploring
+intermediate C code in following experiments.
+
+For each experiment, if not specified, the shown results are the average of 5
+identical runs and their standard deviations are considerable small.
+
+\subsection{Language Primitives}
+\subsubsection{Arithmetic and Array Indexing}
+We first investigate the baseline performance of float point arithmetics for
+both one single variable and an array.  Figure~\ref{fig:arith} shows the
+performance of conducting $10^6$ operations, with the comparison of a direct C
+implementation. While the plain float point arithmetics perform the same as
+direct C implementation, the array reference introduce an average of 15\%
+overhead.
+
+\begin{figure}[t]
+\centering
+\input{figures/arith}
+\caption{Comparison of float point arithmetics}
+\label{fig:arith}
+\end{figure}
+
+\subsubsection{Tuple vs. Record}\label{sec:tuple_record}
+{\em Tuple} and {\em Record} are two light-weight data types for encapsulating a
+group of data. When translated to intermediate C code, tuple is transformed to
+multiple dimensional array and record is transformed to the {\ic struct} type.
+Following code illustrates the correspondence in translation of {\ic tuple}
+type, {\ic record} type, and their nested constructions.
+
+\begin{lstlisting}
+    /* Chapel source */            /* C mapping */
+    var tup: (int, int);           int tup[2];
+    var nstTup: (tup, tup);        int nstTup[2][2];
+
+    record Rec {var x, y: int;}    struct rec {int x, y;}
+    record nstRec {                struct nstRec {
+        var x, y: Rec; }               struct rec x, y; }
+\end{lstlisting}
+
+As described in section~\ref{sec:md_datastruct}, both {\ic tuple} and {\ic
+record} can be used to implement vector. Figure~\ref{fig:1d_vector} and
+\ref{fig:2d_vector} show the manipulation performance of 1D and 2D vectors,
+respectively. 2D vector is implemented by nested types. The number of vectors is
+$10^6$ and we also compare them with a {\em direct C implementation} using array
+and {\ic struct}. Results show that using {\ic tuple} has a potential indexing
+overhead (up to 50\%) than using {\ic record}, and the increment of overhead by
+using nested types is much higher comparing to direct C implementation.
+
+\begin{figure}[t]
+\centering
+\input{figures/1d_vector}
+\caption{Performance of manipulations on 1D-vectors}
+\label{fig:1d_vector}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\input{figures/2d_vector}
+\caption{Performance of manipulation on 2D-vectors}
+\label{fig:2d_vector}
+\end{figure}
+
+\subsection{Domain Indexing}
+In Chapel, domain is classified as {\em rectangular domain} and {\em
+irregular/associative domain}~\cite{chapelspec}. Rectangular domain describes
+multidimensional rectangular index sets, and irregular domain is like
+dictionary-style array which can use arbitrary type as index.
+
+To study the performance of domain reference, we compare the throughput of
+manipulation on arrays that are defined by rectangular domain and associate
+domain. The size of all arrays is set to $10^6$, and the length of a
+$n$-dimensional array is $10^{6/n}$. Figure~\ref{fig:array} presents the
+experimental results. Generally, using regular domain is much more efficient
+(hundreds times faster) than using associate domain because regular domain
+typically requires $O(1)$ space~\cite{chapelspec}.
+\begin{figure}[t]
+\centering
+\input{figures/array}
+\caption{Indexing performance of arrays with different domains}
+\label{fig:array}
+\end{figure}
+
+\subsection{Nested For Loop}\label{sec:nested_loop}
+The nested loop is common in scientific calculation, and it can be constructed
+using a {\em nested iteration} or {\em zipper iteration} in Chapel. But when the
+inner loop depends on the outer loop, the iteration can only use the nested way
+because the {\em range literal} is evaluated at once before iterations (see
+example below).
+\begin{lstlisting}
+    // Nested iteration
+    for i in [1..I] do  // Inner loop depends on outer loop
+      for j in [1..I-1] { .. } 
+
+    // Zipper iteration
+    for (i, j) in [1..I, 1..J] do { ... }    // OK
+    for (i, j) in [1..I, 1..I-1] do { ... }  // NG
+\end{lstlisting}
+
+Figure~\ref{fig:loop} shows the elapsed time of conducing $10^6$ times of
+accumulation by using different {\ic for}/{\ic while} constructions. Here,
+``{\ic for-for}'' stands for a nested iteration and ``{\ic for2}'' stands for a
+zipper iteration. For a $n$-level nested loops, each level is iterated for
+$10^{6/n}$ times.
+\begin{figure*}[t]
+\centering
+\input{figures/loop}
+\caption{Performance comparison of traversing various nested loops}
+\label{fig:loop}
+\end{figure*}
+
+It is clear that the overhead is non-trivial when {\ic for} exists in inner
+loops. Following intermediate C code shows that a {\ic for} loop in Chapel is
+translated into a {\ic while} loop surrounded by a pair of domain constructor
+and destructor procedures which are also iterated by outer loops.
+
+\begin{lstlisting}
+    // Transformed C code of the for loop
+    chpl__buildDomainExpr2(&loop_domain, ...);
+    while (loop_domain) { ... }
+    chpl__autoDestroy2(loop_variable, ...);
+\end{lstlisting}
+
+Thus, there are three ways to overcome this problem by preventing compiler from
+inserting the domain construction procedures.
+\begin{itemize}
+  \item Define an {\em iterator} by using {\ic iter} function~\cite{chapelspec},
+  which preserves the semantics of data parallelism in the {\ic forall}
+  loop\footnote{However, the parallel iterator is not available now. It will be
+  supported in the future~\cite{chapelspec}.}. 
+  \item Use the {\ic while} statement for inner loop, if the inner loop does not
+  need to be executed in parallel.
+  \item Use zipper iteration, if inner loop is independent of outer loop.
+\end{itemize}
+
+\subsection{Molecular Dynamics Applications}
+
+\subsubsection{Serial Execution Performance}
+Figure~\ref{fig:fmm_serial} shows the performance of the serial version of
+\ac{FMM}. Similar as evaluation results in previous sections, a Chapel program
+generally achieves about 50\% of the performance of an identical C program.
+Though not shown here, other simpler \ac{MD} programs with fewer array reference
+can achieve about 60-70\% performance of the C implementation.
+
+\begin{figure}[t]
+\centering
+\input{figures/fmm_serial}
+\caption{Performance of serial \acs{FMM}}
+\label{fig:fmm_serial}
+\end{figure}
+
+\subsubsection{Parallel Execution Performance}
+To parallelize a serial program, parallel statements and synchronization are
+inserted. Figure~\ref{fig:fmm_breakdown} shows the performance breakdown of
+\ac{FMM} phases by a serial version and a parallelized version (but executed
+serially) \ac{FMM} programs. For the most computation intensive part (\ie
+{\ic multipoleCalc} phase), the parallelization can introduces 5 times of
+overhead because lock is used in a heavy loop part.
+\begin{figure}[t]
+\centering
+\input{figures/fmm_breakdown}
+\caption{Serial performance breakdown of serial \ac{FMM} and parallelized \ac{FMM}}
+\label{fig:fmm_breakdown}
+\end{figure}
+
+Figure~\ref{fig:fmm_scale} shows the scalability of parallel \ac{FMM} for
+different number of threads and problem sizes.
+Figure~\ref{fig:fmm_scale_breakdown} illustrates the scalability of each phase
+for $N=32^3$.  For a small problem size (\eg $N=8^3$), the performance drops
+down when the number of threads exceed 4 because there are less calculations for
+long range interactions and the computation for short range is dominant. When
+there are more molecules, which suggests larger space, the performance scales up
+to 8 threads. However, the speedup only achieves 4 for 8 threads, this is
+because an lock existing in {\ic multipoleCalc} phase leads to significant
+overhead. We are currently developing a new algorithm for this phase to remove
+the usage of lock.
+
+\begin{figure}[t]
+\centering
+\input{figures/fmm_scale}
+\caption{Scalability of parallelized \ac{FMM}}
+\label{fig:fmm_scale}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\input{figures/fmm_scale_breakdown}
+\caption{Parallel performance breakdown of parallelized \ac{FMM}}
+\label{fig:fmm_scale_breakdown}
+\end{figure}
+
+\subsection{Source Lines of Code}
+Figure~\ref{fig:loc} shows the head-to-head comparison of \ac{LOC} between
+serial programs of our Chapel and original C implementation. Using Chapel saves
+20-40\% effort to develop a program. Note that the parallel version of programs
+in Chapel only introduce a small fraction of additional code. For example, our
+parallelized \ac{FMM} program has only 3\% more lines of code than the serial
+version, which demonstrates that expressive of describing parallelism by Chapel.
+
+\begin{figure}[t]
+\centering
+\input{figures/loc}
+\caption{Comparison of lines of code of serial MD programs}
+\label{fig:loc}
+\end{figure}
