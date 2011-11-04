@@ -1,0 +1,29 @@
+\begin{tabular}{lcccc}
+\toprule
+ &\multicolumn{2}{c}{\bf x86 core} & \multicolumn{2}{c}{\bf Anton}\\
+ & small cutoff (\unit[9]{\AA}) & large cutoff (\unit[13]{\AA}) & small cutoff
+ (\unit[9]{\AA}) & large cutoff (\unit[13]{\AA}) \\
+ & fine mesh ($64^3$) & large cutoff ($32^3$) & small cutoff ($64^3$) & large
+ cutoff ($32^3$) \\
+\midrule
+\multicolumn{5}{l}{\bf Nonbonded forces}\\
+\tabrowcolor
+\hspace{22pt}Range-limited forces & \unit[56.6]{ms} (65\%) & \unit[164.4]{ms} (89\%) &
+  \unit[1.4]{$\mu$s} (4\%) & \unit[1.9]{$\mu$s} (12\%)\\
+\hspace{22pt}FFT \& inverse FFT & \unit[12.3]{ms} (14\%) & \unit[1.4]{ms} (1\%) &
+  \unit[24.7]{$\mu$s} (63\%) & \unit[8.9]{$\mu$s} (58\%)\\
+\tabrowcolor
+\hspace{22pt}Mesh interpolation & \unit[9.6]{ms} (11\%) & \unit[8.8]{ms} (5\%) &
+  \unit[9.5]{$\mu$s} (24\%) & \unit[2.0]{$\mu$s} (13\%)\\
+\tabrowcolor
+\hspace{22pt}Correction forces & \unit[4.0]{ms} (5\%) & \unit[3.8]{ms} (2\%) &
+  \unit[2.5]{$\mu$s} (6\%) & \unit[2.5]{$\mu$s} (16\%)\\
+{\bf Bonded forces} & \unit[2.7]{ms} (3\%) & \unit[2.7]{ms} (1\%) &
+  \unit[3.5]{$\mu$s} (9\%) & \unit[4.1]{$\mu$s} (27\%)\\
+{\bf Integration} & \unit[3.4]{ms} (4\%) & \unit[3.4]{ms} (2\%) &
+  \unit[1.6]{$\mu$s} (4\%) & \unit[1.6]{$\mu$s} (10\%)\\
+\midrule
+{\bf Total} & \unit[88.5]{ms} (100\%) & \unit[184.5]{ms} (100\%) &
+  \unit[39.2]{$\mu$s} (100\%) & \unit[15.4]{$\mu$s} (100\%)\\
+\bottomrule
+\end{tabular}

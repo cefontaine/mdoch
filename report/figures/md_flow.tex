@@ -1,0 +1,39 @@
+\tikzstyle{decision} = [diamond, draw, %fill=blue!20, 
+    text width=4.5em, text badly centered, node distance=3cm, inner sep=0pt]
+\tikzstyle{block} = [rectangle, draw, %fill=blue!20, 
+    text centered, rounded corners, minimum height=4em]
+\tikzstyle{line} = [draw, -latex']
+\tikzstyle{cloud} = [draw, ellipse,fill=red!20, node distance=3cm,
+    minimum height=2em]
+    
+\begin{tikzpicture}[node distance = 2cm, auto]
+    % Place nodes
+    \node [block] (init) {Define initial positions $\vec{r}_i(t_0)$ and
+    velocities $\vec{v}_i(t_0)$};
+
+    \node [block, below of=init, node distance=2.2cm] (calculate) {Calculate forces at current time
+    $t_n$: $\vec{F}_i=-\nabla V(\vec{r}_1,\ldots,\vec{r}_N)$};
+
+    \node [block, below of=calculate, text width=20em, node distance=2.5cm] 
+    (solve) 
+    {Solve equations of motion for all particles in the system over a short
+    timestep $\Delta t$: $\vec{r}_i(t_n)\rightarrow\vec{r}_i(t_{n+1})$,
+    $\vec{v}_i(t_n)\rightarrow\vec{v}_i(t_{n+1})$, $t_{n+1}=t_n+\Delta t$};
+
+    \node [block, below of=solve, text width=20em, node distance=2.5cm] 
+    (decide) 
+    {Calculate desired physical quantities, write data to trajectory file};
+
+    \node [decision, right of=decide, node distance=7cm] (check) 
+    {$t_{n+1}>t_{max}$?};
+
+    \node [block, below of=check, node distance=3cm] (stop) {Write final atomic
+    configuration and finish};
+    % Draw edges
+    \path [line] (init) -- (calculate);
+    \path [line] (calculate) -- (solve);
+    \path [line] (solve) -- (decide);
+    \path [line] (decide) -- (check);
+    \path [line] (check) |- node [near start] {no} (calculate);
+    \path [line] (check) -- node {yes}(stop);
+\end{tikzpicture}

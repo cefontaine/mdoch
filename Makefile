@@ -1,12 +1,15 @@
-all: src c eval
+all: src c eval report
 
 src: FORCE
-	cd src && $(MAKE)
+	cd $@ && $(MAKE)
 
 c: FORCE
-	cd c && $(MAKE)
+	cd $@ && $(MAKE)
 
 eval: FORCE
-	cd eval && $(MAKE)
+	cd $@ && $(MAKE)
+
+report: FORCE
+	cd $@ && $(MAKE)
 
 FORCE:

@@ -1,0 +1,829 @@
+% The Computer Simulation of Molecular Dynamics
+% Nan Dun <dun@logos.ic.i.u-tokyo.ac.jp>
+
+
+%% bare_jrnl_compsoc.tex
+%% V1.3
+%% 2007/01/11
+%% by Michael Shell
+%% See:
+%% http://www.michaelshell.org/
+%% for current contact information.
+%%
+%% This is a skeleton file demonstrating the use of IEEEtran.cls
+%% (requires IEEEtran.cls version 1.7 or later) with an IEEE Computer
+%% Society journal paper.
+%%
+%% Support sites:
+%% http://www.michaelshell.org/tex/ieeetran/
+%% http://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran/
+%% and
+%% http://www.ieee.org/
+
+\documentclass[a4paper,10pt,technote,compsoc,onecolumn]{IEEEtran}
+
+% Centering figure captions
+\makeatletter
+\long\def\@makecaption#1#2{\ifx\@captype\@IEEEtablestring%
+\footnotesize\begin{center}{\normalfont\footnotesize #1}\\
+{\normalfont\footnotesize\scshape #2}\end{center}%
+\@IEEEtablecaptionsepspace
+\else
+\@IEEEfigurecaptionsepspace
+\setbox\@tempboxa\hbox{\normalfont\footnotesize {#1.}~~ #2}%
+\ifdim \wd\@tempboxa >\hsize%
+\setbox\@tempboxa\hbox{\normalfont\footnotesize {#1.}~~ }%
+\parbox[t]{\hsize}{\normalfont\footnotesize \noindent\unhbox\@tempboxa#2}%
+\else
+\hbox to\hsize{\normalfont\footnotesize\hfil\box\@tempboxa\hfil}\fi\fi}
+\makeatother
+
+% *** GRAPHICS RELATED PACKAGES ***
+%
+\ifCLASSINFOpdf
+  % \usepackage[pdftex]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../pdf/}{../jpeg/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.pdf,.jpeg,.png}
+\else
+  % or other class option (dvipsone, dvipdf, if not using dvips). graphicx
+  % will default to the driver specified in the system graphics.cfg if no
+  % driver is specified.
+  % \usepackage[dvips]{graphicx}
+  % declare the path(s) where your graphic files are
+  % \graphicspath{{../eps/}}
+  % and their extensions so you won't have to specify these with
+  % every instance of \includegraphics
+  % \DeclareGraphicsExtensions{.eps}
+\fi
+% graphicx was written by David Carlisle and Sebastian Rahtz. It is
+% required if you want graphics, photos, etc. graphicx.sty is already
+% installed on most LaTeX systems. The latest version and documentation can
+% be obtained at: 
+% http://www.ctan.org/tex-archive/macros/latex/required/graphics/
+% Another good source of documentation is "Using Imported Graphics in
+% LaTeX2e" by Keith Reckdahl which can be found as epslatex.ps or
+% epslatex.pdf at: http://www.ctan.org/tex-archive/info/
+%
+% latex, and pdflatex in dvi mode, support graphics in encapsulated
+% postscript (.eps) format. pdflatex in pdf mode supports graphics
+% in .pdf, .jpeg, .png and .mps (metapost) formats. Users should ensure
+% that all non-photo figures use a vector format (.eps, .pdf, .mps) and
+% not a bitmapped formats (.jpeg, .png). IEEE frowns on bitmapped formats
+% which can result in "jaggedy"/blurry rendering of lines and letters as
+% well as large increases in file sizes.
+%
+% You can find documentation about the pdfTeX application at:
+% http://www.tug.org/applications/pdftex
+
+\usepackage[cmex10]{amsmath}
+\usepackage{amssymb}
+\interdisplaylinepenalty=2500
+\usepackage{algorithmic}
+\usepackage{array}
+
+
+%\usepackage{eqparbox}
+% Also of notable interest is Scott Pakin's eqparbox package for creating
+% (automatically sized) equal width boxes - aka "natural width parboxes".
+% Available at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/eqparbox/
+
+% *** SUBFIGURE PACKAGES ***
+%\ifCLASSOPTIONcompsoc
+%\usepackage[tight,normalsize,sf,SF]{subfigure}
+%\else
+%\usepackage[tight,footnotesize]{subfigure}
+%\fi
+% subfigure.sty was written by Steven Douglas Cochran. This package makes it
+% easy to put subfigures in your figures. e.g., "Figure 1a and 1b". For IEEE
+% work, it is a good idea to load it with the tight package option to reduce
+% the amount of white space around the subfigures. Computer Society papers
+% use a larger font and \sffamily font for their captions, hence the
+% additional options needed under compsoc mode. subfigure.sty is already
+% installed on most LaTeX systems. The latest version and documentation can
+% be obtained at:
+% http://www.ctan.org/tex-archive/obsolete/macros/latex/contrib/subfigure/
+% subfigure.sty has been superceeded by subfig.sty.
+
+
+%\ifCLASSOPTIONcompsoc
+%  \usepackage[caption=false]{caption}
+%  \usepackage[font=normalsize,labelfont=sf,textfont=sf]{subfig}
+%\else
+%  \usepackage[caption=false]{caption}
+%  \usepackage[font=footnotesize]{subfig}
+%\fi
+% subfig.sty, also written by Steven Douglas Cochran, is the modern
+% replacement for subfigure.sty. However, subfig.sty requires and
+% automatically loads Axel Sommerfeldt's caption.sty which will override
+% IEEEtran.cls handling of captions and this will result in nonIEEE style
+% figure/table captions. To prevent this problem, be sure and preload
+% caption.sty with its "caption=false" package option. This is will preserve
+% IEEEtran.cls handing of captions. Version 1.3 (2005/06/28) and later 
+% (recommended due to many improvements over 1.2) of subfig.sty supports
+% the caption=false option directly:
+%\ifCLASSOPTIONcompsoc
+%  \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+%\else
+%  \usepackage[caption=false,font=footnotesize]{subfig}
+%\fi
+%
+% The latest version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/subfig/
+% The latest version and documentation of caption.sty can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/caption/
+
+
+%\usepackage{stfloats}
+% stfloats.sty was written by Sigitas Tolusis. This package gives LaTeX2e
+% the ability to do double column floats at the bottom of the page as well
+% as the top. (e.g., "\begin{figure*}[!b]" is not normally possible in
+% LaTeX2e). It also provides a command:
+%\fnbelowfloat
+% to enable the placement of footnotes below bottom floats (the standard
+% LaTeX2e kernel puts them above bottom floats). This is an invasive package
+% which rewrites many portions of the LaTeX2e float routines. It may not work
+% with other packages that modify the LaTeX2e float routines. The latest
+% version and documentation can be obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/sttools/
+% Documentation is contained in the stfloats.sty comments as well as in the
+% presfull.pdf file. Do not use the stfloats baselinefloat ability as IEEE
+% does not allow \baselineskip to stretch. Authors submitting work to the
+% IEEE should note that IEEE rarely uses double column equations and
+% that authors should try to avoid such use. Do not be tempted to use the
+% cuted.sty or midfloat.sty packages (also by Sigitas Tolusis) as IEEE does
+% not format its papers in such ways.
+
+
+
+
+%\ifCLASSOPTIONcaptionsoff
+%  \usepackage[nomarkers]{endfloat}
+% \let\MYoriglatexcaption\caption
+% \renewcommand{\caption}[2][\relax]{\MYoriglatexcaption[#2]{#2}}
+%\fi
+% endfloat.sty was written by James Darrell McCauley and Jeff Goldberg.
+% This package may be useful when used in conjunction with IEEEtran.cls'
+% captionsoff option. Some IEEE journals/societies require that submissions
+% have lists of figures/tables at the end of the paper and that
+% figures/tables without any captions are placed on a page by themselves at
+% the end of the document. If needed, the draftcls IEEEtran class option or
+% \CLASSINPUTbaselinestretch interface can be used to increase the line
+% spacing as well. Be sure and use the nomarkers option of endfloat to
+% prevent endfloat from "marking" where the figures would have been placed
+% in the text. The two hack lines of code above are a slight modification of
+% that suggested by in the endfloat docs (section 8.3.1) to ensure that
+% the full captions always appear in the list of figures/tables - even if
+% the user used the short optional argument of \caption[]{}.
+% IEEE papers do not typically make use of \caption[]'s optional argument,
+% so this should not be an issue. A similar trick can be used to disable
+% captions of packages such as subfig.sty that lack options to turn off
+% the subcaptions:
+% For subfig.sty:
+% \let\MYorigsubfloat\subfloat
+% \renewcommand{\subfloat}[2][\relax]{\MYorigsubfloat[]{#2}}
+% For subfigure.sty:
+% \let\MYorigsubfigure\subfigure
+% \renewcommand{\subfigure}[2][\relax]{\MYorigsubfigure[]{#2}}
+% However, the above trick will not work if both optional arguments of
+% the \subfloat/subfig command are used. Furthermore, there needs to be a
+% description of each subfigure *somewhere* and endfloat does not add
+% subfigure captions to its list of figures. Thus, the best approach is to
+% avoid the use of subfigure captions (many IEEE journals avoid them anyway)
+% and instead reference/explain all the subfigures within the main caption.
+% The latest version of endfloat.sty and its documentation can obtained at:
+% http://www.ctan.org/tex-archive/macros/latex/contrib/endfloat/
+%
+% The IEEEtran \ifCLASSOPTIONcaptionsoff conditional can also be used
+% later in the document, say, to conditionally put the References on a 
+% page by themselves.
+
+\usepackage{hyperref}
+\usepackage{acronym}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{units}
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
+
+\hypersetup{
+  bookmarks=true,
+  pdfborder={0 0 0},
+  colorlinks=true,
+  linkcolor=magenta,
+  citecolor=black,%green
+  filecolor=magenta,
+  urlcolor=cyan,
+}
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor}
+%\hyphenpenalty=10000
+
+\newcommand{\ic}[1]{\tt\small #1}
+\newcommand{\ie}{i.\,e., }
+\newcommand{\Ie}{I.\,e., }
+\newcommand{\eg}{e.\,g., }
+\newcommand{\Eg}{E.\,g., }
+
+\numberwithin{equation}{section}
+
+\newcommand{\tabrowcolor}{\rowcolor[gray]{.9}}
+
+\begin{document}
+\title{Molecular Dynamics Simulation in Chapel}
+
+\author{{\rm Nan Dun} \\ 
+{\it Department of Information and Communication} \\
+{\it The University of Tokyo, Tokyo, Japan} \\
+{\it Email: \href{mailto:dun@logos.ic.i.u-tokyo.ac.jp}{dun@logos.ic.i.u-tokyo.ac.jp}}
+        % <-this % stops a space
+%\IEEEcompsocitemizethanks{
+%\IEEEcompsocthanksitem Department
+%of Information and Communication, the University of Tokyo, Tokyo,
+%Japan, 1138656.\protect\\
+% note need leading \protect in front of \\ to get a newline within \thanks as
+% \\ is fragile and will error, could use \hfil\break instead.
+%E-mail: \href{mailto:dun@logos.ic.i.u-tokyo.ac.jp}{dun@logos.ic.i.u-tokyo.ac.jp}
+%}% <-this % stops a space
+%\thanks{Manuscript revised}
+}
+
+\markboth{TECHNICAL NOTES, JST CREST, 2011}%
+{Dun \MakeLowercase{\textit{et al.}}: Molecular Dynamics Simulation in Chapel}
+
+%\IEEEcompsoctitleabstractindextext{%
+%\begin{abstract}
+%\boldmath
+%The abstract goes here.
+%\end{abstract}
+% IEEEtran.cls defaults to using nonbold math in the Abstract.
+% This preserves the distinction between vectors and scalars. However,
+% if the journal you are submitting to favors bold math in the abstract,
+% then you can use LaTeX's standard command \boldmath at the very start
+% of the abstract to achieve this. Many IEEE journals frown on math
+% in the abstract anyway. In particular, the Computer Society does
+% not want either math or citations to appear in the abstract.
+
+% Note that keywords are not normally used for peerreview papers.
+%\begin{IEEEkeywords}
+%Molecular dynamics, computer simulation, algorithms
+%\end{IEEEkeywords}}
+
+
+% make the title area
+\maketitle
+
+% To allow for easy dual compilation without having to reenter the
+% abstract/keywords data, the \IEEEcompsoctitleabstractindextext text will
+% not be used in maketitle, but will appear (i.e., to be "transported")
+% here as \IEEEdisplaynotcompsoctitleabstractindextext when compsoc mode
+% is not selected <OR> if conference mode is selected - because compsoc
+% conference papers position the abstract like regular (non-compsoc)
+% papers do!
+\IEEEdisplaynotcompsoctitleabstractindextext
+% \IEEEdisplaynotcompsoctitleabstractindextext has no effect when using
+% compsoc under a non-conference mode.
+
+
+% For peer review papers, you can put extra information on the cover
+% page as needed:
+% \ifCLASSOPTIONpeerreview
+% \begin{center} \bfseries EDICS Category: 3-BBND \end{center}
+% \fi
+%
+% For peerreview papers, this IEEEtran command inserts a page break and
+% creates the second title. It will be ignored for other modes.
+\IEEEpeerreviewmaketitle
+
+\input{acronyms}
+
+\section{Introduction}
+\ac{MD} simulations compute the motions of individual molecules in motion of
+solids, liquids, and gases. The key idea is {\em motion}, which describes how
+positions, velocities, and orientations change with time~\cite{haile97mds,
+furio97primer}. In \ac{MD}, the time evolution of a set of interacting atoms
+is followed by integrating their equations of motion.
+
+The laws of classical mechanics, \ie Newton's law, are applied in \ac{MD}.
+\begin{equation}
+  \vec{F}_i = m_i\vec{a}_i = m_i\frac{d\vec{v}_i}{dt} =
+  m_i\frac{d^2\vec{r}_i}{dt^2}
+\end{equation}
+for each atom $i$ in a system constituted by $n$ atoms. Here, $m_i$ is the
+atom mass, $\vec{a}_i$ is its acceleration, and $\vec{F}_i$ is the force
+acting upon it.
+Therefore, \ac{MD} is a {\em deterministic} approach. Given initial positions
+and velocities, the evolution of the system in time is, in principle,
+completely determined.  However, in practice, accumulation of integration and
+computational errors would introduce some uncertainty into the \ac{MD} output.
+
+Then, the computer calculate a trajectory in a $6n$-dimensional phase space
+($3n$ positions and $3n$ momenta). In many cases we are not interested in
+trajectories of individual atoms, we are interested in macroscopic properties
+of the material. It generates a set of configurations that are distributed
+according to statistical distribution functions.  \ac{MD} information can be
+averaged over all the atoms in the system and over time to obtain
+thermodynamic parameters. Thus, \ac{MD} can be also a {\em statistical}
+mechanics method.
+
+The main strengths of the MD method is the ability to study fast
+non-equilibrium processes with atomic-level resolution (\eg microscopic
+mechanisms of damage/plastic deformation due to a shock wave propagation,
+dynamic fracture and crack growth, ion bombardment, cluster impact,
+
+\subsection{History}
+The history of \ac{MD} can go back to 1950s. Several milestones include:
+\begin{description}
+  \item [{\em 1957}:] The first \ac{MD} simulation was reported by Alder and
+  Wainwright~\cite{alder57jcs}. They studied a solid-fluid transition in a
+  system composed of hard spheres interacting by instantaneous collisions. The
+  calculation was performed on a UNIVAC~\cite{univac} and an IBM
+  704~\cite{ibm704}. For a system of 500 particles, simulation of 500
+  inter-particle collision took an hour on IBM 704.
+
+  \item [{\em 1960}:] The example of a \ac{MD} calculation with a continuous
+  potential based on a finite difference time integration method (\ie
+  Born-Mayer interaction potential), which studied the radiation damage in a 
+  Cu target~\cite{gibson60phyrev}. The computational cell is composed of 446 
+  to 998 copper atoms was simulated. One integration step took about a minute
+  on an IBM 704 computer.
+
+  \item [{\em 1964}:] Aneesur Rahman used Lennard-Jones potential to describe
+  both attractive and repulsive interaction in a system of 864 liquid argon
+  atoms~\cite{rahman64phyrev} on a CDC 3600 computer~\cite{cdc3600}. The
+  methods of the simulation and analysis of the \ac{MD} results described in
+  this paper are still used in many present \ac{MD} simulation studies.
+
+  \item [{\em 1967}:] Loup Verlet calculated the phase diagram of argon using
+  the Lennard-Jones potential, and computed correlation functions to test
+  theories of the liquid state.
+\end{description}
+
+\subsection{Current Applications}
+The MD method has been widely used to investigate a wide range of problems in
+different research areas.
+\begin{itemize}
+  \item Chemistry and Biochemistry: molecular structures, reactions, drug
+  design, vibrational relaxation and energy transfer, structure of membranes,
+  dynamics of large biomolecules, protein folding, etc.
+
+  \item Statistical Mechanics and Physics: theory of liquids, correlated
+  many-body motion, properties of statistical ensembles, structure and
+  properties of small clusters, phase transitions, etc.
+
+  \item Materials Science: point, linear, and planar defects in crystals and
+  their interactions, microscopic mechanisms of fracture, surface
+  reconstruction, melting and faceting, film growth, friction, etc.
+\end{itemize}
+
+\subsubsection{Liquids}
+
+\subsubsection{Defects}
+
+\subsubsection{Fracture}
+
+\subsubsection{Surfaces}
+
+\subsubsection{Friction}
+
+\subsubsection{Clusters}
+
+\subsubsection{Biomolecules}
+Biomolecule \ac{MD} simulation studies the dynamics of large marco-molecules,
+including biological systems such as proteins, nucleic acids (\ie \acs{DNA},
+\acs{RNA}), membrane. Dynamical events may play a key role in controlling
+process which affect functional properties of the biomolecule. Drug design is
+commonly used in the pharmaceutical industry to test properties of a molecule
+at the computer without the need to synthesize it (which is far more
+expensive).
+
+\subsubsection{Electronic Properties and Dynamics}
+
+\subsection{Limitations}
+Basically, the limitations of \ac{MD} is three-fold: the validity of classical
+dynamics, the realism of interatomic forces, and time/space limitations. The
+first two limitations are mainly related to the problem of approaching real
+world by the theoretical model, which essentially requires the advance of
+physics, chemistry, mathematics knowledge and tools. The third limitation is a
+major challenge for computer scientists: how to accelerate the simulation of a
+mass of atoms in both time and space scales, by harnessing current
+high-performance computing technology.
+
+\subsubsection{The Validity of Classical Dynamics}
+In \ac{MD}, the classical dynamics (\ie Newton's equation) is applied to atoms
+instead of quantum dynamics (\ie Schr\"{o}dinger's equation). The validity of
+this replacement for thermal motion is given by the thermal de Broglie
+wavelength:
+\begin{equation}\label{eq:de_brogile}
+  \Lambda=\frac{h}{\sqrt{2\pi mk_BT}}
+\end{equation}
+where $h$ is the Planck's constant, $m$ is the mass of particle, $k_B$ is the
+Boltzmann's constant, and $T$ is the temperature. The classical approximation
+is valid when $\Lambda << d$, where $d$ is the distance between particles.
+Additionally, \autoref{eq:de_brogile} suggests that the quantum effects become
+significant when the temperature $T$ is sufficiently low.
+
+For example, the masses of H, Si, and Au atoms are \unit[1]{u}, \unit[28]{u},
+and \unit[197]{u}\footnote{\unit{u}: unified atomic mass unit.
+$\unit[1]{u}=\mathrm{m_u}=\mathrm{m({}^{12}C)}/12$}, respectively. For
+$T=\unit[300]{K}$, their $\Lambda$ are $\Lambda_{\mathrm{H}}=\unit[1]{\AA}$,
+$\Lambda_{\mathrm{Si}}=\unit[28]{\AA}$, and
+$\Lambda_{\mathrm{Au}}=\unit[197]{\AA}$\footnote{\unit{\AA}: \AA ngstr\"om.
+$\unit[1]{\AA}=10^{-10}\unit{m}=0.1\unit{nm}$}. Typical $d$ for solid-state
+materials is \unit[1$\sim$3]{\AA}.
+
+Therefore, conditions for conducting meaningful \ac{MD} simulations should be
+examined. Generally, all atoms, except for the lightest ones such as H, He, Ne,
+at sufficiently high temperature ($d >> \Lambda$) and classical mechanics can
+be used to describe their motion.
+
+\subsubsection{The Realism of Interatomic Forces}
+Atoms interact with each other via interatomic forces that are determined by
+relative positions of these atoms. The constitution of forces, usually obtained
+as the gradient of a {\em potential energy function}, is essential to \ac{MD}.
+Therefore, the realism of simulation depends on the ability of the potential
+chosen to reproduce the behavior of the material under the conditions at which
+the simulation is run.
+
+Specifically, the forces are derived from a potential energy function $V$,
+which depends on the particle coordinates:
+\begin{equation}
+  \vec{F}_i=-\nabla V(\vec{r}_1,\ldots,\vec{r}_N)
+\end{equation}
+Synthesizing a potential function that approximates the actual solution of the
+Schr\"{o}dinger's equation is a difficult task. Design of the potential
+function and choice of the parameters is often based on fitting to available
+experimental data.
+
+\subsubsection{Time and Space Limitations}
+The limitations of \ac{MD} mainly attribute to the size and quantity of
+atoms. Typical \ac{MD} simulations contain $10^4\sim 10^7$ atoms and range 
+from $10^{12}\sim 10^9$ seconds.
+
+On one hand, the vibration period in a molecular system is typically in the
+order of fp (\ie femtosecond, $10^{-15}$ seconds). Modern computers are 
+usually able to calculate $10^6\sim10^8$ steps per second. Therefore, 
+the simulation time-scale is limited to \unit[$1\sim100$]{ns}. On the other hand, the relaxation time (\ie the time needed for simulation to be meaningful) is orders of magnitude large than simulation step. For example, the evolution of of a large molecule for protein folding requires at least microseconds.
+
+The size of computational cell is usually tens of nm (\ie nanometer, $10^{-9}$
+meter), which is limited by the number of atoms that can be included in the
+simulation. Any structural or spatial correlation lengths should be smaller
+than the size of the computational cell.
+
+\section{General Principles}
+
+The time step of \ac{MD} consists of a computationally intensive force
+calculation for each atom in the computation cell, and a less expensive
+integration step that advances the positions of the atoms.
+
+Algorithms~\cite{greengard87jcp}.
+
+\begin{figure}[htp]
+\centering
+\input{figures/md_flow}
+\caption{Diagram of Basic Molecular Dynamics}
+\label{fig:md_flow}
+\end{figure}
+
+\section{Applications-Specific Characteristics}
+
+\subsection{Biomolecular System}
+The biomolecular simulation is to observe functionally important biological
+events that typically occur on timescales of many microseconds or milliseconds.
+
+In biomolecular system, the force on an atom is a sum of three
+components~\cite{shaw10science,shaw09sc}:
+\begin{enumerate}
+  \item Bonded forces: interactions between small groups of atoms connected
+  by one or more {\em covalent bonds}~\footnote{A covalent bond is a form of
+  chemical bonding that is characterized by the sharing of pairs of electrons
+  between atoms, and other covalent bonds. In short, the stable balance of
+  attractive and repulsive forces between atoms when they share electrons is
+  known as covalent bonding.}.
+  \item van der Waals forces: interactions between all pairs of atoms in the
+  system, which fall off quickly with distance and are typically only 
+  evaluated for nearby pairs of atoms.
+  \item Electrostatic forces: interactions between all pairs of atoms and fall
+  of slowly with distance.
+\end{enumerate}
+
+Therefore, except bonded forces, both van der Waals forces and electrostatic
+forces depend on {\em distances} between pairs of atoms. The idea of an
+approximation is to decompose forces into {\em range-limited interactions} and
+{\em long-range interactions}. In Ewald decomposition, electrostatic force is
+first divided into two contributions: i) the first decays rapidly with 
+distance and only count for all atom pairs within a {\em cutoff}, ii) the
+second decays more slowly and can be calculated by a series of \ac{FFT}
+operations. Then, the first contribution together with van der Waals
+interactions constitute range-limited interactions, and the second 
+contribution is for long-range interactions.
+
+
+\section{Acceleration Approaches}
+\subsection{Algorithmic Optimizations}
+
+\subsection{Parallelization}
+NAMD2~\cite{kale98namd2}
+
+\subsection{Co-design of Hardware and Algorithms}
+Though recent efforts have been extended to using commodity computers for
+\ac{MD}~\cite{bhatele08ipdps, bowers06sc,hess08jctc}, a specially designed
+computer also shows its power to accelerate the \ac{MD} simulation.
+
+\subsubsection{Anton}
+Anton~\cite{shaw08acm} is a special-purpose massively-parallel supercomputer
+dedicate for simulation of biomolecular systems. It is designed by D. E. Shaw
+Research that is named after its founder and chief scientist David E.
+Shaw~\cite{desres}, and targets the pharmaceutical and medicine industry.
+
+Comparing to the conventional high-performance computers, Anton demonstrates
+significant acceleration and accuracy of \ac{MD} simulation.
+
+\noindent{\bf Acceleration}
+\begin{table}[htp]
+\caption{State-of-the-Art Records of Proteins Simulation}
+\label{tab:anton_records}
+\centering
+\input{tables/anton_records}
+\end{table}
+
+\noindent{\bf Accuracy}
+
+Anton uses a fixed-point number system to achieve both performance advantage
+and numerical accuracy. A $B$-bit (probably $B$ is configurable), signed
+fixed-point number can represent $2^B$ evenly spaced distinct real numbers in
+$[-1,1]$. This design requires two considerations before conducting the
+simulation: i) an estimation of quantities in system, ii) scaling factors
+during the conversion between different units.
+
+The fixed-point system brings two important properties to computation:
+\begin{enumerate}
+  \item Fast adder: a 32-bit fixed-point adder is about 0.1 in size and
+  0.25 in latency of a 32-bit single-precision floating-point adder.
+
+  \item Associate add operation: the order of summation does not affect
+  numerical results.
+\end{enumerate}
+These properties leads to following advantages as for \ac{MD} simulation:
+\begin{itemize}
+  \item {\em Determinism}: Many popular \ac{MD} codes are non-deterministic
+  because message arrive at the node in non-deterministic order, resulting
+  different summation results.
+
+  \item {\em Parallel Invariance}: Bitwise identical results regardless of the
+  number of processors used in a simulation. For example, 2.7 billion time
+  steps produced identical results on 128-node and 512-node Anton
+  configurations.
+
+  \item {\em Exact Reversibility}: Anton simulations are exactly reversible
+  when run without constraints, temperature control or pressure control. This
+  is achieved by representing the continuum space of atomic positions and
+  momenta with a uniformly dense discrete approximation~\cite{bowers06sc,
+  skeel99sif}, and by eliminating variability associated with the order of
+  force simulation.
+\end{itemize}
+
+\noindent{\bf Performance Analysis}
+
+Anton's performance depends on the size of the system, and a number of
+execution parameters.
+\begin{table}[htp]
+\caption{Effect of Electrostatics Parameters}
+\label{tab:anton_profiles}
+\centering
+\input{tables/anton_profiles}
+\end{table}
+
+\subsection{Harnessing GPUs}
+
+\appendices
+\section{Theoretical Fundamentals}
+\subsection{Newtonian Dynamics}
+
+\subsection{Hamiltonian Dynamics}
+
+\section{Resources on Molecular Dynamics}
+\subsection{MIT Lecture 3.320 Atomistic Computer Modeling of Materials}
+This course uses the theory and application of atomistic computer simulations
+to model, understand, and predict the properties of real materials. Specific
+topics include: energy models from classical potentials to first-principles
+approaches; density functional theory and the total-energy pseudo-potential
+method; errors and accuracy of quantitative predictions: thermodynamic
+ensembles, Monte Carlo sampling and molecular dynamics simulations; free energy
+and phase transitions; fluctuations and transport properties; and
+coarse-graining approaches and mesoscale models. The course employs case
+studies from industrial applications of advanced materials to nanotechnology.
+Several laboratories will give students direct experience with simulations of
+classical force fields, electronic-structure approaches, molecular dynamics,
+and Monte Carlo.
+
+Both lecture
+\href{http://ocw.mit.edu/courses/materials-science-and-engineering/3-320-atomistic-computer-modeling-of-materials-sma-5107-spring-2005/video-lectures}{videos}
+and
+\href{http://ocw.mit.edu/courses/materials-science-and-engineering/3-320-atomistic-computer-modeling-of-materials-sma-5107-spring-2005/lecture-notes}{notes}
+are online available at the
+\href{http://ocw.mit.edu/courses/materials-science-and-engineering/3-320-atomistic-computer-modeling-of-materials-sma-5107-spring-2005}{course
+homepage}.  Particularly, the molecular dynamics has been discussed in lecture
+13, 14, and 15.
+
+\subsection{Molecular Dynamics on GPUs}
+This \href{http://www.nvidia.com/object/molecular_dynamics.html}{portal site}
+exhibits technical materials of using NVIDIA's \ac{GPU}
+technique \ac{CUDA} for \ac{MD} simulation.
+
+\subsection{Projects, Software, and Benchmarks}
+\subsubsection{Projects}
+\begin{itemize}
+  \item \href{http://folding.stanford.edu}{Folding@home}: a distributed
+  computing project to harness idle computers around the world to simulate
+  milliseconds of folding time.
+\end{itemize}
+
+\subsubsection{Software}
+\begin{itemize}
+  \item \href{http://ambermd.org/gpus/}{AMBER 11}: NVIDIA \ac{GPU} Acceleration
+  Support 
+  
+  \item \href{http://www.ks.uiuc.edu/Research/namd/}{NAMD}: a parallel
+  molecular dynamics code designed for high-performance simulation of large
+  biomolecular systems.
+  
+  \item \href{http://www.gromacs.org/}{Gromacs}: a versatile package to perform
+  molecular dynamics.
+
+  \item \href{http://www.ks.uiuc.edu/Research/vmd/}{VMD}: a molecular
+  visualization program for displaying, animating, and analyzing large
+  biomolecular systems using 3-D graphics and built-in scripting.
+
+  \item \href{http://www.nwchem-sw.org/}{MWChem}: a comprehensive and scalable
+  open-source solution for large scale molecular
+  simulations~\cite{valiev10cpc}.
+\end{itemize}
+
+\subsubsection{Benchmarks}
+\begin{itemize}
+  \item \href{http://www.fisica.uniud.it/~ercolessi/mdbnch.html}{MDBNCH}: a
+  molecular dynamics benchmark
+\end{itemize}
+
+% you can choose not to have a title for an appendix
+% if you want by leaving the argument blank
+
+% use section* for acknowledgement
+%\ifCLASSOPTIONcompsoc
+  % The Computer Society usually uses the plural form
+%  \section*{Acknowledgments}
+%\else
+  % regular IEEE prefers the singular form
+%  \section*{Acknowledgment}
+%\fi
+
+
+
+\ifCLASSOPTIONcaptionsoff
+  \newpage
+\fi
+
+% trigger a \newpage just before the given reference
+% number - used to balance the columns on the last page
+% adjust value as needed - may need to be readjusted if
+% the document is modified later
+%\IEEEtriggeratref{8}
+% The "triggered" command can be changed if desired:
+%\IEEEtriggercmd{\enlargethispage{-5in}}
+
+% references section
+
+\bibliographystyle{IEEEtran}
+\bibliography{IEEEfull,mdoch}
+
+% biography section
+% 
+% If you have an EPS/PDF photo (graphicx package needed) extra braces are
+% needed around the contents of the optional argument to biography to prevent
+% the LaTeX parser from getting confused when it sees the complicated
+% \includegraphics command within an optional argument. (You could create
+% your own custom macro containing the \includegraphics command to make things
+% simpler here.)
+%\begin{biography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{mshell}}]{Michael Shell}
+% or if you just want to reserve a space for a photo:
+
+%\begin{IEEEbiography}{Michael Shell}
+%Biography text here.
+%\end{IEEEbiography}
+
+% insert where needed to balance the two columns on the last page with
+% biographies
+%\newpage
+
+%\begin{IEEEbiographynophoto}{Jane Doe}
+%Biography text here.
+%\end{IEEEbiographynophoto}
+
+% You can push biographies down or up by placing
+% a \vfill before or after them. The appropriate
+% use of \vfill depends on what kind of text is
+% on the last page and whether or not the columns
+% are being equalized.
+
+%\vfill
+
+% Can be used to pull up biographies so that the bottom of the last one
+% is flush with the other column.
+%\enlargethispage{-5in}
+
+\end{document}
+
+
+%%% TEMPLATE MEMO %%%
+
+% An example of a floating figure using the graphicx package.
+% Note that \label must occur AFTER (or within) \caption.
+% For figures, \caption should occur after the \includegraphics.
+% Note that IEEEtran v1.7 and later has special internal code that
+% is designed to preserve the operation of \label within \caption
+% even when the captionsoff option is in effect. However, because
+% of issues like this, it may be the safest practice to put all your
+% \label just after \caption rather than within \caption{}.
+%
+% Reminder: the "draftcls" or "draftclsnofoot", not "draft", class
+% option should be used if it is desired that the figures are to be
+% displayed while in draft mode.
+%
+%\begin{figure}[!t]
+%\centering
+%\includegraphics[width=2.5in]{myfigure}
+% where an .eps filename suffix will be assumed under latex, 
+% and a .pdf suffix will be assumed for pdflatex; or what has been declared
+% via \DeclareGraphicsExtensions.
+%\caption{Simulation Results}
+%\label{fig_sim}
+%\end{figure}
+
+% Note that IEEE typically puts floats only at the top, even when this
+% results in a large percentage of a column being occupied by floats.
+% However, the Computer Society has been known to put floats at the bottom.
+
+
+% An example of a double column floating figure using two subfigures.
+% (The subfig.sty package must be loaded for this to work.)
+% The subfigure \label commands are set within each subfloat command, the
+% \label for the overall figure must come after \caption.
+% \hfil must be used as a separator to get equal spacing.
+% The subfigure.sty package works much the same way, except \subfigure is
+% used instead of \subfloat.
+%
+%\begin{figure*}[!t]
+%\centerline{\subfloat[Case I]\includegraphics[width=2.5in]{subfigcase1}%
+%\label{fig_first_case}}
+%\hfil
+%\subfloat[Case II]{\includegraphics[width=2.5in]{subfigcase2}%
+%\label{fig_second_case}}}
+%\caption{Simulation results}
+%\label{fig_sim}
+%\end{figure*}
+%
+% Note that often IEEE papers with subfigures do not employ subfigure
+% captions (using the optional argument to \subfloat), but instead will
+% reference/describe all of them (a), (b), etc., within the main caption.
+
+
+% An example of a floating table. Note that, for IEEE style tables, the 
+% \caption command should come BEFORE the table. Table text will default to
+% \footnotesize as IEEE normally uses this smaller font for tables.
+% The \label must come after \caption as always.
+%
+%\begin{table}[!t]
+%% increase table row spacing, adjust to taste
+%\renewcommand{\arraystretch}{1.3}
+% if using array.sty, it might be a good idea to tweak the value of
+% \extrarowheight as needed to properly center the text within the cells
+%\caption{An Example of a Table}
+%\label{table_example}
+%\centering
+%% Some packages, such as MDW tools, offer better commands for making tables
+%% than the plain LaTeX2e tabular which is used here.
+%\begin{tabular}{|c||c|}
+%\hline
+%One & Two\\
+%\hline
+%Three & Four\\
+%\hline
+%\end{tabular}
+%\end{table}
+
+
+% Note that IEEE does not put floats in the very first column - or typically
+% anywhere on the first page for that matter. Also, in-text middle ("here")
+% positioning is not used. Most IEEE journals use top floats exclusively.
+% However, Computer Society journals sometimes do use bottom floats - bear
+% this in mind when choosing appropriate optional arguments for the
+% figure/table environments.
+% Note that, LaTeX2e, unlike IEEE journals, places footnotes above bottom
+% floats. This can be corrected via the \fnbelowfloat command of the
+% stfloats package.
+
