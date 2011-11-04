@@ -28,6 +28,7 @@ use common;
 config const chargeMag: real = 4.0;
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
+config const initUcellD: int = 0;
 config const initUcellX: int = 20;
 config const initUcellY: int = 20;
 config const initUcellZ: int = 20;
@@ -50,7 +51,6 @@ const NDIM: int = 3;
 record mol3d {
 	var r, rv, ra: vector;
 	var chg: real;
-	var lock$: sync bool;
 }
 
 var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
@@ -102,7 +102,8 @@ proc printConfig() {
 
 proc init() {
 	// Setup parameters
-	initUcell = (initUcellX, initUcellY, initUcellZ);
+	if initUcellD > 0 then initUcell = (initUcellD, initUcellD, initUcellD);
+	else initUcell = (initUcellX, initUcellY, initUcellZ);
 	rCut = 2.0 ** (1.0 / 6.0);
 	region = 1.0 / (density ** (1.0/3.0)) * initUcell;
 	nMol = initUcell.prod();
@@ -147,7 +148,6 @@ proc init() {
 		m.ra.zero();	// accelerations
 		if randR() > 0.5 then m.chg = chargeMag;	// charges
 		else m.chg = -chargeMag;
-		m.lock$ = true;
 	}
 	
 	totEnergy.zero();
@@ -555,35 +555,23 @@ proc computeNearCellInt() {
 		m1 = vlinear(m1v, mpCells);
 		uSumLocal = 0.0;
 		if mpCell(maxLevel, m1).occ != 0 {
-			for m2z in iterAscend(m1z, 
+			for m2z in iterAscend(max(m1v.z - wellSep, 0), 
 				min(m1v.z + wellSep, mpCells.z - 1)) {
-				if m2z == m1z then m2yLo = m1y;
-				else m2yLo = max(m1y - wellSep, 0);
-				for m2y in iterAscend(m2yLo, 
+				for m2y in iterAscend(max(m1y - wellSep, 0), 
 					min(m1v.y + wellSep, mpCells.y - 1)) {
-					if m2z == m1z && m2y == m1y then m2xLo = m1x;
-					else m2xLo = max(m1x - wellSep, 0);
-					for m2x in iterAscend(m2xLo, 
+					for m2x in iterAscend(max(m1x - wellSep, 0), 
 						min(m1v.x + wellSep, mpCells.x - 1)) {
 						m2v.set(m2x, m2y, m2z);
 						m2 = vlinear(m2v, mpCells);
 						if mpCell(maxLevel, m2).occ != 0 {
 							for (j1, j2) in iterMpCellList2(m1, m2) {
-								if m1 != m2 || j2 < j1 {
+								if m1 != m2 || j2 != j1 {
 									dr = mol(j1).r - mol(j2).r;
 									ri = 1.0 / dr.len();
 									qq = mol(j1).chg * mol(j2).chg;
 									ft = qq * (ri ** 3) * dr;
-
-									mol(j1).lock$;
 									mol(j1).ra += ft; 
-									mol(j1).lock$ = true;
-									
-									mol(j2).lock$;
-									mol(j2).ra -= ft;
-									mol(j2).lock$ = true;
-
-									uSumLocal += qq * ri;
+									uSumLocal += qq * ri * 0.5;
 								}
 							}
 						}
