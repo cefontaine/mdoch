@@ -28,9 +28,10 @@ use common;
 config const chargeMag: real = 4.0;
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
-config const initUcellX: int = 20;
-config const initUcellY: int = 20;
-config const initUcellZ: int = 20;
+config const initUcellD: int = 0;
+config const initUcellX: int = 0;
+config const initUcellY: int = 0;
+config const initUcellZ: int = 0;
 config const maxLevel: int = 3;
 config const rNebrShell: real = 0.4;
 config const nebrTabFac: int = 12;
@@ -52,6 +53,7 @@ record mol3d {
 	var chg: real;
 }
 
+var _initUcellX, _initUcellY, _initUcellZ: int;
 var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
@@ -76,12 +78,24 @@ var cumRdf: [cumRdfDom] real;
 var kinEnergy, totEnergy: prop;
 var timer: elapsedTimer;
 
+_initUcellX = 20;
+_initUcellY = 20;
+_initUcellZ = 20;
+if initUcellD > 0  {
+	_initUcellX = initUcellD;
+	_initUcellY = initUcellD;
+	_initUcellZ = initUcellD;
+}
+if initUcellX > 0 then _initUcellX = initUcellX;
+if initUcellY > 0 then _initUcellY = initUcellY;
+if initUcellZ > 0 then _initUcellZ = initUcellZ;
+
 proc printConfig() {
 	writeln(
 		"chargeMag       ", chargeMag, "\n",
 		"deltaT          ", deltaT, "\n",
 		"density         ", density, "\n",
-		"initUcell       ", initUcellX, " ",initUcellY," ",initUcellZ,"\n",
+		"initUcell       ", _initUcellX," ", _initUcellY," ",_initUcellZ,"\n",
 		"limitRdf        ", limitRdf, "\n",
 		"maxLevel        ", maxLevel, "\n",
 		"nebrTabFac      ", nebrTabFac, "\n",
@@ -101,7 +115,7 @@ proc printConfig() {
 
 proc init() {
 	// Setup parameters
-	initUcell = (initUcellX, initUcellY, initUcellZ);
+	initUcell = (_initUcellX, _initUcellY, _initUcellZ);
 	rCut = 2.0 ** (1.0 / 6.0);
 	region = 1.0 / (density ** (1.0/3.0)) * initUcell;
 	nMol = initUcell.prod();
@@ -206,6 +220,8 @@ proc buildNebrList() {
 	
 	if profLevel == 2 then timer.start();
 	nebrTabLen = 0;
+	writeln("cells=", cells.z * cells.y * cells.x);
+	writeln("nebrTabMax=", nebrTabMax);
 	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
 		var dr: vector;
 		var m1v, m2v: vector_i;
@@ -215,19 +231,19 @@ proc buildNebrList() {
 		m1 = vlinear(m1v, cells) + nMol;
 		for f in iterAscend(1, N_OFFSET) {
 			m2v = m1v + vOff(f);
-			if m2v.x < 0 || m2v.x >= cells.x || 
-			   m2v.y < 0 || m2v.y >= cells.y || m2v.z >= cells.z 
-			   then continue;
-			m2 = vlinear(m2v, cells) + nMol;
-			for (j1, j2) in iterCellList2(m1, m2, cellList) {
-				if (m1 != m2 || j2 < j1) {
-					dr = mol(j1).r - mol(j2).r;
-					if dr.lensq() < rrNebr {
-						if nebrTabLen >= nebrTabMax then
-							errExit("Too many neighbours");
-						nebrTab(2 * nebrTabLen + 1) = j1;
-						nebrTab(2 * nebrTabLen + 2) = j2;
-						nebrTabLen += 1;
+			if m2v.x >= 0 && m2v.x < cells.x &&
+			   m2v.y >= 0 && m2v.y < cells.y && m2v.z < cells.z  {
+				m2 = vlinear(m2v, cells) + nMol;
+				for (j1, j2) in iterCellList2(m1, m2, cellList) {
+					if (m1 != m2 || j2 < j1) {
+						dr = mol(j1).r - mol(j2).r;
+						if dr.lensq() < rrNebr {
+							if nebrTabLen >= nebrTabMax then
+								errExit("Too many neighbours");
+							nebrTab(2 * nebrTabLen + 1) = j1;
+							nebrTab(2 * nebrTabLen + 2) = j2;
+							nebrTabLen += 1;
+						}
 					}
 				}
 			}
