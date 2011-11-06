@@ -114,7 +114,7 @@ proc printConfig() {
 
 proc init() {
 	// Setup parameters
-	initUcell = (initUcellX, initUcellY, initUcellZ);
+	initUcell = (_initUcellX, _initUcellY, _initUcellZ);
 	rCut = 2.0 ** (1.0 / 6.0);
 	region = 1.0 / (density ** (1.0/3.0)) * initUcell;
 	nMol = initUcell.prod();
