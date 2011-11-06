@@ -220,8 +220,6 @@ proc buildNebrList() {
 	
 	if profLevel == 2 then timer.start();
 	nebrTabLen = 0;
-	writeln("cells=", cells.z * cells.y * cells.x);
-	writeln("nebrTabMax=", nebrTabMax);
 	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
 		var dr: vector;
 		var m1v, m2v: vector_i;
