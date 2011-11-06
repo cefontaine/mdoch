@@ -28,9 +28,10 @@ use common;
 config const chargeMag: real = 4.0;
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
-config const initUcellX: int = 20;
-config const initUcellY: int = 20;
-config const initUcellZ: int = 20;
+config const initUcellD: int = 0;
+config const initUcellX: int = 0;
+config const initUcellY: int = 0;
+config const initUcellZ: int = 0;
 config const maxLevel: int = 3;
 config const rNebrShell: real = 0.4;
 config const nebrTabFac: int = 12;
@@ -52,6 +53,7 @@ record mol3d {
 	var chg: real;
 }
 
+var _initUcellX, _initUcellY, _initUcellZ: int;
 var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
@@ -74,6 +76,18 @@ var histRdf: [histRdfDom] real;
 var cumRdf: [cumRdfDom] real;
 var kinEnergy, totEnergy: prop;
 var timer: elapsedTimer;
+
+_initUcellX = 20;
+_initUcellY = 20;
+_initUcellZ = 20;
+if initUcellD > 0  {
+	_initUcellX = initUcellD;
+	_initUcellY = initUcellD;
+	_initUcellZ = initUcellD;
+}
+if initUcellX > 0 then _initUcellX = initUcellX;
+if initUcellY > 0 then _initUcellY = initUcellY;
+if initUcellZ > 0 then _initUcellZ = initUcellZ;
 
 proc printConfig() {
 	writeln(
