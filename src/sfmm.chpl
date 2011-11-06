@@ -218,17 +218,15 @@ proc buildNebrList() {
 			   m2v.y < 0 || m2v.y >= cells.y || m2v.z >= cells.z 
 			   then continue;
 			m2 = vlinear(m2v, cells) + nMol;
-			for j1 in iterCellList(m1, cellList) {
-				for j2 in iterCellList(m2, cellList) {
-					if (m1 != m2 || j2 < j1) {
-						dr = mol(j1).r - mol(j2).r;
-						if dr.lensq() < rrNebr {
-							if nebrTabLen >= nebrTabMax then
-								errExit("Too many neighbours");
-							nebrTab(2 * nebrTabLen + 1) = j1;
-							nebrTab(2 * nebrTabLen + 2) = j2;
-							nebrTabLen += 1;
-						}
+			for (j1, j2) in iterCellList2(m1, m2, cellList) {
+				if (m1 != m2 || j2 < j1) {
+					dr = mol(j1).r - mol(j2).r;
+					if dr.lensq() < rrNebr {
+						if nebrTabLen >= nebrTabMax then
+							errExit("Too many neighbours");
+						nebrTab(2 * nebrTabLen + 1) = j1;
+						nebrTab(2 * nebrTabLen + 2) = j2;
+						nebrTabLen += 1;
 					}
 				}
 			}
