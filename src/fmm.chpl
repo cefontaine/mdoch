@@ -58,15 +58,15 @@ var rCut, timeNow, velMag, kinEnInitSum, dispHi, uSum, vvSum: real;
 var initUcell, cells, mpCells: vector_i;
 var region, vSum, cellWid: vector;
 var nMol, moreCycles, stepCount, countRdf,
-	nebrTabMax, nebrTabLen, curCellsEdge, curLevel: int;
+	nebrTabMax, curCellsEdge, curLevel: int;
 var nebrNow: bool;
 var uSumLock$: sync bool; // atomic statement is not ready yet
 var molDom: domain(1);
 var mol: [molDom] mol3d;
 var cellListDom: domain(1);
 var cellList: [cellListDom] int;
-var nebrTabDom: domain(1);
-var nebrTab: [nebrTabDom] int;
+var nebrTabDom: domain(4);
+var nebrTab: [nebrTabDom] nebr; 
 var mpCellDom: domain(2);
 var mpCell: [mpCellDom] mp_cell;
 var maxCellsEdge, maxOrd: int;
@@ -121,12 +121,12 @@ proc init() {
 	nMol = initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol) * temperature);
 	cells = 1.0 / (rCut + rNebrShell) * region;
-	nebrTabMax = nebrTabFac * nMol;
+	nebrTabMax = nebrTabFac * 5;
 	maxOrd = MAX_MPEX_ORD;
 	// Allocate storage
 	molDom = [1..nMol];
 	cellListDom = [1..(cells.prod() + nMol)];
-	nebrTabDom = [1..2 * nebrTabMax];
+	nebrTabDom = [1..cells.x, 1..cells.y, 1..cells.z, 1..nebrTabMax];
 	
 	maxCellsEdge = 2 ** maxLevel;
 	mpCells.set(maxCellsEdge);
@@ -217,16 +217,20 @@ proc buildNebrList() {
 		cellList(c) = n;
 	}
 	if profLevel == 2 then writeln("buildNebrList:cellList: ", timer.stop());
+
+	if profLevel == 2 then timer.start();
+	for n in nebrTab do n.zero();
+	if profLevel == 2 then writeln("buildNebrList:nebrTabZero: ", timer.stop());
 	
 	if profLevel == 2 then timer.start();
-	nebrTabLen = 0;
-	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
+	forall (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
 		var dr: vector;
 		var m1v, m2v: vector_i;
-		var m1, m2: int;
+		var m1, m2, nebrIdx: int;
 		var vOff = OFFSET_VALS;
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, cells) + nMol;
+		nebrIdx = 1;
 		for f in iterAscend(1, N_OFFSET) {
 			m2v = m1v + vOff(f);
 			if m2v.x >= 0 && m2v.x < cells.x &&
@@ -236,11 +240,10 @@ proc buildNebrList() {
 					if (m1 != m2 || j2 < j1) {
 						dr = mol(j1).r - mol(j2).r;
 						if dr.lensq() < rrNebr {
-							if nebrTabLen >= nebrTabMax then
+							if nebrIdx >= nebrTabMax then
 								errExit("Too many neighbours");
-							nebrTab(2 * nebrTabLen + 1) = j1;
-							nebrTab(2 * nebrTabLen + 2) = j2;
-							nebrTabLen += 1;
+							nebrTab(m1x+1, m1y+1, m1z+1, nebrIdx).set(j1, j2);
+							nebrIdx += 1;
 						}
 					}
 				}
@@ -253,25 +256,23 @@ proc buildNebrList() {
 proc computeForces() {
 	var rrCut = rCut ** 2;
 	for m in mol do m.ra.zero();
-	uSum = 0.0;
-	for i in iterAscend(1, nebrTabLen) {
+	forall n in nebrTab {
 		var dr: vector;
-		var rr, rri, rri3, fcVal, uVal: real;
-		var j1, j2: int;
-		j1 = nebrTab(2 * i - 1);
-		j2 = nebrTab(2 * i);
-		dr = mol(j1).r - mol(j2).r;
-		rr = dr.lensq();
-		if rr < rrCut {
-			rri = 1.0 / rr;
-			rri3 = rri ** 3;
-			fcVal = 48.0 * rri3 * (rri3 - 0.5) * rri;
-			uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
-			mol(j1).ra += fcVal * dr;
-			mol(j2).ra -= fcVal * dr;
-			uSum += uVal;
+		var rr, rri, rri3, fcVal: real;
+		if n.n1 > 0 {
+			dr = mol(n.n1).r - mol(n.n2).r;
+			rr = dr.lensq();
+			if rr < rrCut {
+				rri = 1.0 / rr;
+				rri3 = rri ** 3;
+				fcVal = 48.0 * rri3 * (rri3 - 0.5) * rri;
+				n.uVal = 4.0 * rri3 * (rri3 - 1.0) + 1.0;
+				mol(n.n1).ra += fcVal * dr;
+				mol(n.n2).ra -= fcVal * dr;
+			}
 		}
 	}
+	uSum = + reduce (nebrTab.uVal);
 }
 
 proc evalMpL (inout le: mp_terms, v: vector, maxOrd: int) {
@@ -331,7 +332,7 @@ proc evalMpM(inout me: mp_terms, inout v: vector, maxOrd: int) {
 	me.set_s(0.0, 0, 0);
 	for j in iterAscend(1, maxOrd) {
 		var a, a1, a2: real;
-		a = - (2 * j - 1) * rri;
+		a = (1 - 2 * j) * rri;
 		me.set_c(a * (v.x * me.c(j-1, j-1) - v.y * me.s(j-1, j-1)), j, j);
 		me.set_s(a * (v.y * me.c(j-1, j-1) + v.x * me.s(j-1, j-1)), j, j);
 		for k in iterDescend(j - 1, 0) {

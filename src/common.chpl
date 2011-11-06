@@ -610,6 +610,13 @@ record mol3d {
 	var r, rv, ra: vector;
 }
 
+record nebr {
+	var n1, n2: int;
+	var uVal: real;
+	proc zero() { n1 = 0; n2 = 0; uVal = 0; }
+	proc set(a: int, b: int) { n1 = a; n2 = b; }
+}
+
 record prop {
 	var v, sum, sum2: real;
 	proc zero() { sum = 0; sum2 = 0; }
