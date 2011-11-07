@@ -535,6 +535,7 @@ proc computeFarCellInt() {
 		var uSumLocal: real;	// To reduce lock times in loop
 		m1v.set(m1x, m1y, m1z);
 		m1 = vlinear(m1v, mpCells);
+		uSumLocal = 0;
 		if mpCell(maxLevel, m1).occ != 0 {
 			cMid = (m1v + 0.5) * cellWid - 0.5 * region;
 			uSumLocal = 0.0;
@@ -545,11 +546,11 @@ proc computeFarCellInt() {
 				mol(j).ra -= mol(j).chg * f;
 				uSumLocal += 0.5 * mol(j).chg * u;
 			}
-			// Put sync after final computation
-			uSumLock$;
-			uSum += uSumLocal;
-			uSumLock$ = true;
 		}
+		// Put sync after final computation
+		uSumLock$;
+		uSum += uSumLocal;
+		uSumLock$ = true;
 	}
 }
 
@@ -788,7 +789,6 @@ proc step() {
 
 	// Leapfrog
 	if profLevel == 1 then timer.start();
-	//forall m in mol {  // s:p=80:19351
 	for m in mol {
 		m.rv += (0.5 * deltaT) * m.ra;
 		m.r += deltaT * m.rv;
@@ -836,7 +836,6 @@ proc step() {
 
 	// Leapfrog
 	if profLevel == 1 then timer.start();
-	//forall m in mol do m.rv += (0.5 * deltaT) * m.ra; // s:p=50:200
 	for m in mol do m.rv += (0.5 * deltaT) * m.ra;
 	if profLevel == 1 then writeln("leapFrog(2): ", timer.stop());
 
