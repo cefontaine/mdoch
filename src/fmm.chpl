@@ -500,7 +500,7 @@ proc propagateCellLo() {
 	var mpCellsN: vector_i;
 
 	mpCellsN = 2 * mpCells;
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	forall (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
 		var le: mp_terms;
 		var rShift: vector;
 		var m1v, m2v: vector_i;
