@@ -23,6 +23,9 @@
 #include <stdio.h>
 #include <time.h>
 
+typedef double tup[3];
+typedef double nst_tup[3][3];
+
 struct rec {
 	double x;
 	double y;
@@ -81,7 +84,9 @@ int main(int argc, char **argv)
 	struct timeval tv_start, tv_end;
 	double asg, add, sub, mul, div;
 	double res, res_tup[3], res_nst_tup[3][3];
-	double *arr, **arr_tup, ***arr_nst_tup;
+	double *arr;
+	tup *arr_tup;
+	nst_tup *arr_nst_tup;
 	struct rec res_rec, *arr_rec;
 	struct nst_rec res_nst_rec, *arr_nst_rec;
 	FILE *devnull;
@@ -183,17 +188,10 @@ int main(int argc, char **argv)
 	free(arr);
 	
 	/* 1D-array vs. struct */
-	arr_tup = (double **) malloc(opcnt * sizeof(double *));
+	arr_tup = (tup *) malloc(opcnt * sizeof(tup));
 	if (arr_tup == NULL) {
 		fprintf(stderr, "failed to allocate memory\n");
 		exit(1);
-	}
-	for (i = 0; i < opcnt; i++) {
-		arr_tup[i] = (double *) malloc(sizeof(double) * 3);
-		if (arr_tup[i] == NULL) {
-			fprintf(stderr, "failed to allocate memory\n");
-			exit(1);
-		}
 	}
 	
 	gettimeofday(&tv_start, NULL);
@@ -311,24 +309,10 @@ int main(int argc, char **argv)
 	free(arr_rec);
 	
 	/* 2D-array vs. struct */
-	arr_nst_tup = (double ***) malloc(opcnt * sizeof(double **));
+	arr_nst_tup = (nst_tup *) malloc(opcnt * sizeof(nst_tup));
 	if (arr_nst_tup == NULL) {
 		fprintf(stderr, "failed to allocate memory\n");
 		exit(1);
-	}
-	for (i = 0; i < opcnt; i++) {
-		arr_nst_tup[i] = (double **) malloc(sizeof(double *) * 3);
-		if (arr_nst_tup[i] == NULL) {
-			fprintf(stderr, "failed to allocate memory\n");
-			exit(1);
-		}
-		for (j = 0; j < 3; j++) {
-			arr_nst_tup[i][j] = (double *) malloc(sizeof(double) * 3);
-			if (arr_nst_tup[i][j] == NULL) {
-				fprintf(stderr, "failed to allocate memory\n");
-				exit(1);
-			}
-		}
 	}
 	
 	gettimeofday(&tv_start, NULL);
@@ -465,11 +449,6 @@ int main(int argc, char **argv)
 	printf("2D-tup\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", 
 		asg, add, sub, mul, div);
 
-	for (i = 0; i < opcnt; i++) {
-		for (j = 0; j < 3; j++)
-			free(arr_nst_tup[i][j]);
-		free(arr_nst_tup[i]);
-	}
 	free(arr_nst_tup);
 	
 	arr_nst_rec = (struct nst_rec *) 
