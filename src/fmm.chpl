@@ -117,7 +117,7 @@ proc init() {
 	// Setup parameters
 	initUcell = (_initUcellX, _initUcellY, _initUcellZ);
 	rCut = 2.0 ** (1.0 / 6.0);
-	region = 1.0 / (density ** (1.0/3.0)) * initUcell;
+	region = 1.0 / (density ** (1.0 / 3.0)) * initUcell;
 	nMol = initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol) * temperature);
 	cells = 1.0 / (rCut + rNebrShell) * region;
@@ -284,8 +284,8 @@ proc evalMpL (inout le: mp_terms, v: vector, maxOrd: int) {
 	for j in iterAscend(1, maxOrd) {
 		var a, a1, a2: real;
 		a = - 1.0 / (2 * j);
-		le.set_c(a*(v.x*le.c(j-1, j-1) - v.y * le.s(j-1, j-1)), j, j);
-		le.set_s(a*(v.y*le.c(j-1, j-1) + v.x * le.s(j-1, j-1)), j, j);
+		le.set_c(a * (v.x * le.c(j-1, j-1) - v.y * le.s(j-1, j-1)), j, j);
+		le.set_s(a * (v.y * le.c(j-1, j-1) + v.x * le.s(j-1, j-1)), j, j);
 		for k in iterDescend(j - 1, 0) {
 			a = 1.0 / ((j + k) * (j - k));
 			a1 = (2 * j - 1) * v.z * a;
@@ -309,7 +309,7 @@ proc evalMpProdLL(inout le1: mp_terms, le2: mp_terms, le3: mp_terms,
 		le1.set_s(0.0, j1, k1);
 		for j2 in iterAscend(0, j1) {
 			j3 = j1 - j2;
-			for k2 in iterAscend(max(-j2, k1-j3), min(j2, k1+j3)) {
+			for k2 in iterAscend(max(-j2, k1 - j3), min(j2, k1 + j3)) {
 				k3 = k1 - k2;
 				v1c2 = le2.c(j2, abs(k2));
 				v1s2 = le2.s(j2, abs(k2));
@@ -660,7 +660,8 @@ proc multipoleCalc() {
 		combineMpCell();
 		curLevel -= 1;
 	}
-	if profLevel == 2 then writeln("multipoleCalc:combineMpCell: ", timer.stop());
+	if profLevel == 2 then 
+		writeln("multipoleCalc:combineMpCell: ", timer.stop());
 
 	if profLevel == 2 then timer.start();
 	for m1 in iterAscend(1, 64) {
@@ -682,7 +683,8 @@ proc multipoleCalc() {
 		if curLevel < maxLevel then propagateCellLo();
 		curLevel += 1;
 	}
-	if profLevel == 2 then writeln("multipoleCalc:gatherWellSepLo: ", timer.stop());
+	if profLevel == 2 then 
+		writeln("multipoleCalc:gatherWellSepLo: ", timer.stop());
 	
 	if profLevel == 2 then timer.start();
 	computeFarCellInt();
