@@ -94,7 +94,7 @@ proc printConfig() {
 		"chargeMag       ", chargeMag, "\n",
 		"deltaT          ", deltaT, "\n",
 		"density         ", density, "\n",
-		"initUcell       ", _initUcellX," ",_initUcellY," ",_initUcellZ,"\n",
+		"initUcell       ", _initUcellX," ",_initUcellY," ", _initUcellZ, "\n",
 		"limitRdf        ", limitRdf, "\n",
 		"maxLevel        ", maxLevel, "\n",
 		"nebrTabFac      ", nebrTabFac, "\n",

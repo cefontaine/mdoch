@@ -1,7 +1,6 @@
 CHPL=chpl
 FLAGS=--fast
-TARGETS=allpairs2d veldist cellsub nebrlist cellspc nebrlistpc trajsep \
-	thermosoft thermolj rdfsoft sfmm fmm
+TARGETS=serial slocale
 REALBINS=$(addsuffix _real, $(TARGETS))
 
 all: $(TARGETS)
