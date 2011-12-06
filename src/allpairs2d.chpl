@@ -19,39 +19,75 @@
 
 /* allpairs2d.chpl */
 
+use BlockDist, CyclicDist;
 use common;
 
+record mol2d {
+	var r, rv, ra: vector2d;
+	var onlocale: int;
+}
+
+var _initUcellX, _initUcellY: int;
 config const deltaT: real = 0.005;
 config const density: real = 0.8;
 config const temperature: real = 1.0;
-config const initUcellX: int = 20;
-config const initUcellY: int = 20;
+config const initUcellD: int = 0;
+config const initUcellX: int = 0;
+config const initUcellY: int = 0;
 config const stepAvg: int = 100;
 config const stepEquil: int = 0;
 config const stepLimit: int = 10000;
 config const profLevel: int = 0;
 const NDIM: int = 2;
 
-var rCut, velMag, timeNow, uSum, virSum, vvSum: real;
+var rCut, rrCut, velMag, timeNow, uSum, virSum, vvSum: real;
 var initUcell: vector2d_i; 
 var region, vSum: vector2d;
 var nMol, stepCount, moreCycles: int; 
 var kinEnergy, totEnergy, pressure: prop;
-var molDom: domain(1) = [1..1];	// use domain to reallocate array
+var Space, BlockSpace: domain(1);
+var molDom: domain(1);	// use domain to reallocate array
 var mol: [molDom] mol2d;
 var timer: elapsedTimer;
+var uSumLock$: sync bool; // atomic statement is not ready yet
+
+_initUcellX = 20;
+_initUcellY = 20;
+if initUcellD > 0  {
+	_initUcellX = initUcellD;
+	_initUcellY = initUcellD;
+}
+if initUcellX > 0 then _initUcellX = initUcellX;
+if initUcellY > 0 then _initUcellY = initUcellY;
+
+proc printConfig() {
+	writeln(
+		"deltaT          ", deltaT, "\n",
+		"density         ", density, "\n",
+		"initUcell       ", _initUcellX, " ",  _initUcellY, "\n",
+		"stepAvg         ", stepAvg, "\n",
+		"stepEquil       ", stepEquil, "\n",
+		"stepLimit       ", stepLimit, "\n",
+		"temperature     ", temperature, "\n",
+		"----");
+	stdout.flush();
+}
 
 proc init() {
 	// Setup parameters
-	initUcell = (initUcellX, initUcellY);
+	initUcell = (_initUcellX, _initUcellY);
 	rCut = 2.0 ** (1.0 / 6.0);
+	rrCut = rCut ** 2;
 	region = 1.0 / sqrt(density) * initUcell;
 	nMol = initUcell.prod();
 	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
 	stepCount = 0;
 
 	// Allocate storage
-	molDom = [1..nMol];
+	Space = [1..nMol];
+//	BlockSpace = Space dmapped Block(boundingBox=Space);
+	BlockSpace = Space dmapped Cyclic(startIdx=Space.low);
+	molDom = [BlockSpace];
 	kinEnergy = new prop();
 	totEnergy = new prop();
 	pressure = new prop();
@@ -98,41 +134,46 @@ proc step() {
 	}
 
 	// Compute forces
-	var dr: vector2d;
-	var fcVal, rr, rrCut, rri, rri3: real;
-
-	rrCut = rCut ** 2;
-
 	uSum = 0;
 	virSum = 0;
+	uSumLock$.reset();
+	uSumLock$ = true;
 
-	for d in [1..nMol-1] {
-		for d2 in iterAscend(d + 1, nMol) {
-			dr = mol(d).r - mol(d2).r;
-			dr = vwrap(dr, region);
+	coforall m in mol {
+		var dr: vector2d;
+		var fcVal, rr, rri, rri3: real;
+		var uSumLocal, virSumLocal: real;
+		m.onlocale = here.id;
+		uSumLocal = 0.0;
+		virSumLocal = 0.0;
+		for m2 in mol {
+			dr = vwrap((m.r - m2.r), region);
 			rr = dr.lensq();
-			if rr < rrCut {
+			if rr > 0 && rr < rrCut {
 				rri = 1.0 / rr;
 				rri3 = rri ** 3;
 				fcVal = 48 * rri3 * (rri3 - 0.5) * rri;
-				mol(d).ra += fcVal * dr;
-				mol(d2).ra += (-fcVal) * dr;
-				uSum += 4 * rri3 * (rri3 - 1.0) + 1;
-				virSum += fcVal * rr;
+				m.ra += fcVal * dr;
+				uSumLocal += (4 * rri3 * (rri3 - 1.0) + 1) * 0.5;
+				virSumLocal += fcVal * rr * 0.5;
 			}
 		}
+		uSumLock$;
+		uSum += uSumLocal;
+		virSum += virSumLocal;
+		uSumLock$ = true;
 	}
 	
 	// Leafrog
 	for m in mol do	m.rv += (0.5 * deltaT) * m.ra;
+	for m in mol do	writeln(m.onlocale);
 
 	// Evaluate thermodynamics properties
 	vSum.zero();
 	vvSum = 0;
-	for m in mol {
-		vSum += m.rv;
-		vvSum += m.rv.lensq();
-	}
+	// reduce does not support operator overloading?
+	for m in mol do vSum += m.rv;
+	vvSum = + reduce (mol.rv.lensq());
 	kinEnergy.v = 0.5 * vvSum / nMol;
 	totEnergy.v = kinEnergy.v + uSum / nMol;
 	pressure.v = density * (vvSum + virSum) / (nMol * NDIM);
@@ -162,6 +203,7 @@ proc step() {
 }
 
 proc main() {
+	printConfig();
 	init();
 	moreCycles = 1;
 	while (moreCycles) {
