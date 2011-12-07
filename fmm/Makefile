@@ -1,6 +1,6 @@
 CHPL=chpl
 FLAGS=--fast
-TARGETS=serial slocale
+TARGETS=dist serial slocale
 REALBINS=$(addsuffix _real, $(TARGETS))
 
 all: $(TARGETS)

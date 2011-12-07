@@ -89,6 +89,10 @@ record elapsedTimer {
 		t.stop();
 		return t.elapsed(u);
 	}
+	proc stop(s: string) {
+		writeln(s, ": ", t.elapsed(u));
+		stdout.flush();
+	}
 }
 
 // Iterators

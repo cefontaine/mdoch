@@ -45,9 +45,6 @@ var initUcell: vector2d_i;
 var region, vSum: vector2d;
 var nMol, stepCount, moreCycles: int; 
 var kinEnergy, totEnergy, pressure: prop;
-var Space, BlockSpace: domain(1);
-var molDom: domain(1);	// use domain to reallocate array
-var mol: [molDom] mol2d;
 var timer: elapsedTimer;
 var uSumLock$: sync bool; // atomic statement is not ready yet
 
@@ -73,57 +70,12 @@ proc printConfig() {
 	stdout.flush();
 }
 
-proc init() {
-	// Setup parameters
-	initUcell = (_initUcellX, _initUcellY);
-	rCut = 2.0 ** (1.0 / 6.0);
-	rrCut = rCut ** 2;
-	region = 1.0 / sqrt(density) * initUcell;
-	nMol = initUcell.prod();
-	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
-	stepCount = 0;
-
-	// Allocate storage
-	Space = [1..nMol];
-//	BlockSpace = Space dmapped Block(boundingBox=Space);
-	BlockSpace = Space dmapped Cyclic(startIdx=Space.low);
-	molDom = [BlockSpace];
-	kinEnergy = new prop();
-	totEnergy = new prop();
-	pressure = new prop();
-
-	// Initial coordinates
-	var c, gap: vector2d;
-	var n: int;
-	
-	gap = region / initUcell;
-	n = 1;
-	for (ny, nx) in [0..initUcell.y-1, 0..initUcell.x-1] {
-		mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
-		n += 1;
-	}
-
-	// Initial velocities and accelerations
-	vSum.zero();
-	for m in mol {
-		m.rv = velMag * vrand2d();
-		vSum += m.rv;
-	}
-	for m in mol {
-		m.rv += (-1.0 / nMol) * vSum;
-		m.ra.zero();	// accelerations
-	}
-	
-	totEnergy.zero();
-	kinEnergy.zero();
-	pressure.zero();
-}
-
-proc step() {
+proc step(mol) {
 	stepCount += 1;
 	timeNow = stepCount * deltaT;
 	
-	for m in mol {
+	if profLevel == 1 then timer.start();
+	forall m in mol {
 		// Leapfrog
 		m.rv += (0.5 * deltaT) * m.ra;
 		m.r += deltaT * m.rv;
@@ -132,18 +84,19 @@ proc step() {
 		// Re-initial acceleration
 		m.ra.zero();
 	}
+	if profLevel == 1 then timer.stop("leapFrog(1)");
 
 	// Compute forces
+	if profLevel == 1 then timer.start();
 	uSum = 0;
 	virSum = 0;
 	uSumLock$.reset();
 	uSumLock$ = true;
 
-	coforall m in mol {
+	forall m in mol {
 		var dr: vector2d;
 		var fcVal, rr, rri, rri3: real;
 		var uSumLocal, virSumLocal: real;
-		m.onlocale = here.id;
 		uSumLocal = 0.0;
 		virSumLocal = 0.0;
 		for m2 in mol {
@@ -158,17 +111,21 @@ proc step() {
 				virSumLocal += fcVal * rr * 0.5;
 			}
 		}
+		/* FIX: hang when numThreadsPerLocale < 5 */
 		uSumLock$;
 		uSum += uSumLocal;
 		virSum += virSumLocal;
 		uSumLock$ = true;
 	}
+	if profLevel == 1 then timer.stop("computeForces");
 	
 	// Leafrog
-	for m in mol do	m.rv += (0.5 * deltaT) * m.ra;
-	for m in mol do	writeln(m.onlocale);
+	if profLevel == 1 then timer.start();
+	forall m in mol do m.rv += (0.5 * deltaT) * m.ra;
+	if profLevel == 1 then timer.stop("leapFrog(2)");
 
 	// Evaluate thermodynamics properties
+	if profLevel == 1 then timer.start();
 	vSum.zero();
 	vvSum = 0;
 	// reduce does not support operator overloading?
@@ -182,6 +139,7 @@ proc step() {
 	totEnergy.acc();
 	kinEnergy.acc();
 	pressure.acc();
+	if profLevel == 1 then timer.stop("evalThermo");
 		
 	if stepCount % stepAvg == 0 {
 		totEnergy.avg(stepAvg);
@@ -204,10 +162,63 @@ proc step() {
 
 proc main() {
 	printConfig();
-	init();
+
+	// Initialization
+	if profLevel == 1 then timer.start();
+	initUcell = (_initUcellX, _initUcellY);
+	nMol = initUcell.prod();
+	rCut = 2.0 ** (1.0 / 6.0);
+	rrCut = rCut ** 2;
+	region = 1.0 / sqrt(density) * initUcell;
+	velMag = sqrt(NDIM * (1.0 - 1.0 / nMol * temperature));
+	stepCount = 0;
+
+	const molDomLit: domain(1) = [1..nMol];
+//	var molDom: domain(1) dmapped Cyclic(startIdx=molDomLit.low) = molDomLit;
+	var molDom: domain(1) dmapped Block(molDomLit) = molDomLit;
+	var mol: [molDom] mol2d;
+	kinEnergy = new prop();
+	totEnergy = new prop();
+	pressure = new prop();
+
+	// Initial coordinates
+	var c, gap: vector2d;
+	var n: int;
+	
+	gap = region / initUcell;
+	n = 1;
+	for (ny, nx) in [0..initUcell.y-1, 0..initUcell.x-1] {
+		mol(n).r = (nx + 0.5, ny + 0.5) * gap - (0.5 * region);
+		n += 1;
+	}
+
+	if profLevel == 1 {
+		forall m in mol do m.onlocale = here.id;
+		write("Distribution of molecules: ");
+		for m in mol do	write(m.onlocale, " ");
+		writeln("");
+	}
+
+	// Initial velocities and accelerations
+	vSum.zero();
+	for m in mol {
+		m.rv = velMag * vrand2d();
+		vSum += m.rv;
+	}
+	for m in mol {
+		m.rv += (-1.0 / nMol) * vSum;
+		m.ra.zero();	// accelerations
+	}
+	
+	totEnergy.zero();
+	kinEnergy.zero();
+	pressure.zero();
+	if profLevel == 1 then timer.stop("init");
+	
+	// Step
 	moreCycles = 1;
 	while (moreCycles) {
-		step();
+		step(mol);
 		if (stepCount >= stepLimit) then moreCycles = 0;
 	};
 }
