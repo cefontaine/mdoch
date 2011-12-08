@@ -680,7 +680,7 @@ proc debugPrintMol2D(mol: [] mol2d) {
 			"), ra=(", m.ra.x, ", ", m.ra.y, ")");
 }
 
-proc debugPrintMol(mol: [] mol3d) {
+proc debugPrintMol(mol) {
 	for m in mol do
 		writeln("r=(", m.r.x, ", ", m.r.y, ", ", m.r.z, ")",
 				", rv=(", m.rv.x, ", ", m.rv.y, ", ", m.rv.z, ")", 

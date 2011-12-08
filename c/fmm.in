@@ -8,10 +8,10 @@ nebrTabFac        12
 rangeRdf          6.
 rNebrShell        0.4
 sizeHistRdf       200
-stepAvg           1
+stepAvg           100
 stepEquil         2000
 stepInitlzTemp    200
-stepLimit         4
+stepLimit         8000
 stepRdf           20
 temperature       1.
 wellSep           1
