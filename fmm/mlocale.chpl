@@ -200,7 +200,7 @@ proc buildNebrList(mol) {
 proc computeForces(mol) {
 	var rrCut = rCut ** 2;
 	for m in mol do m.ra.zero();
-	forall n in nebrTab {
+	for n in nebrTab {
 		var dr: vector;
 		var rr, rri, rri3, fcVal: real;
 		if n.n1 > 0 {
@@ -853,18 +853,18 @@ proc main() {
 	const molDomLit = [1..nMol];
 	var molDom: domain(1) dmapped Block(molDomLit) = molDomLit;
 	var mol: [molDom] mol3d;
-	if profLevel == 1 {
+	if profLevel == 3 {
 		write("Distribution of molecules: ");
 		forall m in mol do write(here.id, " ");
 		writeln("");
 	}
-	cellListDom = [1..(cells.prod() + nMol)];
+	cellListDom = [1..cells.prod() + nMol];
 	nebrTabDom = [1..cells.x, 1..cells.y, 1..cells.z, 1..nebrTabMax];
 	
 	maxCellsEdge = 2 ** maxLevel;
 	mpCells.set(maxCellsEdge);
 	mpCellDom = [1..maxLevel, 1..mpCells.prod()];
-	mpCellListDom = [1..(nMol + mpCells.prod())];
+	mpCellListDom = [1..nMol + mpCells.prod()];
 	histRdfDom = [1..2, 1..sizeHistRdf];
 	cumRdfDom = [1..2, 1..sizeHistRdf];
 
