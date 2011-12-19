@@ -2,20 +2,15 @@ CC=gcc
 CHPL=chpl
 CFLAGS=-O3 -lm
 CHFLAGS=--fast
-TARGETS=array loop allpairs2d
+TARGETS=bench_chpl bench_c
 
-all: $(TARGETS) basic_c basic_chpl
+all: $(TARGETS)
 
-%: %.chpl
-	$(CHPL) -o $@ $< $(CHFLAGS)
-
-basic_c: basic.c 
+bench_c: bench.c 
 	$(CC) -o $@ $< $(CFLAGS)
 
-basic_chpl: basic.chpl
+bench_chpl: bench.chpl
 	$(CHPL) -o $@ $< $(CHFLAGS)
 
 clean:
-	rm -f $(TARGETS) basic_c basic_chpl
-
-
+	rm -f $(TARGETS)
