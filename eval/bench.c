@@ -160,6 +160,8 @@ int main(int argc, char **argv)
 	fprintf(devnull, "%f", resReal);
 	printf("float\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
+	exit(0);
+
 	/* array */
 	arr = malloc(opcnt * sizeof(double));
 	if (arr == NULL) {

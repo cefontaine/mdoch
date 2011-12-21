@@ -60,47 +60,47 @@ iter iterAscend(min: int, max: int, step: int = 1) {
  * Evaluation of primitive types: integer, float
  */
 
-config const opCnt: int = 10000;
+config const cnt: int = 10000;
 
 writeln("Evaluation of Primitive Types");
-writeln("# of ops: ", opCnt, ", time unit: usec");
+writeln("# of ops: ", cnt, ", time unit: usec");
 var t: elapsedTimer;
 var resInt: int;
 var resReal, add, sub, mul, div: real;
 
 // Integer
 t.start();
-for i in iterAscend(1, opCnt) do resInt = resInt + i;
+for i in iterAscend(1, cnt) do resInt = resInt + i;
 add = t.stop();
 
 t.start();
-for i in iterAscend(1, opCnt) do resInt = resInt - i;
+for i in iterAscend(1, cnt) do resInt = resInt - i;
 sub = t.stop();
 
 t.start();
-for i in iterAscend(1, opCnt) do resInt = resInt * i;
+for i in iterAscend(1, cnt) do resInt = resInt * i;
 mul = t.stop();
 
 t.start();
-for i in iterAscend(1, opCnt) do resInt = resInt / i;
+for i in iterAscend(1, cnt) do resInt = resInt / i;
 div = t.stop();
 writeln("int\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 // Float
 t.start();
-for i in iterAscend(1, opCnt) do resReal = resReal + i;
+for i in iterAscend(1, cnt) do resReal = resReal + i;
 add = t.stop();
 
 t.start();
-for i in iterAscend(1, opCnt) do resReal = resReal - i;
+for i in iterAscend(1, cnt) do resReal = resReal - i;
 sub = t.stop();
 
 t.start();
-for i in iterAscend(1, opCnt) do resReal = resReal * i;
+for i in iterAscend(1, cnt) do resReal = resReal * i;
 mul = t.stop();
 
 t.start();
-for i in iterAscend(1, opCnt) do resReal = resReal / i;
+for i in iterAscend(1, cnt) do resReal = resReal / i;
 div = t.stop();
 writeln("real\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
@@ -108,4 +108,4 @@ writeln("real\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
  * Evaluation of structured types: integer, float, imaginary, complex
  */
 writeln("Evaluation of Structured Types");
-writeln("# of ops: ", opCnt, ", time unit: usec");
+writeln("# of ops: ", cnt, ", time unit: usec");
