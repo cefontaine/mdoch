@@ -342,3 +342,66 @@ for i in iterAscend(1, cnt) {
 }
 div = t.stop();
 writeln("nRecord\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+
+// Nested Class
+class nstClass { var a, b, c: Class; }
+var resNstCls = new nstClass();
+resNstCls.a = new Class();
+resNstCls.b = new Class();
+resNstCls.c = new Class();
+t.start();
+for i in iterAscend(1, cnt) {
+	resNstCls.a.a = resNstCls.a.a + i;
+	resNstCls.a.b = resNstCls.a.b + i;
+	resNstCls.a.c = resNstCls.a.c + i;
+	resNstCls.b.a = resNstCls.b.a + i;
+	resNstCls.b.b = resNstCls.b.b + i;
+	resNstCls.b.c = resNstCls.b.c + i;
+	resNstCls.c.a = resNstCls.c.a + i;
+	resNstCls.c.b = resNstCls.c.b + i;
+	resNstCls.c.c = resNstCls.c.c + i;
+}
+add = t.stop();
+
+t.start();
+for i in iterAscend(1, cnt) {
+	resNstCls.a.a = resNstCls.a.a - i;
+	resNstCls.a.b = resNstCls.a.b - i;
+	resNstCls.a.c = resNstCls.a.c - i;
+	resNstCls.b.a = resNstCls.b.a - i;
+	resNstCls.b.b = resNstCls.b.b - i;
+	resNstCls.b.c = resNstCls.b.c - i;
+	resNstCls.c.a = resNstCls.c.a - i;
+	resNstCls.c.b = resNstCls.c.b - i;
+	resNstCls.c.c = resNstCls.c.c - i;
+}
+sub = t.stop();
+
+t.start();
+for i in iterAscend(1, cnt) {
+	resNstCls.a.a = resNstCls.a.a * i;
+	resNstCls.a.b = resNstCls.a.b * i;
+	resNstCls.a.c = resNstCls.a.c * i;
+	resNstCls.b.a = resNstCls.b.a * i;
+	resNstCls.b.b = resNstCls.b.b * i;
+	resNstCls.b.c = resNstCls.b.c * i;
+	resNstCls.c.a = resNstCls.c.a * i;
+	resNstCls.c.b = resNstCls.c.b * i;
+	resNstCls.c.c = resNstCls.c.c * i;
+}
+mul = t.stop();
+
+t.start();
+for i in iterAscend(1, cnt) {
+	resNstCls.a.a = resNstCls.a.a / i;
+	resNstCls.a.b = resNstCls.a.b / i;
+	resNstCls.a.c = resNstCls.a.c / i;
+	resNstCls.b.a = resNstCls.b.a / i;
+	resNstCls.b.b = resNstCls.b.b / i;
+	resNstCls.b.c = resNstCls.b.c / i;
+	resNstCls.c.a = resNstCls.c.a / i;
+	resNstCls.c.b = resNstCls.c.b / i;
+	resNstCls.c.c = resNstCls.c.c / i;
+}
+div = t.stop();
+writeln("nClass\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);

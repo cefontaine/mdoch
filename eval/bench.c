@@ -104,6 +104,7 @@ int main(int argc, char **argv)
 	printf("op\t%17s%17s%17s%17s\n", "add", "sub", "mul", "div");
 	
 	/* Integer */
+	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) resInt += i;
 	gettimeofday(&tv_end, NULL);
@@ -130,6 +131,7 @@ int main(int argc, char **argv)
 	printf("int\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	/* Float */
+	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) resReal += i;
 	gettimeofday(&tv_end, NULL);
@@ -165,6 +167,7 @@ int main(int argc, char **argv)
 	// Tuple
 	double resTup[3];
 
+	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resTup[0] += i;
@@ -172,7 +175,7 @@ int main(int argc, char **argv)
 		resTup[2] += i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	add = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resTup[0]);
 	
 	gettimeofday(&tv_start, NULL);
@@ -182,7 +185,7 @@ int main(int argc, char **argv)
 		resTup[2] -= i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	sub = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resTup[0]);
 	
 	gettimeofday(&tv_start, NULL);
@@ -192,7 +195,7 @@ int main(int argc, char **argv)
 		resTup[2] *= i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	mul = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resTup[0]);
 	
 	gettimeofday(&tv_start, NULL);
@@ -209,6 +212,7 @@ int main(int argc, char **argv)
 	// Record
 	struct Record resRec;
 
+	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resRec.a += i;
@@ -216,7 +220,7 @@ int main(int argc, char **argv)
 		resRec.c += i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	add = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resRec.a);
 	
 	gettimeofday(&tv_start, NULL);
@@ -226,7 +230,7 @@ int main(int argc, char **argv)
 		resRec.c -= i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	sub = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resRec.a);
 	
 	gettimeofday(&tv_start, NULL);
@@ -236,7 +240,7 @@ int main(int argc, char **argv)
 		resRec.c *= i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	mul = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resRec.a);
 	
 	gettimeofday(&tv_start, NULL);
@@ -253,6 +257,7 @@ int main(int argc, char **argv)
 	// Nested Tuple
 	double resNstTup[3][3];
 
+	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resNstTup[0][0] += i;
@@ -266,7 +271,7 @@ int main(int argc, char **argv)
 		resNstTup[2][3] += i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	add = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstTup[0][0]);
 	
 	gettimeofday(&tv_start, NULL);
@@ -282,7 +287,7 @@ int main(int argc, char **argv)
 		resNstTup[2][3] -= i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	sub = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstTup[0][0]);
 	
 	gettimeofday(&tv_start, NULL);
@@ -298,7 +303,7 @@ int main(int argc, char **argv)
 		resNstTup[2][3] *= i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	mul = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstTup[0][0]);
 	
 	gettimeofday(&tv_start, NULL);
@@ -321,6 +326,7 @@ int main(int argc, char **argv)
 	// Nested Record
 	struct nstRecord resNstRec;
 
+	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resNstRec.a.a += i;
@@ -334,7 +340,7 @@ int main(int argc, char **argv)
 		resNstRec.c.c += i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	add = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstRec.a.a);
 	
 	gettimeofday(&tv_start, NULL);
@@ -350,7 +356,7 @@ int main(int argc, char **argv)
 		resNstRec.c.c -= i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	sub = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstRec.a.a);
 	
 	gettimeofday(&tv_start, NULL);
@@ -366,7 +372,7 @@ int main(int argc, char **argv)
 		resNstRec.c.c *= i;
 	}
 	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
+	mul = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstRec.a.a);
 	
 	gettimeofday(&tv_start, NULL);
@@ -385,6 +391,7 @@ int main(int argc, char **argv)
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstRec.a.a);
 	printf("nRecord\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
+	
 	close(devnull);	
 	return 0;
 }
