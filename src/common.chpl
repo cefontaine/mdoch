@@ -676,8 +676,8 @@ iter iterCellList2(n: int, n2: int, cellList: [] int) {
 // Debug utilities
 proc debugPrintMol2D(mol: [] mol2d) {
 	for m in mol do
-		writeln("r=(", m.r.x, ", ", m.r.y, "), 
-			rv=(", m.rv.x, ", ", m.rv.y,"), 
+		writeln("r=(", m.r.x, ", ", m.r.y, "), \
+			rv=(", m.rv.x, ", ", m.rv.y,"), \
 			ra=(", m.ra.x, ", ", m.ra.y, ")");
 }
 
