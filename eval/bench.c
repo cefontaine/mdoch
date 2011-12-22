@@ -78,32 +78,52 @@ static double ts_elapsed(struct timespec *end, struct timespec *start)
 	return (double) res.tv_sec * 1000000000 + (double) res.tv_nsec;
 }
 
-int main(int argc, char **argv)
+/* 
+ * Evaluation of primitive types: integer, float
+ */
+void primitive_types(int opcnt, FILE *devnull)
 {
-	int opcnt, i, j;
-	struct timeval tv_start, tv_end;
 	double asg, add, sub, mul, div;
-	FILE *devnull;
-
-	if (argc < 2) {
-		printf("usage: %s OPCNT\n", argv[0]);
-		exit(0);
-	}
-	
-	opcnt = atoi(argv[1]);
-	devnull = fopen("/dev/null", "w");
-
-	/* 
-	 * Evaluation of primitive types: integer, float
-	 */
-	int resInt;
+	struct timeval tv_start, tv_end;
+	int i;
+	int resInt32;
+	long int resInt;
+	float resReal32;
 	double resReal;
-
+	
 	printf("Evaluation of Primitive Types\n");
 	printf("# of ops: %d, time unit: usec\n", opcnt);
 	printf("op\t%17s%17s%17s%17s\n", "add", "sub", "mul", "div");
 	
-	/* Integer */
+	/* int (int32) */
+	asg = add = sub = mul = div = 0;	
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) resInt32 += i;
+	gettimeofday(&tv_end, NULL);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%i", resInt32);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) resInt32 -= i;
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%i", resInt32);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) resInt32 *= i;
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%i", resInt32);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) resInt32 /= i;
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%i", resInt32);
+	printf("int%d\t%17.0f%17.0f%17.0f%17.0f\n", sizeof(resInt32) * 8, 
+		add, sub, mul, div);
+	
+	/* long (int64) */
 	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) resInt += i;
@@ -128,9 +148,38 @@ int main(int argc, char **argv)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%i", resInt);
-	printf("int\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
+	printf("int%d\t%17.0f%17.0f%17.0f%17.0f\n", sizeof(resInt) * 8,
+		add, sub, mul, div);
+
+	/* float (real32) */
+	asg = add = sub = mul = div = 0;	
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) resReal32 += i;
+	gettimeofday(&tv_end, NULL);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resReal32);
 	
-	/* Float */
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) resReal32 -= i;
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resReal32);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) resReal32 *= i;
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resReal32);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) resReal32 /= i;
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resReal32);
+	printf("real%d\t%17.0f%17.0f%17.0f%17.0f\n", sizeof(resReal32) * 8,
+		add, sub, mul, div);
+
+	/* double (real64) */
 	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) resReal += i;
@@ -155,11 +204,18 @@ int main(int argc, char **argv)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resReal);
-	printf("real\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
-	
-	/* 
-	 * Evaluation of structured types: integer, float
-	 */
+	printf("real%d\t%17.0f%17.0f%17.0f%17.0f\n", sizeof(resReal) * 8,
+		add, sub, mul, div);
+}
+
+/* 
+ * Evaluation of structured types: integer, float
+ */
+void structured_types(int opcnt, FILE *devnull)
+{
+	double asg, add, sub, mul, div;
+	struct timeval tv_start, tv_end;
+	int i;
 	printf("Evaluation of Structured Types\n");
 	printf("# of ops: %d, time unit: usec\n", opcnt);
 	printf("op\t%17s%17s%17s%17s\n", "add", "sub", "mul", "div");
@@ -493,7 +549,23 @@ int main(int argc, char **argv)
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstRec.a.a);
 	printf("xnRecord\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
+}
+
+int main(int argc, char **argv)
+{
+	int opcnt, i, j;
+	FILE *devnull;
+
+	if (argc < 2) {
+		printf("usage: %s OPCNT\n", argv[0]);
+		exit(0);
+	}
 	
+	opcnt = atoi(argv[1]);
+	devnull = fopen("/dev/null", "w");
+	
+	primitive_types(opcnt, devnull);
+
 	close(devnull);	
 	return 0;
 }
