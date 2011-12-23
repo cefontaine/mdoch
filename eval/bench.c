@@ -216,12 +216,13 @@ void structured_types(int opcnt, FILE *devnull)
 	double asg, add, sub, mul, div;
 	struct timeval tv_start, tv_end;
 	int i;
+	double resTup[3];
+	
 	printf("Evaluation of Structured Types\n");
 	printf("# of ops: %d, time unit: usec\n", opcnt);
 	printf("op\t%17s%17s%17s%17s\n", "add", "sub", "mul", "div");
 
 	// Tuple
-	double resTup[3];
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resTup[0] += i;
@@ -260,53 +261,11 @@ void structured_types(int opcnt, FILE *devnull)
 	}
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
+	// introduce dependency
 	fprintf(devnull, "%f", resTup[0]);
 	fprintf(devnull, "%f", resTup[1]);
 	fprintf(devnull, "%f", resTup[2]);
 	printf("tuple\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
-	
-	gettimeofday(&tv_start, NULL);
-	for (i = 1; i <= opcnt; i++) {
-		resTup[0] += i;
-		resTup[1] = resTup[0] + i;
-		resTup[2] = resTup[1] + i;
-	}
-	gettimeofday(&tv_end, NULL);
-	add = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resTup[0]);
-	
-	gettimeofday(&tv_start, NULL);
-	for (i = 1; i <= opcnt; i++) {
-		resTup[0] -= i;
-		resTup[1] = resTup[0] - i;
-		resTup[2] = resTup[1] - i;
-	}
-	gettimeofday(&tv_end, NULL);
-	sub = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resTup[0]);
-	
-	gettimeofday(&tv_start, NULL);
-	for (i = 1; i <= opcnt; i++) {
-		resTup[0] *= i;
-		resTup[1] = resTup[0] * i;
-		resTup[2] = resTup[1] * i;
-	}
-	gettimeofday(&tv_end, NULL);
-	mul = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resTup[0]);
-	
-	gettimeofday(&tv_start, NULL);
-	for (i = 1; i <= opcnt; i++) {
-		resTup[0] /= i;
-		resTup[1] = resTup[0] / i;
-		resTup[2] = resTup[1] / i;
-	}
-	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resTup[0]);
-	fprintf(devnull, "%f", resTup[1]);
-	fprintf(devnull, "%f", resTup[2]);
-	printf("xtuple\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	// Record
 	struct Record resRec;
@@ -493,70 +452,6 @@ void structured_types(int opcnt, FILE *devnull)
 	fprintf(devnull, "%f", resNstRec.b.a);
 	fprintf(devnull, "%f", resNstRec.c.a);
 	printf("nRecord\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
-	
-	gettimeofday(&tv_start, NULL);
-	for (i = 1; i <= opcnt; i++) {
-		resNstRec.a.a += i;
-		resNstRec.a.b = resNstRec.a.a + i;
-		resNstRec.a.c = resNstRec.a.b + i;
-		resNstRec.b.a += i;
-		resNstRec.b.b = resNstRec.b.a + i;
-		resNstRec.b.c = resNstRec.b.b + i;
-		resNstRec.c.a += i;
-		resNstRec.c.b = resNstRec.c.a + i;
-		resNstRec.c.c = resNstRec.c.b + i;
-	}
-	gettimeofday(&tv_end, NULL);
-	add = tv_elapsed(&tv_end, &tv_start);
-	
-	gettimeofday(&tv_start, NULL);
-	for (i = 1; i <= opcnt; i++) {
-		resNstRec.a.a -= i;
-		resNstRec.a.b = resNstRec.a.a - i;
-		resNstRec.a.c = resNstRec.a.b - i;
-		resNstRec.b.a -= i;
-		resNstRec.b.b = resNstRec.b.a - i;
-		resNstRec.b.c = resNstRec.b.b - i;
-		resNstRec.c.a -= i;
-		resNstRec.c.b = resNstRec.c.a - i;
-		resNstRec.c.c = resNstRec.c.b - i;
-	}
-	gettimeofday(&tv_end, NULL);
-	sub = tv_elapsed(&tv_end, &tv_start);
-	
-	gettimeofday(&tv_start, NULL);
-	for (i = 1; i <= opcnt; i++) {
-		resNstRec.a.a *= i;
-		resNstRec.a.b = resNstRec.a.a * i;
-		resNstRec.a.c = resNstRec.a.b * i;
-		resNstRec.b.a *= i;
-		resNstRec.b.b = resNstRec.b.a * i;
-		resNstRec.b.c = resNstRec.b.b * i;
-		resNstRec.c.a *= i;
-		resNstRec.c.b = resNstRec.c.a * i;
-		resNstRec.c.c = resNstRec.c.b * i;
-	}
-	gettimeofday(&tv_end, NULL);
-	mul = tv_elapsed(&tv_end, &tv_start);
-	
-	gettimeofday(&tv_start, NULL);
-	for (i = 1; i <= opcnt; i++) {
-		resNstRec.a.a /= i;
-		resNstRec.a.b = resNstRec.a.a / i;
-		resNstRec.a.c = resNstRec.a.b / i;
-		resNstRec.b.a /= i;
-		resNstRec.b.b = resNstRec.b.a / i;
-		resNstRec.b.c = resNstRec.b.b / i;
-		resNstRec.c.a /= i;
-		resNstRec.c.b = resNstRec.c.a / i;
-		resNstRec.c.c = resNstRec.c.b / i;
-	}
-	gettimeofday(&tv_end, NULL);
-	div = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resNstRec.a.a);
-	fprintf(devnull, "%f", resNstRec.b.a);
-	fprintf(devnull, "%f", resNstRec.c.a);
-	printf("xnRecord\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 }
 
 int main(int argc, char **argv)

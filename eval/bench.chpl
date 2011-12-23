@@ -176,7 +176,8 @@ proc structured_types() {
 		resTup(3) = resTup(3) + i;
 	}
 	add = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
+	// introduce dependency
+	res = res + resTup(1) + resTup(2) + resTup(3); 
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -205,44 +206,6 @@ proc structured_types() {
 	div = t.stop();
 	res = res + resTup(1) + resTup(2) + resTup(3);
 	writeln("tuple\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = resTup(1) + i;
-		resTup(2) = resTup(1) + i;
-		resTup(3) = resTup(2) + i;
-	}
-	add = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = resTup(1) - i;
-		resTup(2) = resTup(1) - i;
-		resTup(3) = resTup(2) - i;
-	}
-	sub = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = resTup(1) * i;
-		resTup(2) = resTup(1) * i;
-		resTup(3) = resTup(2) * i;
-	}
-	mul = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = resTup(1) / i;
-		resTup(2) = resTup(1) / i;
-		resTup(3) = resTup(2) / i;
-	}
-	div = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-	writeln("xtuple\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = resTup(1);
 
 	// Record
 	t.start();
@@ -439,68 +402,8 @@ proc structured_types() {
 	}
 	div = t.stop();
 	writeln("nRecord\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = res + resNstRec.a.a + resNstRec.b.a + resNstRec.c.a;
 	
-	// dependency
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = resNstRec.a.a + i;
-		resNstRec.a.b = resNstRec.a.a + i;
-		resNstRec.a.c = resNstRec.a.b + i;
-		resNstRec.b.a = resNstRec.b.a + i;
-		resNstRec.b.b = resNstRec.b.a + i;
-		resNstRec.b.c = resNstRec.b.b + i;
-		resNstRec.c.a = resNstRec.c.a + i;
-		resNstRec.c.b = resNstRec.c.a + i;
-		resNstRec.c.c = resNstRec.c.b + i;
-	}
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = resNstRec.a.a - i;
-		resNstRec.a.b = resNstRec.a.a - i;
-		resNstRec.a.c = resNstRec.a.b - i;
-		resNstRec.b.a = resNstRec.b.a - i;
-		resNstRec.b.b = resNstRec.b.a - i;
-		resNstRec.b.c = resNstRec.b.b - i;
-		resNstRec.c.a = resNstRec.c.a - i;
-		resNstRec.c.b = resNstRec.c.a - i;
-		resNstRec.c.c = resNstRec.c.b - i;
-	}
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = resNstRec.a.a * i;
-		resNstRec.a.b = resNstRec.a.a * i;
-		resNstRec.a.c = resNstRec.a.b * i;
-		resNstRec.b.a = resNstRec.b.a * i;
-		resNstRec.b.b = resNstRec.b.a * i;
-		resNstRec.b.c = resNstRec.b.b * i;
-		resNstRec.c.a = resNstRec.c.a * i;
-		resNstRec.c.b = resNstRec.c.a * i;
-		resNstRec.c.c = resNstRec.c.b * i;
-	}
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = resNstRec.a.a / i;
-		resNstRec.a.b = resNstRec.a.a / i;
-		resNstRec.a.c = resNstRec.a.b / i;
-		resNstRec.b.a = resNstRec.b.a / i;
-		resNstRec.b.b = resNstRec.b.a / i;
-		resNstRec.b.c = resNstRec.b.b / i;
-		resNstRec.c.a = resNstRec.c.a / i;
-		resNstRec.c.b = resNstRec.c.a / i;
-		resNstRec.c.c = resNstRec.c.b / i;
-	}
-	div = t.stop();
-	writeln("xnRecord\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = resNstRec.a.a;
-	res = res + resNstRec.b.a;
-	res = res + resNstRec.c.a;
-
 	// Nested Class
 	var resNstCls = new nstClass();
 	resNstCls.a = new Class();
@@ -940,7 +843,7 @@ proc task_parallel() {
 }
 
 proc main() {
-//	primitive_types();
+//  primitive_types();
 	structured_types();
 //	task_parallel();
 }
