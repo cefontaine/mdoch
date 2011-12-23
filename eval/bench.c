@@ -23,20 +23,20 @@
 #include <stdio.h>
 #include <time.h>
 
-typedef double tup[3];
-typedef double nst_tup[3][3];
+typedef double Tuple[3];
+typedef double nstTuple[3][3];
 
-struct Record {
+typedef struct Record {
 	double a;
 	double b;
 	double c;
-};
+} Record;
 
-struct nstRecord {
+typedef struct nstRecord {
 	struct Record a;
 	struct Record b;
 	struct Record c;
-};
+} nstRecord;
 
 static double tv_elapsed(struct timeval *end, struct timeval *start)
 {
@@ -215,8 +215,10 @@ void structured_types(int opcnt, FILE *devnull)
 {
 	double asg, add, sub, mul, div;
 	struct timeval tv_start, tv_end;
-	int i;
 	double resTup[3];
+	struct Record resRec;
+	double resNstTup[3][3];
+	int i;
 	
 	printf("Evaluation of Structured Types\n");
 	printf("# of ops: %d, time unit: usec\n", opcnt);
@@ -268,9 +270,6 @@ void structured_types(int opcnt, FILE *devnull)
 	printf("tuple\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	// Record
-	struct Record resRec;
-
-	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resRec.a += i;
@@ -315,8 +314,6 @@ void structured_types(int opcnt, FILE *devnull)
 	printf("record\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	// Nested Tuple
-	double resNstTup[3][3];
-	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resNstTup[0][0] += i;
@@ -454,6 +451,329 @@ void structured_types(int opcnt, FILE *devnull)
 	printf("nRecord\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 }
 
+/* 
+ * Evaluation of array of structured types
+ */
+void parallel_struct_types(int opcnt, FILE *devnull)
+{
+	double asg, add, sub, mul, div;
+	struct timeval tv_start, tv_end;
+	double resTup[3];
+	double resNstTup[3][3];
+	struct Record resRec;
+	Tuple *arrTup;
+	nstTuple *arrNstTup;
+	Record *arrRec;
+	nstRecord *arrNstRec;
+	nstRecord resNstRec;
+	int i;
+
+	printf("Evaluation of Array of Structured Types\n");
+	printf("# of ops: %d, time unit: usec\n", opcnt);
+	printf("op\t\t%17s%17s%17s%17s%17s\n", "asg", "add", "sub", "mul", "div");
+
+	// Tuple
+	arrTup = (Tuple *) malloc(opcnt * sizeof(Tuple));
+	if (arrTup == NULL) {
+		fprintf(stderr, "failed to allocate memory\n");
+		exit(1);
+	}
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		arrTup[i][0] = 1.0;
+		arrTup[i][1] = 2.0;
+		arrTup[i][2] = 3.0;
+	}
+	gettimeofday(&tv_end, NULL);
+	asg = tv_elapsed(&tv_end, &tv_start);
+
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resTup[0] += arrTup[i][0];
+		resTup[1] += arrTup[i][1];
+		resTup[2] += arrTup[i][2];
+	}
+	gettimeofday(&tv_end, NULL);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resTup[0]);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resTup[0] -= arrTup[i][0];
+		resTup[1] -= arrTup[i][1];
+		resTup[2] -= arrTup[i][2];
+	}
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resTup[0]);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resTup[0] *= arrTup[i][0];
+		resTup[1] *= arrTup[i][1];
+		resTup[2] *= arrTup[i][2];
+	}
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resTup[0]);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resTup[0] /= arrTup[i][0];
+		resTup[1] /= arrTup[i][1];
+		resTup[2] /= arrTup[i][2];
+	}
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	// introduce dependency
+	fprintf(devnull, "%f", resTup[0]);
+	fprintf(devnull, "%f", resTup[1]);
+	fprintf(devnull, "%f", resTup[2]);
+	printf("tupleArr\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", asg, add, sub, mul, div);
+	
+	// Record Array
+	arrRec = (Record *) malloc(opcnt * sizeof(Record));
+	if (arrRec == NULL) {
+		fprintf(stderr, "failed to allocate memory\n");
+		exit(1);
+	}
+
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		arrRec[i].a = 1;
+		arrRec[i].b = 2;
+		arrRec[i].c = 3;
+	}
+	gettimeofday(&tv_end, NULL);
+	asg = tv_elapsed(&tv_end, &tv_start);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resRec.a += arrRec[i].a;
+		resRec.b += arrRec[i].b;
+		resRec.c += arrRec[i].c;
+	}
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resRec.a);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resRec.a -= arrRec[i].a;
+		resRec.b -= arrRec[i].b;
+		resRec.c -= arrRec[i].c;
+	}
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resRec.a);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resRec.a *= arrRec[i].a;
+		resRec.b *= arrRec[i].b;
+		resRec.c *= arrRec[i].c;
+	}
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resRec.a);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resRec.a /= arrRec[i].a;
+		resRec.b /= arrRec[i].b;
+		resRec.c /= arrRec[i].c;
+	}
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resRec.a);
+	fprintf(devnull, "%f", resRec.b);
+	fprintf(devnull, "%f", resRec.c);
+	printf("recordArr\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", asg, add, sub, mul, div);
+	
+	// Nested Tuple
+	arrNstTup = (nstTuple *) malloc(opcnt * sizeof(nstTuple));
+	if (arrNstTup == NULL) {
+		fprintf(stderr, "failed to allocate memory\n");
+		exit(1);
+	}
+
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		arrNstTup[i][0][0] = 1;
+		arrNstTup[i][0][1] = 1;
+		arrNstTup[i][0][2] = 1;
+		arrNstTup[i][1][0] = 2;
+		arrNstTup[i][1][1] = 2;
+		arrNstTup[i][1][2] = 2;
+		arrNstTup[i][2][0] = 3;
+		arrNstTup[i][2][1] = 3;
+		arrNstTup[i][2][3] = 3;
+	}
+	gettimeofday(&tv_end, NULL);
+	asg = tv_elapsed(&tv_end, &tv_start);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resNstTup[0][0] += arrNstTup[i][0][0];
+		resNstTup[0][1] += arrNstTup[i][0][1];
+		resNstTup[0][2] += arrNstTup[i][0][2];
+		resNstTup[1][0] += arrNstTup[i][1][0];
+		resNstTup[1][1] += arrNstTup[i][1][1];
+		resNstTup[1][2] += arrNstTup[i][1][2];
+		resNstTup[2][0] += arrNstTup[i][2][0];
+		resNstTup[2][1] += arrNstTup[i][2][1];
+		resNstTup[2][1] += arrNstTup[i][2][2];
+	}
+	gettimeofday(&tv_end, NULL);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resNstTup[0][0]);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resNstTup[0][0] -= arrNstTup[i][0][0];
+		resNstTup[0][1] -= arrNstTup[i][0][1];
+		resNstTup[0][2] -= arrNstTup[i][0][2];
+		resNstTup[1][0] -= arrNstTup[i][1][0];
+		resNstTup[1][1] -= arrNstTup[i][1][1];
+		resNstTup[1][2] -= arrNstTup[i][1][2];
+		resNstTup[2][0] -= arrNstTup[i][2][0];
+		resNstTup[2][1] -= arrNstTup[i][2][1];
+		resNstTup[2][1] -= arrNstTup[i][2][2];
+	}
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resNstTup[0][0]);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resNstTup[0][0] *= arrNstTup[i][0][0];
+		resNstTup[0][1] *= arrNstTup[i][0][1];
+		resNstTup[0][2] *= arrNstTup[i][0][2];
+		resNstTup[1][0] *= arrNstTup[i][1][0];
+		resNstTup[1][1] *= arrNstTup[i][1][1];
+		resNstTup[1][2] *= arrNstTup[i][1][2];
+		resNstTup[2][0] *= arrNstTup[i][2][0];
+		resNstTup[2][1] *= arrNstTup[i][2][1];
+		resNstTup[2][1] *= arrNstTup[i][2][2];
+	}
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resNstTup[0][0]);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resNstTup[0][0] /= arrNstTup[i][0][0];
+		resNstTup[0][1] /= arrNstTup[i][0][1];
+		resNstTup[0][2] /= arrNstTup[i][0][2];
+		resNstTup[1][0] /= arrNstTup[i][1][0];
+		resNstTup[1][1] /= arrNstTup[i][1][1];
+		resNstTup[1][2] /= arrNstTup[i][1][2];
+		resNstTup[2][0] /= arrNstTup[i][2][0];
+		resNstTup[2][1] /= arrNstTup[i][2][1];
+		resNstTup[2][1] /= arrNstTup[i][2][2];
+	}
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resNstTup[0][0]);
+	fprintf(devnull, "%f", resNstTup[1][0]);
+	fprintf(devnull, "%f", resNstTup[2][0]);
+	printf("nTupleArr\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", asg, add, sub, mul, div);
+	
+	// Nested Record
+	arrNstRec = (nstRecord *) malloc(opcnt * sizeof(nstRecord));
+	if (arrNstRec == NULL) {
+		fprintf(stderr, "failed to allocate memory\n");
+		exit(1);
+	}
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		arrNstRec[i].a.a = 1;
+		arrNstRec[i].a.b = 1;
+		arrNstRec[i].a.c = 1;
+		arrNstRec[i].b.a = 2;
+		arrNstRec[i].b.b = 2;
+		arrNstRec[i].b.c = 2;
+		arrNstRec[i].c.a = 3;
+		arrNstRec[i].c.b = 3;
+		arrNstRec[i].c.c = 3;
+	}
+	gettimeofday(&tv_end, NULL);
+	asg = tv_elapsed(&tv_end, &tv_start);
+
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resNstRec.a.a += arrNstRec[i].a.a;
+		resNstRec.a.b += arrNstRec[i].a.b;
+		resNstRec.a.c += arrNstRec[i].a.c;
+		resNstRec.b.a += arrNstRec[i].b.a;
+		resNstRec.b.b += arrNstRec[i].b.b;
+		resNstRec.b.c += arrNstRec[i].b.c;
+		resNstRec.c.a += arrNstRec[i].c.a;
+		resNstRec.c.b += arrNstRec[i].c.b;
+		resNstRec.c.c += arrNstRec[i].c.c;
+	}
+	gettimeofday(&tv_end, NULL);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resNstRec.a.a);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resNstRec.a.a -= arrNstRec[i].a.a;
+		resNstRec.a.b -= arrNstRec[i].a.b;
+		resNstRec.a.c -= arrNstRec[i].a.c;
+		resNstRec.b.a -= arrNstRec[i].b.a;
+		resNstRec.b.b -= arrNstRec[i].b.b;
+		resNstRec.b.c -= arrNstRec[i].b.c;
+		resNstRec.c.a -= arrNstRec[i].c.a;
+		resNstRec.c.b -= arrNstRec[i].c.b;
+		resNstRec.c.c -= arrNstRec[i].c.c;
+	}
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resNstRec.a.a);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resNstRec.a.a *= arrNstRec[i].a.a;
+		resNstRec.a.b *= arrNstRec[i].a.b;
+		resNstRec.a.c *= arrNstRec[i].a.c;
+		resNstRec.b.a *= arrNstRec[i].b.a;
+		resNstRec.b.b *= arrNstRec[i].b.b;
+		resNstRec.b.c *= arrNstRec[i].b.c;
+		resNstRec.c.a *= arrNstRec[i].c.a;
+		resNstRec.c.b *= arrNstRec[i].c.b;
+		resNstRec.c.c *= arrNstRec[i].c.c;
+	}
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resNstRec.a.a);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		resNstRec.a.a /= arrNstRec[i].a.a;
+		resNstRec.a.b /= arrNstRec[i].a.b;
+		resNstRec.a.c /= arrNstRec[i].a.c;
+		resNstRec.b.a /= arrNstRec[i].b.a;
+		resNstRec.b.b /= arrNstRec[i].b.b;
+		resNstRec.b.c /= arrNstRec[i].b.c;
+		resNstRec.c.a /= arrNstRec[i].c.a;
+		resNstRec.c.b /= arrNstRec[i].c.b;
+		resNstRec.c.c /= arrNstRec[i].c.c;
+	}
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resNstRec.a.a);
+	fprintf(devnull, "%f", resNstRec.b.a);
+	fprintf(devnull, "%f", resNstRec.c.a);
+	printf("nRecordArr\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", asg, add, sub, mul, div);
+
+	free(arrTup);
+	free(arrRec);
+	free(arrNstTup);
+	free(arrNstRec);
+}
 int main(int argc, char **argv)
 {
 	int opcnt, i, j;
@@ -468,7 +788,8 @@ int main(int argc, char **argv)
 	devnull = fopen("/dev/null", "w");
 	
 //	primitive_types(opcnt, devnull);
-	structured_types(opcnt, devnull);
+//	structured_types(opcnt, devnull);
+	parallel_struct_types(opcnt, devnull);
 
 	close(devnull);	
 	return 0;
