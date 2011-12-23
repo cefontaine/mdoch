@@ -160,7 +160,7 @@ record nstRecord { var a, b, c: Record; }
 class Class { var a, b, c: real; }
 class nstClass { var a, b, c: Class; }
 
-proc structed_types() {
+proc structured_types() {
 	var resTup: Tuple;
 	var resRec: Record;
 
@@ -176,6 +176,7 @@ proc structed_types() {
 		resTup(3) = resTup(3) + i;
 	}
 	add = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -184,6 +185,7 @@ proc structed_types() {
 		resTup(3) = resTup(3) - i;
 	}
 	sub = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -192,6 +194,7 @@ proc structed_types() {
 		resTup(3) = resTup(3) * i;
 	}
 	mul = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -200,6 +203,7 @@ proc structed_types() {
 		resTup(3) = resTup(3) / i;
 	}
 	div = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
 	writeln("tuple\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 	t.start();
@@ -209,6 +213,7 @@ proc structed_types() {
 		resTup(3) = resTup(2) + i;
 	}
 	add = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -217,6 +222,7 @@ proc structed_types() {
 		resTup(3) = resTup(2) - i;
 	}
 	sub = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -225,6 +231,7 @@ proc structed_types() {
 		resTup(3) = resTup(2) * i;
 	}
 	mul = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -233,7 +240,9 @@ proc structed_types() {
 		resTup(3) = resTup(2) / i;
 	}
 	div = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
 	writeln("xtuple\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = resTup(1);
 
 	// Record
 	t.start();
@@ -243,6 +252,7 @@ proc structed_types() {
 		resRec.c = resRec.c + i;
 	}
 	add = t.stop();
+	res = res + resRec.a + resRec.b + resRec.c;
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -251,6 +261,7 @@ proc structed_types() {
 		resRec.c = resRec.c - i;
 	}
 	sub = t.stop();
+	res = res + resRec.a + resRec.b + resRec.c;
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -259,6 +270,7 @@ proc structed_types() {
 		resRec.c = resRec.c * i;
 	}
 	mul = t.stop();
+	res = res + resRec.a + resRec.b + resRec.c;
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -267,7 +279,9 @@ proc structed_types() {
 		resRec.c = resRec.c / i;
 	}
 	div = t.stop();
+	res = res + resRec.a + resRec.b + resRec.c;
 	writeln("record\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = resRec.a;
 
 	// Class
 	var resCls = new Class();
@@ -363,7 +377,9 @@ proc structed_types() {
 		resNstTup(3)(3) = resNstTup(3)(3) / i;
 	}
 	div = t.stop();
+	res = res + resNstTup(1)(1) + resNstTup(2)(1) + resNstTup(3)(1);
 	writeln("nTuple\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = resNstTup(1)(1);
 
 	// Nested Record
 	var resNstRec: nstRecord;
@@ -423,7 +439,8 @@ proc structed_types() {
 	}
 	div = t.stop();
 	writeln("nRecord\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-
+	
+	// dependency
 	t.start();
 	for i in iterAscend(1, cnt) {
 		resNstRec.a.a = resNstRec.a.a + i;
@@ -480,6 +497,9 @@ proc structed_types() {
 	}
 	div = t.stop();
 	writeln("xnRecord\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = resNstRec.a.a;
+	res = res + resNstRec.b.a;
+	res = res + resNstRec.c.a;
 
 	// Nested Class
 	var resNstCls = new nstClass();
@@ -900,6 +920,27 @@ proc parallel_types() {
 			"\t\t",mul,"\t\t",div);
 }
 
+proc task_parallel() {
+	var dom: domain(1) = [1..cnt];
+	var arr: [dom] int;
+	var tm_for, tm_forall, tm_coforall: real;
+
+	t.start();
+	for a in arr do a = a + 1;
+	tm_for = t.stop();
+	
+	t.start();
+	forall a in arr do a = a + 2;
+	tm_forall = t.stop();
+	
+//	t.start();
+//	coforall a in arr do a = a + 2;
+//	tm_coforall = t.stop();
+	writeln("taskp\t",tm_for,"\t\t",tm_forall,"\t\t",tm_coforall);
+}
+
 proc main() {
-	primitive_types();
+//	primitive_types();
+	structured_types();
+//	task_parallel();
 }

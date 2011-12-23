@@ -261,6 +261,8 @@ void structured_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resTup[0]);
+	fprintf(devnull, "%f", resTup[1]);
+	fprintf(devnull, "%f", resTup[2]);
 	printf("tuple\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	gettimeofday(&tv_start, NULL);
@@ -302,6 +304,8 @@ void structured_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resTup[0]);
+	fprintf(devnull, "%f", resTup[1]);
+	fprintf(devnull, "%f", resTup[2]);
 	printf("xtuple\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	// Record
@@ -347,11 +351,12 @@ void structured_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resRec.a);
+	fprintf(devnull, "%f", resRec.b);
+	fprintf(devnull, "%f", resRec.c);
 	printf("record\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	// Nested Tuple
 	double resNstTup[3][3];
-
 	asg = add = sub = mul = div = 0;	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
@@ -416,6 +421,8 @@ void structured_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstTup[0][0]);
+	fprintf(devnull, "%f", resNstTup[1][0]);
+	fprintf(devnull, "%f", resNstTup[2][0]);
 	printf("nTuple\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	// Nested Record
@@ -483,6 +490,8 @@ void structured_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstRec.a.a);
+	fprintf(devnull, "%f", resNstRec.b.a);
+	fprintf(devnull, "%f", resNstRec.c.a);
 	printf("nRecord\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	gettimeofday(&tv_start, NULL);
@@ -499,7 +508,6 @@ void structured_types(int opcnt, FILE *devnull)
 	}
 	gettimeofday(&tv_end, NULL);
 	add = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resNstRec.a.a);
 	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
@@ -515,7 +523,6 @@ void structured_types(int opcnt, FILE *devnull)
 	}
 	gettimeofday(&tv_end, NULL);
 	sub = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resNstRec.a.a);
 	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
@@ -531,7 +538,6 @@ void structured_types(int opcnt, FILE *devnull)
 	}
 	gettimeofday(&tv_end, NULL);
 	mul = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resNstRec.a.a);
 	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
@@ -548,6 +554,8 @@ void structured_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resNstRec.a.a);
+	fprintf(devnull, "%f", resNstRec.b.a);
+	fprintf(devnull, "%f", resNstRec.c.a);
 	printf("xnRecord\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 }
 
@@ -564,7 +572,8 @@ int main(int argc, char **argv)
 	opcnt = atoi(argv[1]);
 	devnull = fopen("/dev/null", "w");
 	
-	primitive_types(opcnt, devnull);
+//	primitive_types(opcnt, devnull);
+	structured_types(opcnt, devnull);
 
 	close(devnull);	
 	return 0;
