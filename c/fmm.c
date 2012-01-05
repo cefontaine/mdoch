@@ -55,6 +55,7 @@ VecI mpCells;
 real chargeMag;
 int *mpCellList, curCellsEdge, curLevel, maxCellsEdge, maxLevel, maxOrd,
    wellSep;
+int profLevel;
 
 NameList nameList[] = {
   NameR (chargeMag),
@@ -76,13 +77,20 @@ NameList nameList[] = {
   NameI (wellSep),
 };
 
-
 int main (int argc, char **argv)
 {
+  struct timeval tm;
+  if (argc == 2)
+  	profLevel = atoi(argv[1]);
+  else
+    profLevel = 0;
   GetNameList (argc, argv);
   PrintNameList (stdout);
+  if (profLevel == 1) TimerStart(&tm);
   SetParams ();
   SetupJob ();
+  if (profLevel == 1) printf("init: %f\n", TimerStop(&tm));
+  
   moreCycles = 1;
   while (moreCycles) {
     SingleStep ();
@@ -93,19 +101,41 @@ int main (int argc, char **argv)
 
 void SingleStep ()
 { 
+  struct timeval tm;
   ++ stepCount;
   timeNow = stepCount * deltaT;
+  if (profLevel == 1) TimerStart(&tm);
   LeapfrogStep (1);
+  if (profLevel == 1) printf("leapFrog(1): %f\n", TimerStop(&tm));
+  
+  if (profLevel == 1) TimerStart(&tm);
   if (nebrNow) {
     nebrNow = 0;
     dispHi = 0.;
     BuildNebrList ();
   }
+  if (profLevel == 1) printf("buildNebrList: %f\n", TimerStop(&tm));
+
+  if (profLevel == 1) TimerStart(&tm);
   ComputeForces ();
+  if (profLevel == 1) printf("computeForces: %f\n", TimerStop(&tm));
+
+  if (profLevel == 1) TimerStart(&tm);
   MultipoleCalc ();
+  if (profLevel == 1) printf("multipoleCalc: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 1) TimerStart(&tm);
   ComputeWallForces ();
+  if (profLevel == 1) printf("computeWallForces: %f\n", TimerStop(&tm));
+
+  if (profLevel == 1) TimerStart(&tm);
   ApplyThermostat ();
+  if (profLevel == 1) printf("applyThermo: %f\n", TimerStop(&tm));
+
+  if (profLevel == 1) TimerStart(&tm);
   LeapfrogStep (2);
+  if (profLevel == 1) printf("leapFrog(2): %f\n", TimerStop(&tm));
+  
   EvalProps ();
   
   if (stepCount < stepEquil) AdjustInitTemp ();
@@ -165,6 +195,7 @@ void AllocArrays ()
 
 void BuildNebrList ()
 {
+  struct timeval tm;
   VecR dr, invWid, rs;
   VecI cc, m1v, m2v, vOff[] = OFFSET_VALS;
   real rrNebr;
@@ -172,7 +203,9 @@ void BuildNebrList ()
 
   rrNebr = Sqr (rCut + rNebrShell);
   VDiv (invWid, cells, region);
+  
   for (n = nMol; n < nMol + VProd (cells); n ++) cellList[n] = -1;
+  if (profLevel == 2) TimerStart(&tm);
   DO_MOL {
     VSAdd (rs, mol[n].r, 0.5, region);
     VMul (cc, rs, invWid);
@@ -180,6 +213,9 @@ void BuildNebrList ()
     cellList[n] = cellList[c];
     cellList[c] = n;
   }
+  if (profLevel == 2) printf("buildNebrList:cellList: %f\n", TimerStop(&tm));;
+  
+  if (profLevel == 2) TimerStart(&tm);
   nebrTabLen = 0;
   for (m1z = 0; m1z < cells.z; m1z ++) {
     for (m1y = 0; m1y < cells.y; m1y ++) {
@@ -210,6 +246,7 @@ void BuildNebrList ()
       }
     }
   }
+  if (profLevel == 2) printf("buildNebrList:nebrTab: %f\n", TimerStop(&tm));;
 }
 
 
@@ -241,13 +278,21 @@ void ComputeForces ()
 
 
 void MultipoleCalc ()
-{
+{ 
+  struct timeval tm;
   int j, k, m1;
 
   VSetAll (mpCells, maxCellsEdge);
+  if (profLevel == 2) TimerStart(&tm);
   AssignMpCells ();
+  if (profLevel == 2) printf("multipoleCalc:mpCells: %f\n", TimerStop(&tm));
+
+  if (profLevel == 2) TimerStart(&tm);
   VDiv (cellWid, region, mpCells);
   EvalMpCell ();
+  if (profLevel == 2) printf("multipoleCalc:evalMpL: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 2) TimerStart(&tm);
   curCellsEdge = maxCellsEdge;
   for (curLevel = maxLevel - 1; curLevel >= 2; curLevel --) {
     curCellsEdge /= 2;
@@ -255,6 +300,9 @@ void MultipoleCalc ()
     VDiv (cellWid, region, mpCells);
     CombineMpCell ();
   }
+  if (profLevel == 2) printf("multipoleCalc:combineMpCell: %f\n", TimerStop(&tm));
+
+  if (profLevel == 2) TimerStart(&tm);
   for (m1 = 0; m1 < 64; m1 ++) {
     for (j = 0; j <= maxOrd; j ++) {
       for (k = 0; k <= j; k ++) {
@@ -263,6 +311,9 @@ void MultipoleCalc ()
       }
     }
   }
+  if (profLevel == 2) printf("multipoleCalc:mpCellSet: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 2) TimerStart(&tm);
   curCellsEdge = 2;
   for (curLevel = 2; curLevel <= maxLevel; curLevel ++) {
     curCellsEdge *= 2;
@@ -271,8 +322,15 @@ void MultipoleCalc ()
     GatherWellSepLo ();
     if (curLevel < maxLevel) PropagateCellLo ();
   }
+  if (profLevel == 2) printf("multipoleCalc:gatherWellSepLo: %f\n", TimerStop(&tm));
+
+  if (profLevel == 2) TimerStart(&tm);
   ComputeFarCellInt ();
+  if (profLevel == 2) printf("multipoleCalc:computeFarCellInt: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 2) TimerStart(&tm);
   ComputeNearCellInt ();
+  if (profLevel == 2) printf("multipoleCalc:computeNearCellInt: %f\n", TimerStop(&tm));
 }
 
 

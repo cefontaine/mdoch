@@ -29,6 +29,7 @@
 #define NDIM  2
 
 #include "in_mddefs.h"
+#include "in_debug.h"
 
 typedef struct {
   VecR r, rv, ra;
@@ -42,6 +43,7 @@ Prop kinEnergy, totEnergy;
 int moreCycles, nMol, stepAvg, stepCount, stepEquil, stepLimit;
 real virSum;
 Prop pressure;
+int profLevel;
 
 NameList nameList[] = {
   NameR (deltaT),
@@ -56,10 +58,17 @@ NameList nameList[] = {
 
 int main (int argc, char **argv)
 {
+  struct timeval tm;
+  if (argc == 2) profLevel = atoi(argv[1]);
+  else profLevel = 0;
   GetNameList (argc, argv);
   PrintNameList (stdout);
+  
+  if (profLevel == 1) TimerStart(&tm);
   SetParams ();
   SetupJob ();
+  if (profLevel == 1) printf("init: %f\n", TimerStop(&tm));
+
   moreCycles = 1;
   while (moreCycles) {
     SingleStep ();
@@ -70,12 +79,25 @@ int main (int argc, char **argv)
 
 void SingleStep ()
 {
+  struct timeval tm;
   ++ stepCount;
   timeNow = stepCount * deltaT;
+  if (profLevel == 1) TimerStart(&tm);
   LeapfrogStep (1);
+  if (profLevel == 1) printf("LeapfrogStep(1): %f\n", TimerStop(&tm));
+  
+  if (profLevel == 1) TimerStart(&tm);
   ApplyBoundaryCond ();
+  if (profLevel == 1) printf("ApplyBoundaryCond: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 1) TimerStart(&tm);
   ComputeForces ();
+  if (profLevel == 1) printf("ComputeForces: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 1) TimerStart(&tm);
   LeapfrogStep (2);
+  if (profLevel == 1) printf("LeapfrogStep(2): %f\n", TimerStop(&tm));
+  
   EvalProps ();
   AccumProps (1);
   if (stepCount % stepAvg == 0) {
@@ -249,4 +271,4 @@ void PrintSummary (FILE *fp)
 #include "in_rand.c"
 #include "in_errexit.c"
 #include "in_namelist.c"
-
+#include "in_debug.c"

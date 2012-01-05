@@ -27,6 +27,7 @@
 
 
 #include "in_mddefs.h"
+#include "in_debug.h"
 
 typedef struct {
   VecR r, rv, ra;
@@ -46,6 +47,7 @@ real virSum;
 Prop pressure;
 real kinEnInitSum;
 int stepInitlzTemp;
+int profLevel;
 
 NameList nameList[] = {
   NameR (deltaT),
@@ -64,10 +66,18 @@ NameList nameList[] = {
 
 int main (int argc, char **argv)
 {
+  struct timeval tm;
+  if (argc == 2) profLevel = atoi(argv[1]);
+  else profLevel = 0;
+  
   GetNameList (argc, argv);
   PrintNameList (stdout);
+  
+  if (profLevel == 1) TimerStart(&tm);
   SetParams ();
   SetupJob ();
+  if (profLevel == 1) printf("init: %f\n", TimerStop(&tm));
+  
   moreCycles = 1;
   while (moreCycles) {
     SingleStep ();
@@ -78,16 +88,34 @@ int main (int argc, char **argv)
 
 void SingleStep ()
 {
+  struct timeval tm;
   ++ stepCount;
   timeNow = stepCount * deltaT;
+  if (profLevel == 2) TimerStart(&tm);
   LeapfrogStep (1);
+  if (profLevel == 2) printf("LeapfrogStep(1): %f\n", TimerStop(&tm));
+
+  if (profLevel == 2) TimerStart(&tm);
   ApplyBoundaryCond ();
+  if (profLevel == 2) printf("ApplyBoundaryCond: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 2) TimerStart(&tm);
   if (nebrNow) {
     nebrNow = 0;
     dispHi = 0.;
     BuildNebrList ();
   }
+  if (profLevel == 2) printf("BuildNebrList: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 2) TimerStart(&tm);
   ComputeForces ();
+  if (profLevel == 2) printf("ComputeForces: %f\n", TimerStop(&tm));
+  
+  if (profLevel == 2) TimerStart(&tm);
+  LeapfrogStep (2);
+  if (profLevel == 2) printf("LeapfrogStep(1): %f\n", TimerStop(&tm));
+  
+  if (profLevel == 2) TimerStart(&tm);
   LeapfrogStep (2);
   EvalProps ();
   if (stepCount < stepEquil) AdjustInitTemp ();
@@ -97,6 +125,7 @@ void SingleStep ()
     PrintSummary (stdout);
     AccumProps (0);
   }
+  if (profLevel == 2) printf("Stat: %f\n", TimerStop(&tm));
 }
 
 void SetupJob ()
@@ -129,9 +158,9 @@ void AllocArrays ()
   AllocMem (nebrTab, 2 * nebrTabMax, int);
 }
 
-
 void BuildNebrList ()
 {
+  struct timeval tm;
   VecR dr, invWid, rs, shift;
   VecI cc, m1v, m2v, vOff[] = OFFSET_VALS;
   real rrNebr;
@@ -139,6 +168,8 @@ void BuildNebrList ()
 
   rrNebr = Sqr (rCut + rNebrShell);
   VDiv (invWid, cells, region);
+  
+  if (profLevel == 3) TimerStart(&tm);
   for (n = nMol; n < nMol + VProd (cells); n ++) cellList[n] = -1;
   DO_MOL {
     VSAdd (rs, mol[n].r, 0.5, region);
@@ -147,7 +178,11 @@ void BuildNebrList ()
     cellList[n] = cellList[c];
     cellList[c] = n;
   }
+  if (profLevel == 3) printf("BuildNebrList:Set: %f\n", TimerStop(&tm));
+  
   nebrTabLen = 0;
+  
+  if (profLevel == 3) TimerStart(&tm);
   for (m1z = 0; m1z < cells.z; m1z ++) {
     for (m1y = 0; m1y < cells.y; m1y ++) {
       for (m1x = 0; m1x < cells.x; m1x ++) {
@@ -177,6 +212,7 @@ void BuildNebrList ()
       }
     }
   }
+  if (profLevel == 3) printf("BuildNebrList:Iter: %f\n", TimerStop(&tm));
 }
 
 
@@ -345,4 +381,4 @@ void PrintSummary (FILE *fp)
 #include "in_rand.c"
 #include "in_errexit.c"
 #include "in_namelist.c"
-
+#include "in_debug.c"

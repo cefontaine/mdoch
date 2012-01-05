@@ -205,8 +205,8 @@ proc buildNebrList() {
 
 	rrNebr = (rCut + rNebrShell) ** 2;
 	invWid = cells / region;
-	if profLevel == 2 then timer.start();
 	for n in iterAscend(nMol + 1, nMol + cells.prod()) do cellList(n) = -1; 
+	if profLevel == 2 then timer.start();
 	for n in iterAscend(1, nMol) {
 		var cc: vector_i;
 		var c: int;
@@ -219,7 +219,7 @@ proc buildNebrList() {
 	
 	if profLevel == 2 then timer.start();
 	nebrTabLen = 0;
-	for (m1z, m1y, m1x) in [0..cells.z-1, 0..cells.y-1, 0..cells.x-1] {
+	for (m1z, m1y, m1x) in iterAscend3(0,cells.z-1,0,cells.y-1,0,cells.x-1) {
 		var dr: vector;
 		var m1v, m2v: vector_i;
 		var m1, m2: int;
@@ -279,7 +279,7 @@ proc evalMpL (inout le: mp_terms, v: vector, maxOrd: int) {
 	rr = v.lensq();
 	le.set_c(1.0, 0, 0);
 	le.set_s(0.0, 0, 0);
-	for j in [1..maxOrd] {
+	for j in iterAscend(1, maxOrd) {
 		var a, a1, a2: real;
 		a = - 1.0 / (2 * j);
 		le.set_c(a*(v.x*le.c(j-1, j-1) - v.y * le.s(j-1, j-1)), j, j);
@@ -418,7 +418,7 @@ proc evalMpForce(inout f: vector, inout u: real, inout me: mp_terms,
 proc combineMpCell() {
 	var mpCellsN: vector_i;
 	mpCellsN = 2 * mpCells;
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in iterAscend3(0,mpCells.z-1,0,mpCells.y-1,0,mpCells.x-1) {
 		var le, le2: mp_terms;
 		var rShift: vector;
 		var m1v, m2v: vector_i;
@@ -451,7 +451,7 @@ proc combineMpCell() {
 }
 
 proc gatherWellSepLo() {
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in iterAscend3(0,mpCells.z-1,0,mpCells.y-1,0,mpCells.x-1) {
 		var le, me, me2: mp_terms;
 		var rShift: vector;
 		var m1v, m2v: vector_i;
@@ -498,7 +498,7 @@ proc propagateCellLo() {
 	var mpCellsN: vector_i;
 
 	mpCellsN = 2 * mpCells;
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in iterAscend3(0,mpCells.z-1,0,mpCells.y-1,0,mpCells.x-1) {
 		var le: mp_terms;
 		var rShift: vector;
 		var m1v, m2v: vector_i;
@@ -522,7 +522,7 @@ proc propagateCellLo() {
 }
 
 proc computeFarCellInt() {
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in iterAscend3(0,mpCells.z-1,0,mpCells.y-1,0,mpCells.x-1) {
 		var le: mp_terms;
 		var cMid, dr, f: vector;
 		var m1v: vector_i;
@@ -544,7 +544,7 @@ proc computeFarCellInt() {
 }
 
 proc computeNearCellInt() {
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in iterAscend3(0,mpCells.z-1,0,mpCells.y-1,0,mpCells.x-1) {
 		var dr, ft: vector;
 		var m1v, m2v: vector_i;
 		var qq, ri: real;
@@ -592,7 +592,7 @@ proc multipoleCalc() {
 	// Assign mpCells
 	invWid = mpCells / region;
 	if profLevel == 2 then timer.start();
-	for n in [nMol + 1..nMol + mpCells.prod()] do mpCellList(n) = -1;
+	for n in iterAscend(nMol + 1, nMol + mpCells.prod()) do mpCellList(n) = -1;
 	for n in mol.domain {
 		var cc: vector_i;
 		var c: int;
@@ -606,7 +606,7 @@ proc multipoleCalc() {
 	// Evaluate mpCells
 	if profLevel == 2 then timer.start();
 	cellWid = region / mpCells;
-	for (m1z, m1y, m1x) in [0..mpCells.z-1,0..mpCells.y-1,0..mpCells.x-1] {
+	for (m1z, m1y, m1x) in iterAscend3(0,mpCells.z-1,0,mpCells.y-1,0,mpCells.x-1) {
 		var le: mp_terms;
 		var cMid, dr: vector;
 		var m1v: vector_i;
@@ -724,14 +724,14 @@ proc evalRdf() {
 	var n: int;
 
 	if countRdf == 0 {
-		for n in [1..sizeHistRdf] {
+		for n in iterAscend(1, sizeHistRdf) {
 			histRdf(1, n) = 0.0;
 			histRdf(2, n) = 0.0;
 		}
 	}
 
 	deltaR = rangeRdf / sizeHistRdf;
-	for j1 in [1..nMol - 1] {
+	for j1 in iterAscend(1, nMol - 1) {
 		for j2 in iterAscend(j1 + 1, nMol) {
 			dr = mol(j1).r - mol(j2).r;
 			rr = dr.lensq();
@@ -747,7 +747,7 @@ proc evalRdf() {
 	if countRdf == limitRdf {
 		normFac = region.prod() / (2.0 * PI * (deltaR ** 3) * 
 			(nMol ** 2) * countRdf);
-		for k in [1..2] {
+		for k in iterAscend(1, 2) {
 			cumRdf(k, 1) = 0.0;
 			for n in iterAscend(2, sizeHistRdf) do
 				cumRdf(k, n) = cumRdf(k, n - 1) + histRdf(k, n);
@@ -762,7 +762,7 @@ proc evalRdf() {
 		for n in iterAscend(1, sizeHistRdf) {
 			rb = (n - 0.5) * rangeRdf / sizeHistRdf;
 			write(rb, " ", n, " ");
-			for k in [1..2] do 	write(histRdf(k, n), " ", cumRdf(k, n), " ");
+			for k in iterAscend(1, 2) do write(histRdf(k, n), " ", cumRdf(k, n), " ");
 			write("\n");
 		}
 		stdout.flush();

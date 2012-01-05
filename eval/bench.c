@@ -218,6 +218,7 @@ void structured_types(int opcnt, FILE *devnull)
 	double resTup[3];
 	struct Record resRec;
 	double resNstTup[3][3];
+	struct nstRecord resNstRec;
 	int i;
 	
 	printf("Evaluation of Structured Types\n");
@@ -382,7 +383,6 @@ void structured_types(int opcnt, FILE *devnull)
 	printf("nTuple\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 	
 	// Nested Record
-	struct nstRecord resNstRec;
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resNstRec.a.a += i;
@@ -451,6 +451,61 @@ void structured_types(int opcnt, FILE *devnull)
 	printf("nRecord\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
 }
 
+void parallel_types(int opcnt, FILE *devnull)
+{
+	double asg, add, sub, mul, div;
+	struct timeval tv_start, tv_end;
+	double *arr, res;
+	int i;
+
+	/* array */
+	arr = malloc(opcnt * sizeof(double));
+	if (arr == NULL) {
+		fprintf(stderr, "failed to allocate memory\n");
+		exit(1);
+	}
+
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) arr[i] = i;
+	gettimeofday(&tv_end, NULL);
+	asg = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", res);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) {
+		arr[i] += arr[(i+1) % opcnt];
+	}
+	gettimeofday(&tv_end, NULL);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", res);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		arr[i] -= arr[(i+1) % opcnt];
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", res);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		arr[i] *= arr[(i+1) % opcnt];
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", res);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		res = arr[i] / arr[(i+1) % opcnt];
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", res);
+	
+	printf("array\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", 
+		asg, add, sub, mul, div);
+	free(arr);
+}
+
+
 /* 
  * Evaluation of array of structured types
  */
@@ -461,6 +516,10 @@ void parallel_struct_types(int opcnt, FILE *devnull)
 	double resTup[3];
 	double resNstTup[3][3];
 	struct Record resRec;
+	int *arrInt;
+	int resInt;
+	double *arrReal;
+	double  resReal;
 	Tuple *arrTup;
 	nstTuple *arrNstTup;
 	Record *arrRec;
@@ -471,6 +530,92 @@ void parallel_struct_types(int opcnt, FILE *devnull)
 	printf("Evaluation of Array of Structured Types\n");
 	printf("# of ops: %d, time unit: usec\n", opcnt);
 	printf("op\t\t%17s%17s%17s%17s%17s\n", "asg", "add", "sub", "mul", "div");
+
+	// Int
+	arrInt = (int *) malloc(opcnt * sizeof(int));
+	if (arrInt == NULL) {
+		fprintf(stderr, "failed to allocate memory\n");
+		exit(1);
+	}
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) arrInt[i] = i;
+	gettimeofday(&tv_end, NULL);
+	asg = tv_elapsed(&tv_end, &tv_start);
+
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		resInt += arrInt[i];
+	gettimeofday(&tv_end, NULL);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resInt);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		resInt -= arrInt[i];
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resInt);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		resInt *= arrInt[i];
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resInt);
+	
+	arrInt[0] = 1;
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		resInt /= arrInt[i];
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	// introduce dependency
+	fprintf(devnull, "%f", resInt);
+	printf("intArr\t\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", asg, add, sub, mul, div);
+	
+	// Real
+	arrReal = (double *) malloc(opcnt * sizeof(double));
+	if (arrReal == NULL) {
+		fprintf(stderr, "failed to allocate memory\n");
+		exit(1);
+	}
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++) arrReal[i] = i;
+	gettimeofday(&tv_end, NULL);
+	asg = tv_elapsed(&tv_end, &tv_start);
+
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		resReal += arrReal[i];
+	gettimeofday(&tv_end, NULL);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resReal);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		resReal -= arrReal[i];
+	gettimeofday(&tv_end, NULL);
+	sub = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resReal);
+	
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		resReal *= arrReal[i];
+	gettimeofday(&tv_end, NULL);
+	mul = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resReal);
+	
+	arrReal[0] = 1;
+	gettimeofday(&tv_start, NULL);
+	for (i = 0; i < opcnt; i++)
+		resReal /= arrReal[i];
+	gettimeofday(&tv_end, NULL);
+	div = tv_elapsed(&tv_end, &tv_start);
+	// introduce dependency
+	fprintf(devnull, "%f", resReal);
+	printf("realArr\t\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", asg, add, sub, mul, div);
 
 	// Tuple
 	arrTup = (Tuple *) malloc(opcnt * sizeof(Tuple));
@@ -555,8 +700,8 @@ void parallel_struct_types(int opcnt, FILE *devnull)
 		resRec.c += arrRec[i].c;
 	}
 	gettimeofday(&tv_end, NULL);
-	sub = tv_elapsed(&tv_end, &tv_start);
-	fprintf(devnull, "%f", resRec.a);
+	add = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", arrRec[0].a);
 	
 	gettimeofday(&tv_start, NULL);
 	for (i = 0; i < opcnt; i++) {
@@ -768,7 +913,9 @@ void parallel_struct_types(int opcnt, FILE *devnull)
 	fprintf(devnull, "%f", resNstRec.b.a);
 	fprintf(devnull, "%f", resNstRec.c.a);
 	printf("nRecordArr\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", asg, add, sub, mul, div);
-
+	
+	free(arrInt);
+	free(arrReal);
 	free(arrTup);
 	free(arrRec);
 	free(arrNstTup);
@@ -776,7 +923,7 @@ void parallel_struct_types(int opcnt, FILE *devnull)
 }
 int main(int argc, char **argv)
 {
-	int opcnt, i, j;
+	int opcnt;
 	FILE *devnull;
 
 	if (argc < 2) {
@@ -789,6 +936,7 @@ int main(int argc, char **argv)
 	
 //	primitive_types(opcnt, devnull);
 //	structured_types(opcnt, devnull);
+//	parallel_types(opcnt, devnull);
 	parallel_struct_types(opcnt, devnull);
 
 	close(devnull);	

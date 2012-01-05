@@ -23,6 +23,13 @@
 
 use Time;
 
+type Tuple = (real, real, real);
+type nstTuple = (Tuple, Tuple, Tuple);
+record Record { var a, b, c: real; }
+record nstRecord { var a, b, c: Record; }
+class Class { var a, b, c: real; }
+class nstClass { var a, b, c: Class; }
+
 record elapsedTimer {
 	var t: Timer;
 	var u: TimeUnits = TimeUnits.microseconds;
@@ -54,6 +61,38 @@ iter iterAscend(min: int, max: int, step: int = 1) {
 		yield i;
 		i += step;
 	}
+}
+
+proc +(a: Tuple, b: Tuple) {
+	var r: Tuple;
+	r(1) = a(1) + b(1);
+	r(2) = a(2) + b(2);
+	r(3) = a(3) + b(3);
+	return r;
+}
+
+proc +(a: Record, b: Record) {
+	var r: Record;
+	r.a = a.a + b.a;
+	r.b = a.b + b.b;
+	r.c = a.c + b.c;
+	return r;
+}
+
+proc -(a: Record, b: Record) {
+	var r: Record;
+	r.a = a.a - b.a;
+	r.b = a.b - b.b;
+	r.c = a.c - b.c;
+	return r;
+}
+
+proc +(a: nstRecord, b: nstRecord) {
+	var r: nstRecord;
+	r.a = a.a + b.a;
+	r.b = a.b + b.b;
+	r.c = a.c + b.c;
+	return r;
 }
 
 config const cnt: int = 10000;
@@ -153,13 +192,6 @@ proc primitive_types() {
 /* 
  * Evaluation of structured types: tuple, record, class
  */
-type Tuple = (real, real, real);
-type nstTuple = (Tuple, Tuple, Tuple);
-record Record { var a, b, c: real; }
-record nstRecord { var a, b, c: Record; }
-class Class { var a, b, c: real; }
-class nstClass { var a, b, c: Class; }
-
 proc structured_types() {
 	var resTup: Tuple;
 	var resRec: Record;
@@ -651,11 +683,36 @@ proc parallel_types() {
 	writeln("");
 	writeln("\t\taloc\t\tasg\t\tadd\t\tsub\t\tmul\t\tdiv"); 
 	var rDom1D: domain(1);	// rectangular domain
-	var rctArr1D: [rDom1D] int;
+	var arr: [rDom1D] real;
 	t.start();
 	rDom1D = [1..cnt]; // with array allocation
 	aloc = t.stop();
 
+	t.start();
+	for d in arr.domain do arr(d) = d;
+	asg = t.stop();
+
+	t.start();
+	for d in arr.domain {
+		arr(d) = arr(d) + arr((d % cnt) + 1);
+	}
+	add = t.stop();
+
+	t.start();
+	for d in arr.domain do arr(d) = arr(d) - arr((d % cnt) + 1);
+	sub = t.stop();
+
+	t.start();
+	for d in arr.domain do arr(d) = arr(d) * arr((d % cnt) + 1);
+	mul = t.stop();
+
+	t.start();
+	for d in arr.domain do res = arr(d) / arr((d % cnt) + 1);
+	div = t.stop();
+	writeln("array\t",aloc,"\t\t",asg,"\t\t",add,"\t\t",sub,
+			"\t\t",mul,"\t\t",div);
+	
+	var rctArr1D: [rDom1D] int;
 	t.start();
 	for a in rctArr1D do a = 1;
 	asg = t.stop();
@@ -825,16 +882,74 @@ proc parallel_types() {
 
 proc parallel_struct_types() {
 	var arrDom1D: domain(1);	// rectangular domain
+	var arrInt: [arrDom1D] int;
+	var arrReal: [arrDom1D] real;
 	var arrTup: [arrDom1D] Tuple;
 	var arrRec: [arrDom1D] Record;
 	var arrNstTup: [arrDom1D] nstTuple;
 	var arrNstRec: [arrDom1D] nstRecord;
+	var resInt: int;
+	var resReal: real;
 	var resTup: Tuple;
 	var resRec: Record;
 	var resNstTup: nstTuple;
 	var resNstRec: nstRecord;
 
 	arrDom1D = [1..cnt];
+
+	// Int Array
+	t.start();
+	for d in arrInt.domain do arrInt(d) = d;
+	asg = t.stop();
+	
+	t.start();
+	for d in arrInt.domain do
+		resInt = resInt + arrInt(d); 
+	add = t.stop();
+	
+	t.start();
+	for d in arrInt.domain do
+		resInt = resInt - arrInt(d);
+	sub = t.stop();
+	
+	t.start();
+	for d in arrInt.domain do
+		resInt = resInt * arrInt(d);
+	mul = t.stop();
+	
+	t.start();
+	for d in arrInt.domain do
+		resInt = resInt /  arrInt(d);
+	div = t.stop();
+	res = resInt;
+	writeln("intArr\t\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	
+	// Real Array
+	t.start();
+	for d in arrReal.domain do arrReal(d) = d;
+	asg = t.stop();
+	
+	t.start();
+	for d in arrReal.domain do
+		resReal = resReal + arrReal(d); 
+	add = t.stop();
+	
+	t.start();
+	for d in arrReal.domain do
+		resReal = resReal - arrReal(d);
+	sub = t.stop();
+	
+	t.start();
+	for d in arrReal.domain do
+		resReal = resReal * arrReal(d);
+	mul = t.stop();
+	
+	t.start();
+	for d in arrReal.domain do
+		resReal = resReal /  arrReal(d);
+	div = t.stop();
+	res = resReal;
+	writeln("realArr\t\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 	// Tuple Array
 	t.start();
@@ -906,17 +1021,17 @@ proc parallel_struct_types() {
 
 	t.start();
 	for a in arrRec {
-		resRec.a = resRec.a - a.a;
-		resRec.b = resRec.b - a.b;
-		resRec.c = resRec.c - a.c;
+		resRec.a = resRec.a * a.a;
+		resRec.b = resRec.b * a.b;
+		resRec.c = resRec.c * a.c;
 	}
 	mul = t.stop();
 
 	t.start();
 	for a in arrRec {
-		resRec.a = resRec.a - a.a;
-		resRec.b = resRec.b - a.b;
-		resRec.c = resRec.c - a.c;
+		resRec.a = resRec.a / a.a;
+		resRec.b = resRec.b / a.b;
+		resRec.c = resRec.c / a.c;
 	}
 	div = t.stop();
 	res = res + resRec.a + resRec.b + resRec.c;
@@ -1010,32 +1125,22 @@ proc parallel_struct_types() {
 		a.c.c = 3;
 	}
 	asg = t.stop();
-
 	t.start();
-	for a in arrNstRec {
-		resNstRec.a.a = resNstRec.a.a + a.a.a;
-		resNstRec.a.b = resNstRec.a.b + a.a.b;
-		resNstRec.a.c = resNstRec.a.c + a.a.c;
-		resNstRec.b.a = resNstRec.b.a + a.b.a;
-		resNstRec.b.b = resNstRec.b.b + a.b.b;
-		resNstRec.b.c = resNstRec.b.c + a.b.c;
-		resNstRec.c.a = resNstRec.c.a + a.c.a;
-		resNstRec.c.b = resNstRec.c.b + a.c.b;
-		resNstRec.c.c = resNstRec.c.c + a.c.c;
-	}
+	for a in arrNstRec do resNstRec = resNstRec + a;
 	add = t.stop();
+	res = res + resNstRec.a.a + resNstRec.b.a + resNstRec.c.a;
 
 	t.start();
 	for a in arrNstRec {
-		resNstRec.a.a = resNstRec.a.a + a.a.a;
-		resNstRec.a.b = resNstRec.a.b + a.a.b;
-		resNstRec.a.c = resNstRec.a.c + a.a.c;
-		resNstRec.b.a = resNstRec.b.a + a.b.a;
-		resNstRec.b.b = resNstRec.b.b + a.b.b;
-		resNstRec.b.c = resNstRec.b.c + a.b.c;
-		resNstRec.c.a = resNstRec.c.a + a.c.a;
-		resNstRec.c.b = resNstRec.c.b + a.c.b;
-		resNstRec.c.c = resNstRec.c.c + a.c.c;
+		resNstRec.a.a = resNstRec.a.a - a.a.a;
+		resNstRec.a.b = resNstRec.a.b - a.a.b;
+		resNstRec.a.c = resNstRec.a.c - a.a.c;
+		resNstRec.b.a = resNstRec.b.a - a.b.a;
+		resNstRec.b.b = resNstRec.b.b - a.b.b;
+		resNstRec.b.c = resNstRec.b.c - a.b.c;
+		resNstRec.c.a = resNstRec.c.a - a.c.a;
+		resNstRec.c.b = resNstRec.c.b - a.c.b;
+		resNstRec.c.c = resNstRec.c.c - a.c.c;
 	}
 	sub = t.stop();
 
@@ -1068,6 +1173,29 @@ proc parallel_struct_types() {
 	div = t.stop();
 	writeln("nRecordArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	res = res + resNstRec.a.a + resNstRec.b.a + resNstRec.c.a;
+
+	// Reduce
+	t.start();
+	resInt = + reduce arrInt;
+	add = t.stop();
+	
+	t.start();
+	resInt = * reduce arrInt;
+	mul = t.stop();
+	
+	writeln("intRdc\t\t",add,"\t\t",mul);
+	res = res + resInt;
+	
+	t.start();
+	resReal = + reduce arrReal;
+	add = t.stop();
+	
+	t.start();
+	resReal = * reduce arrReal;
+	mul = t.stop();
+	
+	writeln("realRdc\t\t",add,"\t\t",mul);
+	res = res + resReal;
 }
 
 proc task_parallel() {
@@ -1093,5 +1221,6 @@ proc main() {
 //  primitive_types();
 //	structured_types();
 	parallel_struct_types();
-//	task_parallel();
+//	parallel_types();
+///	task_parallel();
 }

@@ -54,14 +54,12 @@ record myTimer {
 var arrDom: domain(1) = [1..arrSize];
 var arrTup: [arrDom] Tuple;
 var arrRec: [arrDom] Record;
-var arrNstTup: [arrDom] nstTuple;
-var arrNstRec: [arrDom] nstRecord;
 var resTup: Tuple;
 var resRec: Record;
-var resNstTup: nstTuple;
-var resNstRec: nstRecord;
 var tmpTuple: Tuple;
 var tmpRecord: Record;
+var resNstTup: nstTuple;
+var resNstRec: nstRecord;
 var t: myTimer;
 var res, asg, add, sub, mul, div: real;
 
@@ -261,6 +259,13 @@ div = t.stop();
 writeln("1D-rec\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 // 2D-array vs. struct
+proc test() {
+var aDom: domain(1) = [1..arrSize];
+var arrNstTup: [aDom] nstTuple;
+var arrNstRec: [arrDom] nstRecord;
+var resNstTup: nstTuple;
+var resNstRec: nstRecord;
+var res, asg, add, sub, mul, div: real;
 t.start();
 for d in arrDom do
 	arrNstTup(d) = ((1.0, 1.0, 1.0), (2.0, 2.0, 2.0), (3.0, 3.0, 3.0));
@@ -312,11 +317,8 @@ for d in arrDom do
 	resNstRec = arrNstRec(d) / arrNstRec(d % arrSize + 1);
 div = t.stop();
 writeln("2D-rec\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-
-
-// Though not clear yet, add reference to prevent memory free happen in timing
-for d in arrDom {
-	res = arr(d);
-	resNstTup = arrNstTup(d);
-	resNstRec = arrNstRec(d);
+writeln(resNstRec);
 }
+
+test();
+
