@@ -148,8 +148,8 @@ void primitive_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%i", resInt);
-	printf("int%d\t%17.0f%17.0f%17.0f%17.0f\n", sizeof(resInt) * 8,
-		add, sub, mul, div);
+	printf("int%d\t%17.0f%17.0f%17.0f%17.0f\n", 
+		sizeof(resInt) * 8, add, sub, mul, div);
 
 	/* float (real32) */
 	asg = add = sub = mul = div = 0;	
@@ -176,8 +176,8 @@ void primitive_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resReal32);
-	printf("real%d\t%17.0f%17.0f%17.0f%17.0f\n", sizeof(resReal32) * 8,
-		add, sub, mul, div);
+	printf("real%d\t%17.0f%17.0f%17.0f%17.0f\n", 
+		sizeof(resReal32) * 8, add, sub, mul, div);
 
 	/* double (real64) */
 	asg = add = sub = mul = div = 0;	
@@ -204,8 +204,8 @@ void primitive_types(int opcnt, FILE *devnull)
 	gettimeofday(&tv_end, NULL);
 	div = tv_elapsed(&tv_end, &tv_start);
 	fprintf(devnull, "%f", resReal);
-	printf("real%d\t%17.0f%17.0f%17.0f%17.0f\n", sizeof(resReal) * 8,
-		add, sub, mul, div);
+	printf("real%d\t%17.0f%17.0f%17.0f%17.0f\n", 
+		sizeof(resReal) * 8, add, sub, mul, div);
 }
 
 /* 
@@ -223,9 +223,19 @@ void structured_types(int opcnt, FILE *devnull)
 	
 	printf("Evaluation of Structured Types\n");
 	printf("# of ops: %d, time unit: usec\n", opcnt);
-	printf("op\t%17s%17s%17s%17s\n", "add", "sub", "mul", "div");
+	printf("op\t%17s%17s%17s%17s%17s\n", "asg", "add", "sub", "mul", "div");
 
 	// Tuple
+	gettimeofday(&tv_start, NULL);
+	for (i = 1; i <= opcnt; i++) {
+		resTup[0] = i;
+		resTup[1] = i;
+		resTup[2] = i;
+	}
+	gettimeofday(&tv_end, NULL);
+	asg = tv_elapsed(&tv_end, &tv_start);
+	fprintf(devnull, "%f", resTup[0]);
+	
 	gettimeofday(&tv_start, NULL);
 	for (i = 1; i <= opcnt; i++) {
 		resTup[0] += i;
@@ -268,7 +278,8 @@ void structured_types(int opcnt, FILE *devnull)
 	fprintf(devnull, "%f", resTup[0]);
 	fprintf(devnull, "%f", resTup[1]);
 	fprintf(devnull, "%f", resTup[2]);
-	printf("tuple\t%17.0f%17.0f%17.0f%17.0f\n", add, sub, mul, div);
+	printf("tuple\t%17.0f%17.0f%17.0f%17.0f%17.0f\n", 
+		asg, add, sub, mul, div);
 	
 	// Record
 	gettimeofday(&tv_start, NULL);
@@ -934,10 +945,10 @@ int main(int argc, char **argv)
 	opcnt = atoi(argv[1]);
 	devnull = fopen("/dev/null", "w");
 	
-//	primitive_types(opcnt, devnull);
-//	structured_types(opcnt, devnull);
-//	parallel_types(opcnt, devnull);
-	parallel_struct_types(opcnt, devnull);
+	//primitive_types(opcnt, devnull);
+	structured_types(opcnt, devnull);
+	//parallel_types(opcnt, devnull);
+	//parallel_struct_types(opcnt, devnull);
 
 	close(devnull);	
 	return 0;

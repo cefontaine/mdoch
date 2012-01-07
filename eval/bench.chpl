@@ -63,11 +63,83 @@ iter iterAscend(min: int, max: int, step: int = 1) {
 	}
 }
 
-proc +(a: Tuple, b: Tuple) {
+proc =(a: Tuple, b: int) {
 	var r: Tuple;
-	r(1) = a(1) + b(1);
-	r(2) = a(2) + b(2);
-	r(3) = a(3) + b(3);
+	r(1) = b;
+	r(2) = b;
+	r(3) = b;
+	return r;
+}
+
+proc +(a: Tuple, b: int) {
+	var r: Tuple;
+	r(1) = a(1) + b;
+	r(2) = a(2) + b;
+	r(3) = a(3) + b;
+	return r;
+}
+
+proc -(a: Tuple, b: int) {
+	var r: Tuple;
+	r(1) = a(1) - b;
+	r(2) = a(2) - b;
+	r(3) = a(3) - b;
+	return r;
+}
+
+proc *(a: Tuple, b: int) {
+	var r: Tuple;
+	r(1) = a(1) * b;
+	r(2) = a(2) * b;
+	r(3) = a(3) * b;
+	return r;
+}
+
+proc /(a: Tuple, b: int) {
+	var r: Tuple;
+	r(1) = a(1) / b;
+	r(2) = a(2) / b;
+	r(3) = a(3) / b;
+	return r;
+}
+
+proc =(a: Record, b: int) {
+	var r: Record;
+	r.a = b;
+	r.b = b;
+	r.c = b;
+	return r;
+}
+
+proc +(a: Record, b: int) {
+	var r: Record;
+	r.a = a.a + b;
+	r.b = a.b + b;
+	r.c = a.c + b;
+	return r;
+}
+
+proc -(a: Record, b: int) {
+	var r: Record;
+	r.a = a.a + b;
+	r.b = a.b + b;
+	r.c = a.c + b;
+	return r;
+}
+
+proc *(a: Record, b: int) {
+	var r: Record;
+	r.a = a.a * b;
+	r.b = a.b * b;
+	r.c = a.c * b;
+	return r;
+}
+
+proc /(a: Record, b: int) {
+	var r: Record;
+	r.a = a.a / b;
+	r.b = a.b / b;
+	r.c = a.c / b;
 	return r;
 }
 
@@ -87,12 +159,244 @@ proc -(a: Record, b: Record) {
 	return r;
 }
 
-proc +(a: nstRecord, b: nstRecord) {
-	var r: nstRecord;
-	r.a = a.a + b.a;
-	r.b = a.b + b.b;
-	r.c = a.c + b.c;
+proc =(a: Class, b: int) {
+	a.a = b;
+	a.b = b;
+	a.c = b;
+	return a;
+}
+
+proc +(a: Class, b: int) {
+	a.a = a.a + b;
+	a.b = a.b + b;
+	a.c = a.c + b;
+	return a;
+}
+
+proc -(a: Class, b: int) {
+	a.a = a.a + b;
+	a.b = a.b + b;
+	a.c = a.c + b;
+	return a;
+}
+
+proc *(a: Class, b: int) {
+	a.a = a.a * b;
+	a.b = a.b * b;
+	a.c = a.c * b;
+	return a;
+}
+
+proc /(a: Class, b: int) {
+	a.a = a.a / b;
+	a.b = a.b / b;
+	a.c = a.c / b;
+	return a;
+}
+
+proc =(a:nstTuple, b: int) {
+	var r: nstTuple;
+	r(1)(1) = b;
+	r(1)(2) = b;
+	r(1)(3) = b;
+	r(2)(1) = b;
+	r(2)(2) = b;
+	r(2)(3) = b;
+	r(3)(1) = b;
+	r(3)(2) = b;
+	r(3)(3) = b;
 	return r;
+}
+
+proc +(a:nstTuple, b: int) {
+	var r: nstTuple;
+	r(1)(1) = a(1)(1) + b;
+	r(1)(2) = a(1)(2) + b;
+	r(1)(3) = a(1)(3) + b;
+	r(2)(1) = a(2)(1) + b;
+	r(2)(2) = a(2)(2) + b;
+	r(2)(3) = a(2)(3) + b;
+	r(3)(1) = a(3)(1) + b;
+	r(3)(2) = a(3)(2) + b;
+	r(3)(3) = a(3)(3) + b;
+	return r;
+}
+
+proc -(a:nstTuple, b: int) {
+	var r: nstTuple;
+	r(1)(1) = a(1)(1) - b;
+	r(1)(2) = a(1)(2) - b;
+	r(1)(3) = a(1)(3) - b;
+	r(2)(1) = a(2)(1) - b;
+	r(2)(2) = a(2)(2) - b;
+	r(2)(3) = a(2)(3) - b;
+	r(3)(1) = a(3)(1) - b;
+	r(3)(2) = a(3)(2) - b;
+	r(3)(3) = a(3)(3) - b;
+	return r;
+}
+
+proc *(a:nstTuple, b: int) {
+	var r: nstTuple;
+	r(1)(1) = a(1)(1) * b;
+	r(1)(2) = a(1)(2) * b;
+	r(1)(3) = a(1)(3) * b;
+	r(2)(1) = a(2)(1) * b;
+	r(2)(2) = a(2)(2) * b;
+	r(2)(3) = a(2)(3) * b;
+	r(3)(1) = a(3)(1) * b;
+	r(3)(2) = a(3)(2) * b;
+	r(3)(3) = a(3)(3) * b;
+	return r;
+}
+
+proc /(a:nstTuple, b: int) {
+	var r: nstTuple;
+	r(1)(1) = a(1)(1) / b;
+	r(1)(2) = a(1)(2) / b;
+	r(1)(3) = a(1)(3) / b;
+	r(2)(1) = a(2)(1) / b;
+	r(2)(2) = a(2)(2) / b;
+	r(2)(3) = a(2)(3) / b;
+	r(3)(1) = a(3)(1) / b;
+	r(3)(2) = a(3)(2) / b;
+	r(3)(3) = a(3)(3) / b;
+	return r;
+}
+
+proc =(a:nstRecord, b: int) {
+	var r: nstRecord;
+	r.a.a = b;
+	r.a.b = b;
+	r.a.c = b;
+	r.b.a = b;
+	r.b.b = b;
+	r.b.c = b;
+	r.c.a = b;
+	r.c.b = b;
+	r.c.c = b;
+	return r;
+}
+
+proc +(a:nstRecord, b: int) {
+	var r: nstRecord;
+	r.a.a = a.a.a + b;
+	r.a.b = a.a.b + b;
+	r.a.c = a.a.c + b;
+	r.b.a = a.b.a + b;
+	r.b.b = a.b.b + b;
+	r.b.c = a.b.c + b;
+	r.c.a = a.c.a + b;
+	r.c.b = a.c.b + b;
+	r.c.c = a.c.c + b;
+	return r;
+}
+
+proc -(a:nstRecord, b: int) {
+	var r: nstRecord;
+	r.a.a = a.a.a - b;
+	r.a.b = a.a.b - b;
+	r.a.c = a.a.c - b;
+	r.b.a = a.b.a - b;
+	r.b.b = a.b.b - b;
+	r.b.c = a.b.c - b;
+	r.c.a = a.c.a - b;
+	r.c.b = a.c.b - b;
+	r.c.c = a.c.c - b;
+	return r;
+}
+
+proc *(a:nstRecord, b: int) {
+	var r: nstRecord;
+	r.a.a = a.a.a * b;
+	r.a.b = a.a.b * b;
+	r.a.c = a.a.c * b;
+	r.b.a = a.b.a * b;
+	r.b.b = a.b.b * b;
+	r.b.c = a.b.c * b;
+	r.c.a = a.c.a * b;
+	r.c.b = a.c.b * b;
+	r.c.c = a.c.c * b;
+	return r;
+}
+
+proc /(a:nstRecord, b: int) {
+	var r: nstRecord;
+	r.a.a = a.a.a / b;
+	r.a.b = a.a.b / b;
+	r.a.c = a.a.c / b;
+	r.b.a = a.b.a / b;
+	r.b.b = a.b.b / b;
+	r.b.c = a.b.c / b;
+	r.c.a = a.c.a / b;
+	r.c.b = a.c.b / b;
+	r.c.c = a.c.c / b;
+	return r;
+}
+
+proc =(a:nstClass, b: int) {
+	a.a.a = b;
+	a.a.b = b;
+	a.a.c = b;
+	a.b.a = b;
+	a.b.b = b;
+	a.b.c = b;
+	a.c.a = b;
+	a.c.b = b;
+	a.c.c = b;
+	return a;
+}
+
+proc +(a:nstClass, b: int) {
+	a.a.a = a.a.a + b;
+	a.a.b = a.a.b + b;
+	a.a.c = a.a.c + b;
+	a.b.a = a.b.a + b;
+	a.b.b = a.b.b + b;
+	a.b.c = a.b.c + b;
+	a.c.a = a.c.a + b;
+	a.c.b = a.c.b + b;
+	a.c.c = a.c.c + b;
+	return a;
+}
+
+proc -(a:nstClass, b: int) {
+	a.a.a = a.a.a - b;
+	a.a.b = a.a.b - b;
+	a.a.c = a.a.c - b;
+	a.b.a = a.b.a - b;
+	a.b.b = a.b.b - b;
+	a.b.c = a.b.c - b;
+	a.c.a = a.c.a - b;
+	a.c.b = a.c.b - b;
+	a.c.c = a.c.c - b;
+	return a;
+}
+
+proc *(a:nstClass, b: int) {
+	a.a.a = a.a.a * b;
+	a.a.b = a.a.b * b;
+	a.a.c = a.a.c * b;
+	a.b.a = a.b.a * b;
+	a.b.b = a.b.b * b;
+	a.b.c = a.b.c * b;
+	a.c.a = a.c.a * b;
+	a.c.b = a.c.b * b;
+	a.c.c = a.c.c * b;
+	return a;
+}
+
+proc /(a:nstClass, b: int) {
+	a.a.a = a.a.a / b;
+	a.a.b = a.a.b / b;
+	a.a.c = a.a.c / b;
+	a.b.a = a.b.a / b;
+	a.b.b = a.b.b / b;
+	a.b.c = a.b.c / b;
+	a.c.a = a.c.a / b;
+	a.c.b = a.c.b / b;
+	a.c.c = a.c.c / b;
+	return a;
 }
 
 config const cnt: int = 10000;
@@ -203,6 +507,14 @@ proc structured_types() {
 	// Tuple
 	t.start();
 	for i in iterAscend(1, cnt) {
+		resTup(1) = i;
+		resTup(2) = i;
+		resTup(3) = i;
+	}
+	asg = t.stop();
+	
+	t.start();
+	for i in iterAscend(1, cnt) {
 		resTup(1) = resTup(1) + i;
 		resTup(2) = resTup(2) + i;
 		resTup(3) = resTup(3) + i;
@@ -237,9 +549,17 @@ proc structured_types() {
 	}
 	div = t.stop();
 	res = res + resTup(1) + resTup(2) + resTup(3);
-	writeln("tuple\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	writeln("tuple\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 	// Record
+	t.start();
+	for i in iterAscend(1, cnt) {
+		resRec.a = i;
+		resRec.b = i;
+		resRec.c = i;
+	}
+	asg = t.stop();
+	
 	t.start();
 	for i in iterAscend(1, cnt) {
 		resRec.a = resRec.a + i;
@@ -275,11 +595,19 @@ proc structured_types() {
 	}
 	div = t.stop();
 	res = res + resRec.a + resRec.b + resRec.c;
-	writeln("record\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	writeln("record\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	res = resRec.a;
 
 	// Class
 	var resCls = new Class();
+	
+	t.start();
+	for i in iterAscend(1, cnt) {
+		resCls.a = i;
+		resCls.b = i;
+		resCls.c = i;
+	}
+	asg = t.stop();
 
 	t.start();
 	for i in iterAscend(1, cnt) {
@@ -312,11 +640,25 @@ proc structured_types() {
 		resCls.c = resCls.c / i;
 	}
 	div = t.stop();
-	writeln("class\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	writeln("class\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 	var resNstTup: nstTuple;
 
 	// Nested Tuple
+	t.start();
+	for i in iterAscend(1, cnt) {
+		resNstTup(1)(1) = i;
+		resNstTup(1)(2) = i;
+		resNstTup(1)(3) = i;
+		resNstTup(2)(1) = i;
+		resNstTup(2)(2) = i;
+		resNstTup(2)(3) = i;
+		resNstTup(3)(1) = i;
+		resNstTup(3)(2) = i;
+		resNstTup(3)(3) = i;
+	}
+	asg = t.stop();
+	
 	t.start();
 	for i in iterAscend(1, cnt) {
 		resNstTup(1)(1) = resNstTup(1)(1) + i;
@@ -373,11 +715,25 @@ proc structured_types() {
 	}
 	div = t.stop();
 	res = res + resNstTup(1)(1) + resNstTup(2)(1) + resNstTup(3)(1);
-	writeln("nTuple\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	writeln("nTuple\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	res = resNstTup(1)(1);
 
 	// Nested Record
 	var resNstRec: nstRecord;
+	t.start();
+	for i in iterAscend(1, cnt) {
+		resNstRec.a.a = i;
+		resNstRec.a.b = i;
+		resNstRec.a.c = i;
+		resNstRec.b.a = i;
+		resNstRec.b.b = i;
+		resNstRec.b.c = i;
+		resNstRec.c.a = i;
+		resNstRec.c.b = i;
+		resNstRec.c.c = i;
+	}
+	asg = t.stop();
+	
 	t.start();
 	for i in iterAscend(1, cnt) {
 		resNstRec.a.a = resNstRec.a.a + i;
@@ -433,7 +789,7 @@ proc structured_types() {
 		resNstRec.c.c = resNstRec.c.c / i;
 	}
 	div = t.stop();
-	writeln("nRecord\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	writeln("nRecord\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	res = res + resNstRec.a.a + resNstRec.b.a + resNstRec.c.a;
 	
 	// Nested Class
@@ -441,6 +797,20 @@ proc structured_types() {
 	resNstCls.a = new Class();
 	resNstCls.b = new Class();
 	resNstCls.c = new Class();
+	t.start();
+	for i in iterAscend(1, cnt) {
+		resNstCls.a.a = i;
+		resNstCls.a.b = i;
+		resNstCls.a.c = i;
+		resNstCls.b.a = i;
+		resNstCls.b.b = i;
+		resNstCls.b.c = i;
+		resNstCls.c.a = i;
+		resNstCls.c.b = i;
+		resNstCls.c.c = i;
+	}
+	asg = t.stop();
+	
 	t.start();
 	for i in iterAscend(1, cnt) {
 		resNstCls.a.a = resNstCls.a.a + i;
@@ -496,7 +866,174 @@ proc structured_types() {
 		resNstCls.c.c = resNstCls.c.c / i;
 	}
 	div = t.stop();
-	writeln("nClass\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	writeln("nClass\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+}
+
+proc structured_types_with_overload() {
+	var resTup: Tuple;
+	var resRec: Record;
+
+	writeln("");
+	writeln("Evaluation of Structured Types with Overloading");
+	writeln("# of ops: ", cnt, ", time unit: usec");
+
+	// Tuple
+	t.start();
+	for i in iterAscend(1, cnt) {
+		resTup(1) = i;
+		resTup(2) = i;
+		resTup(3) = i;
+	}
+	asg = t.stop();
+	
+	t.start();
+	for i in iterAscend(1, cnt) do resTup = resTup + i;
+	add = t.stop();
+	// introduce dependency
+	res = res + resTup(1) + resTup(2) + resTup(3); 
+
+	t.start();
+	for i in iterAscend(1, cnt) do resTup = resTup - i;
+	sub = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
+
+	t.start();
+	for i in iterAscend(1, cnt) do resTup = resTup * i;
+	mul = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
+
+	t.start();
+	for i in iterAscend(1, cnt) do resTup = resTup / i;
+	div = t.stop();
+	res = res + resTup(1) + resTup(2) + resTup(3);
+	writeln("tuple\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+
+	// Record
+	t.start();
+	for i in iterAscend(1, cnt) do resRec = i;
+	asg = t.stop();
+	
+	t.start();
+	for i in iterAscend(1, cnt) do resRec = resRec + i;
+	add = t.stop();
+	res = res + resRec.a + resRec.b + resRec.c;
+
+	t.start();
+	for i in iterAscend(1, cnt) do resRec = resRec - i;
+	sub = t.stop();
+	res = res + resRec.a + resRec.b + resRec.c;
+
+	t.start();
+	for i in iterAscend(1, cnt) do resRec = resRec * i;
+	mul = t.stop();
+	res = res + resRec.a + resRec.b + resRec.c;
+
+	t.start();
+	for i in iterAscend(1, cnt) do resRec = resRec / i;
+	div = t.stop();
+	res = res + resRec.a + resRec.b + resRec.c;
+	writeln("record\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = resRec.a;
+
+	// Class
+	var resCls = new Class();
+	
+	t.start();
+	for i in iterAscend(1, cnt) do resCls = i;
+	asg = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resCls = resCls + i;
+	add = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resCls = resCls - i;
+	sub = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resCls = resCls * i;
+	mul = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resCls = resCls / i;
+	div = t.stop();
+	writeln("class\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+
+	var resNstTup: nstTuple;
+
+	// Nested Tuple
+	t.start();
+	for i in iterAscend(1, cnt) do resNstTup = i;
+	asg = t.stop();
+	
+	t.start();
+	for i in iterAscend(1, cnt) do resNstTup = resNstTup + i;
+	add = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstTup = resNstTup - i;
+	sub = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstTup = resNstTup * i;
+	mul = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstTup = resNstTup / i;
+	div = t.stop();
+	res = res + resNstTup(1)(1) + resNstTup(2)(1) + resNstTup(3)(1);
+	writeln("nTuple\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = resNstTup(1)(1);
+
+	// Nested Record
+	var resNstRec: nstRecord;
+	t.start();
+	for i in iterAscend(1, cnt) do resNstRec = i;
+	asg = t.stop();
+	
+	t.start();
+	for i in iterAscend(1, cnt) do resNstRec = resNstRec + i;
+	add = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstRec = resNstRec - i;
+	sub = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstRec = resNstRec * i;
+	mul = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstRec = resNstRec / i;
+	div = t.stop();
+	writeln("nRecord\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = res + resNstRec.a.a + resNstRec.b.a + resNstRec.c.a;
+	
+	// Nested Class
+	var resNstCls = new nstClass();
+	resNstCls.a = new Class();
+	resNstCls.b = new Class();
+	resNstCls.c = new Class();
+	t.start();
+	for i in iterAscend(1, cnt) do resNstCls = i;
+	asg = t.stop();
+	
+	t.start();
+	for i in iterAscend(1, cnt) do resNstCls = resNstCls + i;
+	add = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstCls = resNstCls - i;
+	sub = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstCls = resNstCls * i;
+	mul = t.stop();
+
+	t.start();
+	for i in iterAscend(1, cnt) do resNstCls = resNstCls / i;
+	div = t.stop();
+	writeln("nClass\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 }
 
 proc parallel_types() {
@@ -903,23 +1440,19 @@ proc parallel_struct_types() {
 	asg = t.stop();
 	
 	t.start();
-	for d in arrInt.domain do
-		resInt = resInt + arrInt(d); 
+	for d in arrInt.domain do resInt = resInt + arrInt(d); 
 	add = t.stop();
 	
 	t.start();
-	for d in arrInt.domain do
-		resInt = resInt - arrInt(d);
+	for d in arrInt.domain do resInt = resInt - arrInt(d);
 	sub = t.stop();
 	
 	t.start();
-	for d in arrInt.domain do
-		resInt = resInt * arrInt(d);
+	for d in arrInt.domain do resInt = resInt * arrInt(d);
 	mul = t.stop();
 	
 	t.start();
-	for d in arrInt.domain do
-		resInt = resInt /  arrInt(d);
+	for d in arrInt.domain do resInt = resInt /  arrInt(d);
 	div = t.stop();
 	res = resInt;
 	writeln("intArr\t\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
@@ -1219,8 +1752,9 @@ proc task_parallel() {
 
 proc main() {
 //  primitive_types();
-//	structured_types();
-	parallel_struct_types();
+	structured_types();
+	structured_types_with_overload();
+//	parallel_struct_types();
 //	parallel_types();
 ///	task_parallel();
 }
