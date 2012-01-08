@@ -493,549 +493,6 @@ proc primitive_types() {
 	res = resReal;
 }
 
-/* 
- * Evaluation of structured types: tuple, record, class
- */
-proc structured_types() {
-	var resTup: Tuple;
-	var resRec: Record;
-
-	writeln("");
-	writeln("Evaluation of Structured Types");
-	writeln("# of ops: ", cnt, ", time unit: usec");
-
-	// Tuple
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = i;
-		resTup(2) = i;
-		resTup(3) = i;
-	}
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = resTup(1) + i;
-		resTup(2) = resTup(2) + i;
-		resTup(3) = resTup(3) + i;
-	}
-	add = t.stop();
-	// introduce dependency
-	res = res + resTup(1) + resTup(2) + resTup(3); 
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = resTup(1) - i;
-		resTup(2) = resTup(2) - i;
-		resTup(3) = resTup(3) - i;
-	}
-	sub = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = resTup(1) * i;
-		resTup(2) = resTup(2) * i;
-		resTup(3) = resTup(3) * i;
-	}
-	mul = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = resTup(1) / i;
-		resTup(2) = resTup(2) / i;
-		resTup(3) = resTup(3) / i;
-	}
-	div = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-	writeln("tuple\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-
-	// Record
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resRec.a = i;
-		resRec.b = i;
-		resRec.c = i;
-	}
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resRec.a = resRec.a + i;
-		resRec.b = resRec.b + i;
-		resRec.c = resRec.c + i;
-	}
-	add = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resRec.a = resRec.a - i;
-		resRec.b = resRec.b - i;
-		resRec.c = resRec.c - i;
-	}
-	sub = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resRec.a = resRec.a * i;
-		resRec.b = resRec.b * i;
-		resRec.c = resRec.c * i;
-	}
-	mul = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resRec.a = resRec.a / i;
-		resRec.b = resRec.b / i;
-		resRec.c = resRec.c / i;
-	}
-	div = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
-	writeln("record\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = resRec.a;
-
-	// Class
-	var resCls = new Class();
-	
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resCls.a = i;
-		resCls.b = i;
-		resCls.c = i;
-	}
-	asg = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resCls.a = resCls.a + i;
-		resCls.b = resCls.b + i;
-		resCls.c = resCls.c + i;
-	}
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resCls.a = resCls.a - i;
-		resCls.b = resCls.b - i;
-		resCls.c = resCls.c - i;
-	}
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resCls.a = resCls.a * i;
-		resCls.b = resCls.b * i;
-		resCls.c = resCls.c * i;
-	}
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resCls.a = resCls.a / i;
-		resCls.b = resCls.b / i;
-		resCls.c = resCls.c / i;
-	}
-	div = t.stop();
-	writeln("class\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-
-	var resNstTup: nstTuple;
-
-	// Nested Tuple
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstTup(1)(1) = i;
-		resNstTup(1)(2) = i;
-		resNstTup(1)(3) = i;
-		resNstTup(2)(1) = i;
-		resNstTup(2)(2) = i;
-		resNstTup(2)(3) = i;
-		resNstTup(3)(1) = i;
-		resNstTup(3)(2) = i;
-		resNstTup(3)(3) = i;
-	}
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstTup(1)(1) = resNstTup(1)(1) + i;
-		resNstTup(1)(2) = resNstTup(1)(2) + i;
-		resNstTup(1)(3) = resNstTup(1)(3) + i;
-		resNstTup(2)(1) = resNstTup(2)(1) + i;
-		resNstTup(2)(2) = resNstTup(2)(2) + i;
-		resNstTup(2)(3) = resNstTup(2)(3) + i;
-		resNstTup(3)(1) = resNstTup(3)(1) + i;
-		resNstTup(3)(2) = resNstTup(3)(2) + i;
-		resNstTup(3)(3) = resNstTup(3)(3) + i;
-	}
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstTup(1)(1) = resNstTup(1)(1) - i;
-		resNstTup(1)(2) = resNstTup(1)(2) - i;
-		resNstTup(1)(3) = resNstTup(1)(3) - i;
-		resNstTup(2)(1) = resNstTup(2)(1) - i;
-		resNstTup(2)(2) = resNstTup(2)(2) - i;
-		resNstTup(2)(3) = resNstTup(2)(3) - i;
-		resNstTup(3)(1) = resNstTup(3)(1) - i;
-		resNstTup(3)(2) = resNstTup(3)(2) - i;
-		resNstTup(3)(3) = resNstTup(3)(3) - i;
-	}
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstTup(1)(1) = resNstTup(1)(1) * i;
-		resNstTup(1)(2) = resNstTup(1)(2) * i;
-		resNstTup(1)(3) = resNstTup(1)(3) * i;
-		resNstTup(2)(1) = resNstTup(2)(1) * i;
-		resNstTup(2)(2) = resNstTup(2)(2) * i;
-		resNstTup(2)(3) = resNstTup(2)(3) * i;
-		resNstTup(3)(1) = resNstTup(3)(1) * i;
-		resNstTup(3)(2) = resNstTup(3)(2) * i;
-		resNstTup(3)(3) = resNstTup(3)(3) * i;
-	}
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstTup(1)(1) = resNstTup(1)(1) / i;
-		resNstTup(1)(2) = resNstTup(1)(2) / i;
-		resNstTup(1)(3) = resNstTup(1)(3) / i;
-		resNstTup(2)(1) = resNstTup(2)(1) / i;
-		resNstTup(2)(2) = resNstTup(2)(2) / i;
-		resNstTup(2)(3) = resNstTup(2)(3) / i;
-		resNstTup(3)(1) = resNstTup(3)(1) / i;
-		resNstTup(3)(2) = resNstTup(3)(2) / i;
-		resNstTup(3)(3) = resNstTup(3)(3) / i;
-	}
-	div = t.stop();
-	res = res + resNstTup(1)(1) + resNstTup(2)(1) + resNstTup(3)(1);
-	writeln("nTuple\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = resNstTup(1)(1);
-
-	// Nested Record
-	var resNstRec: nstRecord;
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = i;
-		resNstRec.a.b = i;
-		resNstRec.a.c = i;
-		resNstRec.b.a = i;
-		resNstRec.b.b = i;
-		resNstRec.b.c = i;
-		resNstRec.c.a = i;
-		resNstRec.c.b = i;
-		resNstRec.c.c = i;
-	}
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = resNstRec.a.a + i;
-		resNstRec.a.b = resNstRec.a.b + i;
-		resNstRec.a.c = resNstRec.a.c + i;
-		resNstRec.b.a = resNstRec.b.a + i;
-		resNstRec.b.b = resNstRec.b.b + i;
-		resNstRec.b.c = resNstRec.b.c + i;
-		resNstRec.c.a = resNstRec.c.a + i;
-		resNstRec.c.b = resNstRec.c.b + i;
-		resNstRec.c.c = resNstRec.c.c + i;
-	}
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = resNstRec.a.a - i;
-		resNstRec.a.b = resNstRec.a.b - i;
-		resNstRec.a.c = resNstRec.a.c - i;
-		resNstRec.b.a = resNstRec.b.a - i;
-		resNstRec.b.b = resNstRec.b.b - i;
-		resNstRec.b.c = resNstRec.b.c - i;
-		resNstRec.c.a = resNstRec.c.a - i;
-		resNstRec.c.b = resNstRec.c.b - i;
-		resNstRec.c.c = resNstRec.c.c - i;
-	}
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = resNstRec.a.a * i;
-		resNstRec.a.b = resNstRec.a.b * i;
-		resNstRec.a.c = resNstRec.a.c * i;
-		resNstRec.b.a = resNstRec.b.a * i;
-		resNstRec.b.b = resNstRec.b.b * i;
-		resNstRec.b.c = resNstRec.b.c * i;
-		resNstRec.c.a = resNstRec.c.a * i;
-		resNstRec.c.b = resNstRec.c.b * i;
-		resNstRec.c.c = resNstRec.c.c * i;
-	}
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstRec.a.a = resNstRec.a.a / i;
-		resNstRec.a.b = resNstRec.a.b / i;
-		resNstRec.a.c = resNstRec.a.c / i;
-		resNstRec.b.a = resNstRec.b.a / i;
-		resNstRec.b.b = resNstRec.b.b / i;
-		resNstRec.b.c = resNstRec.b.c / i;
-		resNstRec.c.a = resNstRec.c.a / i;
-		resNstRec.c.b = resNstRec.c.b / i;
-		resNstRec.c.c = resNstRec.c.c / i;
-	}
-	div = t.stop();
-	writeln("nRecord\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = res + resNstRec.a.a + resNstRec.b.a + resNstRec.c.a;
-	
-	// Nested Class
-	var resNstCls = new nstClass();
-	resNstCls.a = new Class();
-	resNstCls.b = new Class();
-	resNstCls.c = new Class();
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstCls.a.a = i;
-		resNstCls.a.b = i;
-		resNstCls.a.c = i;
-		resNstCls.b.a = i;
-		resNstCls.b.b = i;
-		resNstCls.b.c = i;
-		resNstCls.c.a = i;
-		resNstCls.c.b = i;
-		resNstCls.c.c = i;
-	}
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstCls.a.a = resNstCls.a.a + i;
-		resNstCls.a.b = resNstCls.a.b + i;
-		resNstCls.a.c = resNstCls.a.c + i;
-		resNstCls.b.a = resNstCls.b.a + i;
-		resNstCls.b.b = resNstCls.b.b + i;
-		resNstCls.b.c = resNstCls.b.c + i;
-		resNstCls.c.a = resNstCls.c.a + i;
-		resNstCls.c.b = resNstCls.c.b + i;
-		resNstCls.c.c = resNstCls.c.c + i;
-	}
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstCls.a.a = resNstCls.a.a - i;
-		resNstCls.a.b = resNstCls.a.b - i;
-		resNstCls.a.c = resNstCls.a.c - i;
-		resNstCls.b.a = resNstCls.b.a - i;
-		resNstCls.b.b = resNstCls.b.b - i;
-		resNstCls.b.c = resNstCls.b.c - i;
-		resNstCls.c.a = resNstCls.c.a - i;
-		resNstCls.c.b = resNstCls.c.b - i;
-		resNstCls.c.c = resNstCls.c.c - i;
-	}
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstCls.a.a = resNstCls.a.a * i;
-		resNstCls.a.b = resNstCls.a.b * i;
-		resNstCls.a.c = resNstCls.a.c * i;
-		resNstCls.b.a = resNstCls.b.a * i;
-		resNstCls.b.b = resNstCls.b.b * i;
-		resNstCls.b.c = resNstCls.b.c * i;
-		resNstCls.c.a = resNstCls.c.a * i;
-		resNstCls.c.b = resNstCls.c.b * i;
-		resNstCls.c.c = resNstCls.c.c * i;
-	}
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resNstCls.a.a = resNstCls.a.a / i;
-		resNstCls.a.b = resNstCls.a.b / i;
-		resNstCls.a.c = resNstCls.a.c / i;
-		resNstCls.b.a = resNstCls.b.a / i;
-		resNstCls.b.b = resNstCls.b.b / i;
-		resNstCls.b.c = resNstCls.b.c / i;
-		resNstCls.c.a = resNstCls.c.a / i;
-		resNstCls.c.b = resNstCls.c.b / i;
-		resNstCls.c.c = resNstCls.c.c / i;
-	}
-	div = t.stop();
-	writeln("nClass\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-}
-
-proc structured_types_with_overload() {
-	var resTup: Tuple;
-	var resRec: Record;
-
-	writeln("");
-	writeln("Evaluation of Structured Types with Overloading");
-	writeln("# of ops: ", cnt, ", time unit: usec");
-
-	// Tuple
-	t.start();
-	for i in iterAscend(1, cnt) {
-		resTup(1) = i;
-		resTup(2) = i;
-		resTup(3) = i;
-	}
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) do resTup = resTup + i;
-	add = t.stop();
-	// introduce dependency
-	res = res + resTup(1) + resTup(2) + resTup(3); 
-
-	t.start();
-	for i in iterAscend(1, cnt) do resTup = resTup - i;
-	sub = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-
-	t.start();
-	for i in iterAscend(1, cnt) do resTup = resTup * i;
-	mul = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-
-	t.start();
-	for i in iterAscend(1, cnt) do resTup = resTup / i;
-	div = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
-	writeln("tuple\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-
-	// Record
-	t.start();
-	for i in iterAscend(1, cnt) do resRec = i;
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) do resRec = resRec + i;
-	add = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
-
-	t.start();
-	for i in iterAscend(1, cnt) do resRec = resRec - i;
-	sub = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
-
-	t.start();
-	for i in iterAscend(1, cnt) do resRec = resRec * i;
-	mul = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
-
-	t.start();
-	for i in iterAscend(1, cnt) do resRec = resRec / i;
-	div = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
-	writeln("record\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = resRec.a;
-
-	// Class
-	var resCls = new Class();
-	
-	t.start();
-	for i in iterAscend(1, cnt) do resCls = i;
-	asg = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resCls = resCls + i;
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resCls = resCls - i;
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resCls = resCls * i;
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resCls = resCls / i;
-	div = t.stop();
-	writeln("class\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-
-	var resNstTup: nstTuple;
-
-	// Nested Tuple
-	t.start();
-	for i in iterAscend(1, cnt) do resNstTup = i;
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) do resNstTup = resNstTup + i;
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstTup = resNstTup - i;
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstTup = resNstTup * i;
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstTup = resNstTup / i;
-	div = t.stop();
-	res = res + resNstTup(1)(1) + resNstTup(2)(1) + resNstTup(3)(1);
-	writeln("nTuple\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = resNstTup(1)(1);
-
-	// Nested Record
-	var resNstRec: nstRecord;
-	t.start();
-	for i in iterAscend(1, cnt) do resNstRec = i;
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) do resNstRec = resNstRec + i;
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstRec = resNstRec - i;
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstRec = resNstRec * i;
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstRec = resNstRec / i;
-	div = t.stop();
-	writeln("nRecord\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = res + resNstRec.a.a + resNstRec.b.a + resNstRec.c.a;
-	
-	// Nested Class
-	var resNstCls = new nstClass();
-	resNstCls.a = new Class();
-	resNstCls.b = new Class();
-	resNstCls.c = new Class();
-	t.start();
-	for i in iterAscend(1, cnt) do resNstCls = i;
-	asg = t.stop();
-	
-	t.start();
-	for i in iterAscend(1, cnt) do resNstCls = resNstCls + i;
-	add = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstCls = resNstCls - i;
-	sub = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstCls = resNstCls * i;
-	mul = t.stop();
-
-	t.start();
-	for i in iterAscend(1, cnt) do resNstCls = resNstCls / i;
-	div = t.stop();
-	writeln("nClass\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-}
-
 proc parallel_types() {
 	/* 
 	 * Evaluation of data parallel types: range, domain, array
@@ -1788,7 +1245,6 @@ proc array_with_types_rw() {
 	t.start();
 	for d in arrReal.domain do arrReal(d) = arrReal(d) / d;
 	div = t.stop();
-	res = resReal;
 	writeln("realArr\t\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 	// Tuple Array
@@ -1831,7 +1287,6 @@ proc array_with_types_rw() {
 		arrTup(d)(3) = arrTup(d)(3) / d;
 	}
 	div = t.stop();
-	res = res + resTup(1) + resTup(2) + resTup(3);
 	writeln("tupleArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	
 	// Record Array
@@ -1874,9 +1329,7 @@ proc array_with_types_rw() {
 		arrRec(d).c = arrRec(d).c / d;
 	}
 	div = t.stop();
-	res = res + resRec.a + resRec.b + resRec.c;
 	writeln("recordArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = resRec.a;
 
 	// Nested Tuple
 	t.start();
@@ -1948,7 +1401,6 @@ proc array_with_types_rw() {
 		arrNstTup(d)(3)(3) = arrNstTup(d)(3)(3) / d;
 	}
 	div = t.stop();
-	res = res + resNstTup(1)(1) + resNstTup(2)(1) + resNstTup(3)(1);
 	writeln("nTupleArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 
 	// Nested Record
@@ -1967,7 +1419,7 @@ proc array_with_types_rw() {
 	asg = t.stop();
 	
 	t.start();
-	for d in arrNstRec.domain do {
+	for d in arrNstRec.domain {
 		arrNstRec(d).a.a = arrNstRec(d).a.a + d;
 		arrNstRec(d).a.b = arrNstRec(d).a.b + d;
 		arrNstRec(d).a.c = arrNstRec(d).a.c + d;
@@ -1981,7 +1433,7 @@ proc array_with_types_rw() {
 	add = t.stop();
 
 	t.start();
-	for d in arrNstRec.domain do {
+	for d in arrNstRec.domain {
 		arrNstRec(d).a.a = arrNstRec(d).a.a - d;
 		arrNstRec(d).a.b = arrNstRec(d).a.b - d;
 		arrNstRec(d).a.c = arrNstRec(d).a.c - d;
@@ -1995,7 +1447,7 @@ proc array_with_types_rw() {
 	sub = t.stop();
 
 	t.start();
-	for d in arrNstRec.domain do {
+	for d in arrNstRec.domain {
 		arrNstRec(d).a.a = arrNstRec(d).a.a * d;
 		arrNstRec(d).a.b = arrNstRec(d).a.b * d;
 		arrNstRec(d).a.c = arrNstRec(d).a.c * d;
@@ -2009,7 +1461,7 @@ proc array_with_types_rw() {
 	mul = t.stop();
 
 	t.start();
-	for d in arrNstRec.domain do {
+	for d in arrNstRec.domain {
 		arrNstRec(d).a.a = arrNstRec(d).a.a / d;
 		arrNstRec(d).a.b = arrNstRec(d).a.b / d;
 		arrNstRec(d).a.c = arrNstRec(d).a.c / d;
@@ -2022,9 +1474,166 @@ proc array_with_types_rw() {
 	}
 	div = t.stop();
 	writeln("nRecordArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
-	res = res + resNstRec.a.a + resNstRec.b.a + resNstRec.c.a;
 }
 
+proc array_with_types_rwo() {
+	var arrDom1D: domain(1);
+	var arrInt: [arrDom1D] int;
+	var arrReal: [arrDom1D] real;
+	var arrTup: [arrDom1D] Tuple;
+	var arrRec: [arrDom1D] Record;
+	var arrNstTup: [arrDom1D] nstTuple;
+	var arrNstRec: [arrDom1D] nstRecord;
+	var resInt: int;
+	var resReal: real;
+	var resTup: Tuple;
+	var resRec: Record;
+	var resNstTup: nstTuple;
+	var resNstRec: nstRecord;
+
+	arrDom1D = [1..cnt];
+
+	/* 
+	   The operation includes both memory read and write,
+	   thus the performance analysis should be careful.
+	 */
+	writeln("Evaluation of Array with Types (Read/Write, Overloading)");
+	writeln("# of ops: ", cnt, ", time unit: usec");
+
+	// Int Array
+	t.start();
+	for d in arrInt.domain do arrInt(d) = d;
+	asg = t.stop();
+	
+	t.start();
+	for d in arrInt.domain do arrInt(d) = arrInt(d) + d; 
+	add = t.stop();
+	
+	t.start();
+	for d in arrInt.domain do arrInt(d) = arrInt(d) - d; 
+	sub = t.stop();
+	
+	t.start();
+	for d in arrInt.domain do arrInt(d) = arrInt(d) * d; 
+	mul = t.stop();
+	
+	t.start();
+	for d in arrInt.domain do arrInt(d) = arrInt(d) / d; 
+	div = t.stop();
+	res = resInt;
+	writeln("intArr\t\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	
+	// Real Array
+	t.start();
+	for d in arrReal.domain do arrReal(d) = d;
+	asg = t.stop();
+	
+	t.start();
+	for d in arrReal.domain do arrReal(d) = arrReal(d) + d;
+	add = t.stop();
+	
+	t.start();
+	for d in arrReal.domain do arrReal(d) = arrReal(d) - d;
+	sub = t.stop();
+	
+	t.start();
+	for d in arrReal.domain do arrReal(d) = arrReal(d) * d;
+	mul = t.stop();
+	
+	t.start();
+	for d in arrReal.domain do arrReal(d) = arrReal(d) / d;
+	div = t.stop();
+	writeln("realArr\t\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+
+	// Tuple Array
+	t.start();
+	for d in arrTup.domain do arrTup(d) = d;
+	asg = t.stop();
+	
+	t.start();
+	for d in arrTup.domain do arrTup(d) = arrTup(d) + d;
+	add = t.stop();
+	
+	t.start();
+	for d in arrTup.domain do arrTup(d) = arrTup(d) - d;
+	sub = t.stop();
+	
+	t.start();
+	for d in arrTup.domain do arrTup(d) = arrTup(d) * d;
+	mul = t.stop();
+	
+	t.start();
+	for d in arrTup.domain do arrTup(d) = arrTup(d) / d;
+	div = t.stop();
+	writeln("tupleArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	
+	// Record Array
+	t.start();
+	for d in arrRec.domain do arrRec(d) = d;
+	asg = t.stop();
+	
+	t.start();
+	for d in arrRec.domain do arrRec(d) = arrRec(d) + d;
+	add = t.stop();
+
+	t.start();
+	for d in arrRec.domain do arrRec(d) = arrRec(d) - d;
+	sub = t.stop();
+
+	t.start();
+	for d in arrRec.domain do arrRec(d) = arrRec(d) * d;
+	mul = t.stop();
+
+	t.start();
+	for d in arrRec.domain do arrRec(d) = arrRec(d) / d;
+	div = t.stop();
+	writeln("recordArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+	res = resRec.a;
+
+	// Nested Tuple
+	t.start();
+	for d in arrNstTup.domain do arrNstTup(d) = d;
+	asg = t.stop();
+	
+	t.start();
+	for d in arrNstTup.domain do arrNstTup(d) = arrNstTup(d) + d;
+	add = t.stop();
+	
+	t.start();
+	for d in arrNstTup.domain do arrNstTup(d) = arrNstTup(d) - d;
+	sub = t.stop();
+	
+	t.start();
+	for d in arrNstTup.domain do arrNstTup(d) = arrNstTup(d) * d;
+	mul = t.stop();
+	
+	t.start();
+	for d in arrNstTup.domain do arrNstTup(d) = arrNstTup(d) / d;
+	div = t.stop();
+	writeln("nTupleArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+
+	// Nested Record
+	t.start();
+	for d in arrNstRec.domain do arrNstRec(d) = d;
+	asg = t.stop();
+	
+	t.start();
+	for d in arrNstRec.domain do arrNstRec(d) = arrNstRec(d) + d;
+	add = t.stop();
+
+	t.start();
+	for d in arrNstRec.domain do arrNstRec(d) = arrNstRec(d) - d;
+	sub = t.stop();
+
+	t.start();
+	for d in arrNstRec.domain do arrNstRec(d) = arrNstRec(d) * d;
+	mul = t.stop();
+
+	t.start();
+	for d in arrNstRec.domain do arrNstRec(d) = arrNstRec(d) / d;
+	div = t.stop();
+	writeln("nRecordArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
+}
 proc task_parallel() {
 	var dom: domain(1) = [1..cnt];
 	var arr: [dom] int;
@@ -2071,10 +1680,9 @@ proc task_parallel() {
 
 proc main() {
 //  primitive_types();
-//	structured_types();
-//	structured_types_with_overload();
-	array_with_types_r();
+//	array_with_types_r();
 	array_with_types_rw();
+	array_with_types_rwo();
 //	parallel_types();
 ///	task_parallel();
 }
