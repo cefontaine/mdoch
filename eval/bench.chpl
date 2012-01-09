@@ -399,7 +399,7 @@ proc /(a:nstClass, b: int) {
 	return a;
 }
 
-config const cnt: int = 10000;
+config const n: int = 10000;
 
 var t: elapsedTimer;
 var res, aloc, asg, add, sub, mul, div: real;
@@ -416,78 +416,78 @@ proc primitive_types() {
 	var resReal: real(64);
 	
 	writeln("Evaluation of Primitive Types");
-	writeln("# of ops: ", cnt, ", time unit: usec");
+	writeln("# of ops: ", n, ", time unit: usec");
 
 	// Integer
 	t.start();
-	for i in iterAscend(1, cnt) do resInt32 = resInt32 + i;
+	for i in iterAscend(1, n) do resInt32 = resInt32 + i;
 	add = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resInt32 = resInt32 - i;
+	for i in iterAscend(1, n) do resInt32 = resInt32 - i;
 	sub = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resInt32 = resInt32 * i;
+	for i in iterAscend(1, n) do resInt32 = resInt32 * i;
 	mul = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resInt32 = resInt32 / i;
+	for i in iterAscend(1, n) do resInt32 = resInt32 / i;
 	div = t.stop();
 	writeln("int32\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	res = resInt32;
 
 	t.start();
-	for i in iterAscend(1, cnt) do resInt = resInt + i;
+	for i in iterAscend(1, n) do resInt = resInt + i;
 	add = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resInt = resInt - i;
+	for i in iterAscend(1, n) do resInt = resInt - i;
 	sub = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resInt = resInt * i;
+	for i in iterAscend(1, n) do resInt = resInt * i;
 	mul = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resInt = resInt / i;
+	for i in iterAscend(1, n) do resInt = resInt / i;
 	div = t.stop();
 	writeln("int64\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	res = resInt;
 
 	// Float
 	t.start();
-	for i in iterAscend(1, cnt) do resReal32 = resReal32 + i: real(32);
+	for i in iterAscend(1, n) do resReal32 = resReal32 + i: real(32);
 	add = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resReal32 = resReal32 - i: real(32);
+	for i in iterAscend(1, n) do resReal32 = resReal32 - i: real(32);
 	sub = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resReal32 = resReal32 * i: real(32);
+	for i in iterAscend(1, n) do resReal32 = resReal32 * i: real(32);
 	mul = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resReal32 = resReal32 / i: real(32);
+	for i in iterAscend(1, n) do resReal32 = resReal32 / i: real(32);
 	div = t.stop();
 	writeln("real32\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	res = resReal32;
 
 	t.start();
-	for i in iterAscend(1, cnt) do resReal = resReal + i;
+	for i in iterAscend(1, n) do resReal = resReal + i;
 	add = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resReal = resReal - i;
+	for i in iterAscend(1, n) do resReal = resReal - i;
 	sub = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resReal = resReal * i;
+	for i in iterAscend(1, n) do resReal = resReal * i;
 	mul = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do resReal = resReal / i;
+	for i in iterAscend(1, n) do resReal = resReal / i;
 	div = t.stop();
 	writeln("real64\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 	res = resReal;
@@ -500,41 +500,51 @@ proc parallel_types() {
     var resInt: int;	
 	writeln("");
 	writeln("Evaluation of Data Parellel Types");
-	writeln("# of ops: ", cnt, ", time unit: usec");
+	writeln("# of ops: ", n, ", time unit: usec");
 
-	var loopDom, loopRange, loopIter: real;
+	var loopDom, loopRange, loopIter, loopPredom: real;
 
 	// Range Type
 	t.start();
-	for i in iterAscend(1, cnt) do
+	for i in iterAscend(1, n) do
 		for j in [1..1] do resInt += i;
 	loopDom = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do
+	for i in iterAscend(1, n) do
 		for j in 1..1 do resInt += i;
 	loopRange = t.stop();
 
 	t.start();
-	for i in iterAscend(1, cnt) do
+	for i in iterAscend(1, n) do
 		for j in iterAscend(1, 1) do resInt += i;
 	loopIter = t.stop();
-	writeln("     \t\t", "domain\t\t\t", "range\t\t\t", "iterator");
-	writeln("loop\t\t",loopDom,"\t\t",loopRange,"\t\t",loopIter);
+
+	var preDom = [1..1];
+	t.start();
+	for i in iterAscend(1, n) do
+		for j in preDom do resInt += i;
+	loopPredom = t.stop();
+	
+	writeln("     \t\t", "domain\t\t\t", "range\t\t\t", "iterator\t\t\t",
+		"ForwardedDom");
+	writeln("loop\t\t",loopDom,"\t\t",loopRange,"\t\t",loopIter,"\t\t",
+		loopPredom);
+	res = resInt;
 
 	// Domain and Array
 	var rctDom1D: domain(1);	// rectangular domain
 	var irrDom1D: domain(int);			// irregular domain
 	var dim2d, dim3d: int;
-	dim2d = sqrt(cnt): int;
-	dim3d = cbrt(cnt): int;
+	dim2d = sqrt(n): int;
+	dim3d = cbrt(n): int;
 	writeln("");
-	writeln("# of ops: ", cnt, ", 2D domain: ", dim2d, "x", dim2d, 
+	writeln("# of ops: ", n, ", 2D domain: ", dim2d, "x", dim2d, 
 		", 3D domain: ", dim3d, "x", dim3d, "x", dim3d, ", time unit: usec");
 
 	// 1D domain
 	t.start();
-	rctDom1D = [1..cnt];
+	rctDom1D = [1..n];
 	aloc = t.stop();
 
 	t.start();
@@ -554,9 +564,10 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("1D-rctDom\t",aloc,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	t.start();
-	irrDom1D = [1..cnt];
+	irrDom1D = [1..n];
 	aloc = t.stop();
 
 	t.start();
@@ -576,6 +587,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("1D-irrDom\t",aloc,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	// 2D domain
 	var rctDom2D: domain(2);	// rectangular domain
@@ -602,6 +614,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("2D-rctDom\t",aloc,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	t.start();
 	irrDom2D = [1..dim2d, 1..dim2d];
@@ -624,6 +637,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("2D-irrDom\t",aloc,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	// 3D domain
 	var rctDom3D: domain(3);			// rectangular domain
@@ -650,6 +664,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("3D-rctDom\t",aloc,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	t.start();
 	irrDom3D = [1..dim3d, 1..dim3d, 1..dim3d];
@@ -672,41 +687,17 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("3D-irrDom\t",aloc,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	// 1D array
 	writeln("");
 	writeln("\t\taloc\t\tasg\t\tadd\t\tsub\t\tmul\t\tdiv"); 
 	var rDom1D: domain(1);	// rectangular domain
-	var arr: [rDom1D] real;
-	t.start();
-	rDom1D = [1..cnt]; // with array allocation
-	aloc = t.stop();
-
-	t.start();
-	for d in arr.domain do arr(d) = d;
-	asg = t.stop();
-
-	t.start();
-	for d in arr.domain {
-		arr(d) = arr(d) + arr((d % cnt) + 1);
-	}
-	add = t.stop();
-
-	t.start();
-	for d in arr.domain do arr(d) = arr(d) - arr((d % cnt) + 1);
-	sub = t.stop();
-
-	t.start();
-	for d in arr.domain do arr(d) = arr(d) * arr((d % cnt) + 1);
-	mul = t.stop();
-
-	t.start();
-	for d in arr.domain do res = arr(d) / arr((d % cnt) + 1);
-	div = t.stop();
-	writeln("array\t",aloc,"\t\t",asg,"\t\t",add,"\t\t",sub,
-			"\t\t",mul,"\t\t",div);
-	
 	var rctArr1D: [rDom1D] int;
+	t.start();
+	rDom1D = [1..n]; // with array allocation
+	aloc = t.stop();
+	
 	t.start();
 	for a in rctArr1D do a = 1;
 	asg = t.stop();
@@ -728,11 +719,12 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("1D-rctArr\t",aloc,"\t\t",asg,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	var iDom1D: domain(int);	// rectangular domain
 	var irrArr1D: [iDom1D] int;
 	t.start();
-	iDom1D = [1..cnt]; // with array allocation
+	iDom1D = [1..n]; // with array allocation
 	aloc = t.stop();
 
 	t.start();
@@ -756,6 +748,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("1D-irrArr\t",aloc,"\t\t",asg,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	// 2D array
 	var rDom2D: domain(2);
@@ -785,6 +778,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("2D-rctArr\t",aloc,"\t\t",asg,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	var iDom2D: domain(2*int);
 	var irrArr2D: [iDom2D] int;
@@ -813,6 +807,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("2D-irrArr\t",aloc,"\t\t",asg,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	// 3D array
 	var rDom3D: domain(3);			// rectangular domain
@@ -843,6 +838,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("3D-rctArr\t",aloc,"\t\t",asg,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 
 	var iDom3D: domain(3*int);		// irregular domain
 	var irrArr3D: [iDom3D] int;
@@ -872,6 +868,7 @@ proc parallel_types() {
 	div = t.stop();
 	writeln("3D-irrArr\t",aloc,"\t\t",asg,"\t\t",add,"\t\t",sub,
 			"\t\t",mul,"\t\t",div);
+	res = resInt;
 }
 
 proc array_with_types_r() {
@@ -889,14 +886,14 @@ proc array_with_types_r() {
 	var resNstTup: nstTuple;
 	var resNstRec: nstRecord;
 
-	arrDom1D = [1..cnt];
+	arrDom1D = [1..n];
 	
 	/* 
 	   The operation includes both memory read, (except assignment)
 	   thus the performance analysis should be careful.
 	 */
 	writeln("Evaluation of Array with Types (Read Only)");
-	writeln("# of ops: ", cnt, ", time unit: usec");
+	writeln("# of ops: ", n, ", time unit: usec");
 
 	// Int Array
 	t.start();
@@ -1193,14 +1190,14 @@ proc array_with_types_rw() {
 	var resNstTup: nstTuple;
 	var resNstRec: nstRecord;
 
-	arrDom1D = [1..cnt];
+	arrDom1D = [1..n];
 
 	/* 
 	   The operation includes both memory read and write,
 	   thus the performance analysis should be careful.
 	 */
 	writeln("Evaluation of Array with Types (Read/Write)");
-	writeln("# of ops: ", cnt, ", time unit: usec");
+	writeln("# of ops: ", n, ", time unit: usec");
 
 	// Int Array
 	t.start();
@@ -1491,14 +1488,14 @@ proc array_with_types_rwo() {
 	var resNstTup: nstTuple;
 	var resNstRec: nstRecord;
 
-	arrDom1D = [1..cnt];
+	arrDom1D = [1..n];
 
 	/* 
 	   The operation includes both memory read and write,
 	   thus the performance analysis should be careful.
 	 */
 	writeln("Evaluation of Array with Types (Read/Write, Overloading)");
-	writeln("# of ops: ", cnt, ", time unit: usec");
+	writeln("# of ops: ", n, ", time unit: usec");
 
 	// Int Array
 	t.start();
@@ -1635,7 +1632,7 @@ proc array_with_types_rwo() {
 	writeln("nRecordArr\t\t",asg,"\t\t",add,"\t\t",sub,"\t\t",mul,"\t\t",div);
 }
 proc task_parallel() {
-	var dom: domain(1) = [1..cnt];
+	var dom: domain(1) = [1..n];
 	var arr: [dom] int;
 	var tm_for, tm_forall, tm_coforall: real;
 
@@ -1681,8 +1678,8 @@ proc task_parallel() {
 proc main() {
 //  primitive_types();
 //	array_with_types_r();
-	array_with_types_rw();
-	array_with_types_rwo();
-//	parallel_types();
+//	array_with_types_rw();
+//	array_with_types_rwo();
+	parallel_types();
 ///	task_parallel();
 }

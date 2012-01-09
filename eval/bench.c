@@ -1054,9 +1054,9 @@ int main(int argc, char **argv)
 	arrsize = opcnt + 1;	// index starts from 1
 	devnull = fopen("/dev/null", "w");
 	
-	primitive_types(opcnt, arrsize, devnull);
-	//array_with_types_r(opcnt, arrsize, devnull);
-	//array_with_types_rw(opcnt, arrsize, devnull);
+	//primitive_types(opcnt, arrsize, devnull);
+	array_with_types_r(opcnt, arrsize, devnull);
+	array_with_types_rw(opcnt, arrsize, devnull);
 	//parallel_types(opcnt, arrsize, devnull);
 
 	close(devnull);	
