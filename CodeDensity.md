@@ -1,0 +1,1 @@
+![https://docs.google.com/spreadsheet/oimg?key=0AsQUQWzou-B5dG94MDl1dlJiMTc1WkllZ3N1Ujh1WUE&oid=7&zx=r3co8altlxt1&nonsense=loc.png](https://docs.google.com/spreadsheet/oimg?key=0AsQUQWzou-B5dG94MDl1dlJiMTc1WkllZ3N1Ujh1WUE&oid=7&zx=r3co8altlxt1&nonsense=loc.png)
